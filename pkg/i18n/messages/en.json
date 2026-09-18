@@ -1,0 +1,65 @@
+{
+  "common": {
+    "brand": "STAGER",
+    "tagline": "Building Better Food Businesses",
+    "positioning": "Culinary & Foodservice Development",
+    "loading": "Loading…",
+    "error": "Something went wrong",
+    "retry": "Try again",
+    "readMore": "Read more",
+    "backToList": "Back to list",
+    "notFound": "Page not found"
+  },
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "services": "Services",
+    "projects": "Projects",
+    "team": "Team",
+    "insights": "Insights",
+    "contact": "Contact",
+    "startProject": "Start a Project"
+  },
+  "locale": {
+    "switchLabel": "Change language",
+    "ka": "KA",
+    "en": "EN"
+  },
+  "contact": {
+    "title": "Start a Project",
+    "name": "Name",
+    "company": "Company",
+    "email": "Email",
+    "phone": "Phone",
+    "interest": "What are you looking for?",
+    "message": "Tell us about your project",
+    "submit": "Start a Conversation",
+    "submitting": "Sending…",
+    "success": "Thank you. Your message has been received.",
+    "failure": "The message could not be sent. Please try again.",
+    "interests": {
+      "NEW_FOOD_BUSINESS": "New Food Business",
+      "MENU_DEVELOPMENT": "Menu Development",
+      "KITCHEN_OPERATIONS": "Kitchen & Operations",
+      "TRAINING": "Training",
+      "HACCP_FOOD_SAFETY": "HACCP / Food Safety",
+      "CONSULTING": "Consulting",
+      "OTHER": "Other"
+    }
+  },
+  "validation": {
+    "required": "This field is required",
+    "email": "Enter a valid email address",
+    "tooShort": "Too short",
+    "tooLong": "Too long",
+    "rateLimited": "Too many requests. Please try again later."
+  },
+  "admin": {
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "email": "Email",
+    "password": "Password",
+    "invalidCredentials": "Email or password is incorrect",
+    "notAuthorized": "You do not have access to the admin dashboard"
+  }
+}

@@ -1,0 +1,67 @@
+# CLAUDE.md
+
+**Read `AGENTS.md` before writing code in this repository.** It holds the full
+contract: stack, folder architecture, data flow, caching, security and
+conventions. This file exists because Claude Code loads it automatically — it
+restates only the rules that do the most damage when missed, so they are in
+context even if `AGENTS.md` has not been opened yet.
+
+Kept short on purpose. One document is the source of truth; two competing ones
+drift.
+
+---
+
+## The stack is fixed
+
+Next.js 16 · React 19 · TypeScript strict · Tailwind 4 · TanStack Query ·
+Zustand · react-hook-form · zod 4 · Prisma 7 · Supabase · Vercel Blob · Resend ·
+next-intl · Playwright · pnpm.
+
+Do not add a library outside this list without raising it first.
+
+## Ten rules that break things when broken
+
+1. **Only `src/app/api/**` may touch the database.** Everything else goes through
+   an entity `.api.ts` → `/api`. ESLint enforces this.
+2. **Imports point one way**: `app → modules → widgets → entity → shared → pkg`.
+   A module's `elements/` may never import from its parent module.
+3. **Every public read is tagged, every write revalidates.** Tags come from
+   `pkg/cache/tags.ts`, never inline strings. An untagged read cannot be
+   invalidated, and the dashboard will look broken.
+4. **`getUser()`, never `getSession()`** — the latter does not verify the JWT.
+5. **Middleware is not the auth boundary.** Prisma cannot run on Edge.
+   `requireAdmin()` in the Node runtime is the real check, and every admin route
+   handler repeats it.
+6. **Admin access needs both** a valid Supabase session and an active `AdminUser`
+   row. A Supabase account alone grants nothing.
+7. **`process.env` is read only inside `pkg/config`**, where zod validates it.
+8. **Sanitize rich text on write**, so the database only ever holds safe HTML.
+9. **No hard-coded colours or sizes.** They live in the `@theme` block in
+   `src/app/globals.css`.
+10. **Schema changes go through `pnpm db:migrate`** and the generated SQL is
+    committed. Never edit the database by hand.
+
+## Traps this codebase has already hit
+
+- `prisma` / `@prisma/client` are pinned to **`7.10.0` exactly** — npm's `latest`
+  tag points at an `8.0.0-rc`.
+- Prisma 7 takes no connection URL in `schema.prisma` and requires a driver
+  adapter.
+- **`middleware.ts` must be at `src/middleware.ts`.** At the repo root it is
+  silently ignored, taking locale routing, CSP and session refresh with it.
+- `revalidateTag(tag, { expire: 0 })` — anything else serves stale content right
+  after an admin saves.
+- Where a zod schema uses `.default()`, react-hook-form needs both types:
+  `useForm<z.input<S>, unknown, z.output<S>>`.
+
+## Before pushing
+
+```bash
+pnpm lint && pnpm typecheck && pnpm build && pnpm test:e2e
+```
+
+## What is not built yet
+
+The public site design. `src/app/[locale]/page.tsx` is an intentionally unstyled
+scaffold proving that dashboard edits reach the site. Its API endpoints already
+exist — the design phase is frontend work only.

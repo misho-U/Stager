@@ -1,0 +1,649 @@
+// STAGER — database schema
+//
+// Rules:
+//  - This file is the ONLY source of truth for the database. Never edit the
+//    schema by hand in the Supabase SQL editor. Change it here, then run
+//    `pnpm db:migrate` so the SQL lands in prisma/migrations/ and is committed.
+//  - Every piece of user-visible copy lives in a `*Translation` table keyed by
+//    `locale`, so KA and EN stay symmetrical and independently queryable.
+//  - Prisma connects as the table owner and therefore bypasses RLS. RLS is
+//    enabled on every table (see migrations) with no policies, so the Supabase
+//    anon/authenticated roles can read nothing directly.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Prisma 7 no longer accepts connection URLs here.
+//  - Migrations read theirs from prisma.config.ts (DIRECT_URL, port 5432).
+//  - The runtime client gets the pooled URL (DATABASE_URL, port 6543) through
+//    the pg driver adapter in pkg/db/prisma.ts.
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Locale {
+  KA
+  EN
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AdminRole {
+  OWNER
+  EDITOR
+}
+
+enum PageKey {
+  HOME
+  ABOUT
+  SERVICES
+  PROJECTS
+  TEAM
+  INSIGHTS
+  CONTACT
+}
+
+enum InquiryInterest {
+  NEW_FOOD_BUSINESS
+  MENU_DEVELOPMENT
+  KITCHEN_OPERATIONS
+  TRAINING
+  HACCP_FOOD_SAFETY
+  CONSULTING
+  OTHER
+}
+
+enum InquiryStatus {
+  NEW
+  READ
+  ARCHIVED
+}
+
+enum SocialPlatform {
+  FACEBOOK
+  INSTAGRAM
+  LINKEDIN
+  YOUTUBE
+  TIKTOK
+  X
+  OTHER
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGIN_FAILED
+  LOGOUT
+}
+
+// ---------------------------------------------------------------------------
+// Access control
+// ---------------------------------------------------------------------------
+
+/// Allowlist of people permitted into /admin. A valid Supabase session alone
+/// grants nothing — the email must also appear here with isActive = true.
+model AdminUser {
+  id String @id @default(cuid())
+
+  /// Always stored lowercased. Matched against the Supabase session email.
+  email String @unique
+
+  /// Linked on first successful login, so we can revoke by Supabase user id too.
+  supabaseUserId String? @unique
+
+  name      String?
+  role      AdminRole @default(EDITOR)
+  isActive  Boolean   @default(true)
+  lastLogin DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  uploadedMedia Media[]    @relation("MediaUploader")
+  auditLogs     AuditLog[] @relation("AuditActor")
+
+  @@index([isActive])
+  @@map("admin_users")
+}
+
+/// Append-only record of every mutation performed through the admin API.
+model AuditLog {
+  id String @id @default(cuid())
+
+  actorId    String?
+  actor      AdminUser? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actorEmail String?
+
+  action     AuditAction
+  entityType String
+  entityId   String?
+
+  /// { before, after } shape; secrets are never written here.
+  diff Json?
+
+  ipHash    String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+/// Fixed-window rate limiter. Postgres-backed so it works across serverless
+/// instances without adding another vendor.
+model RateLimit {
+  id String @id @default(cuid())
+
+  /// e.g. "contact:<ipHash>" or "login:<emailHash>"
+  key         String
+  windowStart DateTime
+  count       Int      @default(0)
+
+  @@unique([key, windowStart])
+  @@index([windowStart])
+  @@map("rate_limits")
+}
+
+// ---------------------------------------------------------------------------
+// Media
+// ---------------------------------------------------------------------------
+
+/// A file in Vercel Blob. Video is NOT stored here — videos are YouTube links
+/// on the owning record (see Project.youtubeUrl).
+model Media {
+  id String @id @default(cuid())
+
+  /// Public Vercel Blob URL.
+  url String @db.Text
+  /// Blob pathname, needed to delete the object.
+  pathname    String  @unique
+  contentType String
+  size        Int
+  width       Int?
+  height      Int?
+  /// Tiny base64 placeholder for next/image.
+  blurDataUrl String? @db.Text
+
+  uploadedById String?
+  uploadedBy   AdminUser? @relation("MediaUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  translations MediaTranslation[]
+
+  projectCovers          Project[]             @relation("ProjectCover")
+  projectOgImages        ProjectTranslation[]  @relation("ProjectTranslationOg")
+  projectGalleryItems    ProjectGalleryItem[]  @relation("ProjectGalleryMedia")
+  serviceCovers          Service[]             @relation("ServiceCover")
+  serviceOgImages        ServiceTranslation[]  @relation("ServiceTranslationOg")
+  teamMemberPhotos       TeamMember[]          @relation("TeamMemberPhoto")
+  insightCovers          Insight[]             @relation("InsightCover")
+  insightOgImages        InsightTranslation[]  @relation("InsightTranslationOg")
+  pageOgImages           PageTranslation[]     @relation("PageTranslationOg")
+  pageSectionMedia       PageSection[]         @relation("PageSectionMedia")
+  siteSettingLogos       SiteSetting[]         @relation("SiteSettingLogo")
+  siteSettingLogosLight  SiteSetting[]         @relation("SiteSettingLogoLight")
+  siteSettingOgImages    SiteSettingTranslation[] @relation("SiteSettingTranslationOg")
+
+  @@index([createdAt])
+  @@map("media")
+}
+
+model MediaTranslation {
+  id String @id @default(cuid())
+
+  mediaId String
+  media   Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  locale  Locale
+
+  /// Required for accessibility; enforced at the API boundary.
+  alt     String @default("")
+  caption String @default("")
+
+  @@unique([mediaId, locale])
+  @@map("media_translations")
+}
+
+// ---------------------------------------------------------------------------
+// Projects / Case studies
+// ---------------------------------------------------------------------------
+
+model Project {
+  id   String @id @default(cuid())
+  slug String @unique
+
+  coverMediaId String?
+  coverMedia   Media?  @relation("ProjectCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+
+  /// Optional YouTube watch/share URL. Rendered as a click-to-load facade.
+  youtubeUrl String?
+
+  client   String?
+  location String?
+  year     Int?
+
+  status      ContentStatus @default(DRAFT)
+  featured    Boolean       @default(false)
+  order       Int           @default(0)
+  publishedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  translations ProjectTranslation[]
+  gallery      ProjectGalleryItem[]
+  services     ServicesOnProjects[]
+
+  @@index([status, publishedAt])
+  @@index([status, featured, order])
+  @@map("projects")
+}
+
+model ProjectTranslation {
+  id String @id @default(cuid())
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  locale    Locale
+
+  title   String
+  summary String @default("") @db.Text
+  /// Sanitized HTML (DOMPurify on write).
+  body    String @default("") @db.Text
+
+  metaTitle       String?
+  metaDescription String?
+  ogMediaId       String?
+  ogMedia         Media?  @relation("ProjectTranslationOg", fields: [ogMediaId], references: [id], onDelete: SetNull)
+
+  @@unique([projectId, locale])
+  @@map("project_translations")
+}
+
+model ProjectGalleryItem {
+  id String @id @default(cuid())
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  mediaId String
+  media   Media  @relation("ProjectGalleryMedia", fields: [mediaId], references: [id], onDelete: Cascade)
+
+  order Int @default(0)
+
+  @@unique([projectId, mediaId])
+  @@index([projectId, order])
+  @@map("project_gallery_items")
+}
+
+/// Which service lines a case study demonstrates.
+model ServicesOnProjects {
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, serviceId])
+  @@map("services_on_projects")
+}
+
+// ---------------------------------------------------------------------------
+// Services
+// ---------------------------------------------------------------------------
+
+model Service {
+  id   String @id @default(cuid())
+  slug String @unique
+
+  /// Icon key resolved to a component in shared/components; no SVG in the DB.
+  icon String?
+
+  coverMediaId String?
+  coverMedia   Media?  @relation("ServiceCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+
+  status ContentStatus @default(DRAFT)
+  order  Int           @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  translations ServiceTranslation[]
+  projects     ServicesOnProjects[]
+
+  @@index([status, order])
+  @@map("services")
+}
+
+model ServiceTranslation {
+  id String @id @default(cuid())
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  locale    Locale
+
+  title            String
+  shortDescription String @default("") @db.Text
+  body             String @default("") @db.Text
+
+  metaTitle       String?
+  metaDescription String?
+  ogMediaId       String?
+  ogMedia         Media?  @relation("ServiceTranslationOg", fields: [ogMediaId], references: [id], onDelete: SetNull)
+
+  @@unique([serviceId, locale])
+  @@map("service_translations")
+}
+
+// ---------------------------------------------------------------------------
+// Team
+// ---------------------------------------------------------------------------
+
+model TeamMember {
+  id   String @id @default(cuid())
+  slug String @unique
+
+  photoMediaId String?
+  photoMedia   Media?  @relation("TeamMemberPhoto", fields: [photoMediaId], references: [id], onDelete: SetNull)
+
+  email       String?
+  linkedinUrl String?
+
+  status ContentStatus @default(DRAFT)
+  order  Int           @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  translations    TeamMemberTranslation[]
+  authoredInsight Insight[]               @relation("InsightAuthor")
+
+  @@index([status, order])
+  @@map("team_members")
+}
+
+model TeamMemberTranslation {
+  id String @id @default(cuid())
+
+  teamMemberId String
+  teamMember   TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+  locale       Locale
+
+  name      String
+  position  String @default("")
+  bio       String @default("") @db.Text
+  expertise String @default("") @db.Text
+
+  @@unique([teamMemberId, locale])
+  @@map("team_member_translations")
+}
+
+// ---------------------------------------------------------------------------
+// Insights / Blog
+// ---------------------------------------------------------------------------
+
+model Category {
+  id   String @id @default(cuid())
+  slug String @unique
+
+  order Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  translations CategoryTranslation[]
+  insights     Insight[]
+
+  @@map("categories")
+}
+
+model CategoryTranslation {
+  id String @id @default(cuid())
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  locale     Locale
+
+  name String
+
+  @@unique([categoryId, locale])
+  @@map("category_translations")
+}
+
+model Insight {
+  id   String @id @default(cuid())
+  slug String @unique
+
+  coverMediaId String?
+  coverMedia   Media?  @relation("InsightCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  authorId String?
+  author   TeamMember? @relation("InsightAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  /// The brief asks to sometimes publish without naming an author.
+  showAuthor Boolean @default(true)
+
+  readingMinutes Int?
+
+  status      ContentStatus @default(DRAFT)
+  publishedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  translations InsightTranslation[]
+
+  @@index([status, publishedAt])
+  @@index([categoryId, status])
+  @@map("insights")
+}
+
+model InsightTranslation {
+  id String @id @default(cuid())
+
+  insightId String
+  insight   Insight @relation(fields: [insightId], references: [id], onDelete: Cascade)
+  locale    Locale
+
+  title   String
+  excerpt String @default("") @db.Text
+  body    String @default("") @db.Text
+
+  metaTitle       String?
+  metaDescription String?
+  ogMediaId       String?
+  ogMedia         Media?  @relation("InsightTranslationOg", fields: [ogMediaId], references: [id], onDelete: SetNull)
+
+  @@unique([insightId, locale])
+  @@map("insight_translations")
+}
+
+// ---------------------------------------------------------------------------
+// Editable page copy
+// ---------------------------------------------------------------------------
+
+/// Lets the admin change page copy and SEO without a deploy. Structure is fixed
+/// in code; the words are not.
+model Page {
+  id  String  @id @default(cuid())
+  key PageKey @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  translations PageTranslation[]
+  sections     PageSection[]
+
+  @@map("pages")
+}
+
+model PageTranslation {
+  id String @id @default(cuid())
+
+  pageId String
+  page   Page   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  locale Locale
+
+  title String @default("")
+
+  metaTitle       String?
+  metaDescription String?
+  ogMediaId       String?
+  ogMedia         Media?  @relation("PageTranslationOg", fields: [ogMediaId], references: [id], onDelete: SetNull)
+
+  @@unique([pageId, locale])
+  @@map("page_translations")
+}
+
+model PageSection {
+  id String @id @default(cuid())
+
+  pageId String
+  page   Page   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  /// Stable identifier the frontend looks up, e.g. "hero" or "why-stager".
+  key   String
+  order Int    @default(0)
+
+  mediaId String?
+  media   Media?  @relation("PageSectionMedia", fields: [mediaId], references: [id], onDelete: SetNull)
+
+  isVisible Boolean @default(true)
+
+  translations PageSectionTranslation[]
+
+  @@unique([pageId, key])
+  @@index([pageId, order])
+  @@map("page_sections")
+}
+
+model PageSectionTranslation {
+  id String @id @default(cuid())
+
+  sectionId String
+  section   PageSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  locale    Locale
+
+  heading    String @default("")
+  subheading String @default("") @db.Text
+  body       String @default("") @db.Text
+  ctaLabel   String @default("")
+  ctaHref    String @default("")
+
+  @@unique([sectionId, locale])
+  @@map("page_section_translations")
+}
+
+// ---------------------------------------------------------------------------
+// Site-wide settings
+// ---------------------------------------------------------------------------
+
+/// Single row, id is pinned to "singleton".
+model SiteSetting {
+  id String @id @default("singleton")
+
+  logoMediaId String?
+  logoMedia   Media?  @relation("SiteSettingLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
+
+  logoLightMediaId String?
+  logoLightMedia   Media?  @relation("SiteSettingLogoLight", fields: [logoLightMediaId], references: [id], onDelete: SetNull)
+
+  contactEmail String?
+  phone        String?
+
+  /// Inbox that contact-form submissions are forwarded to. Falls back to
+  /// CONTACT_INBOX_EMAIL when unset.
+  inquiryInboxEmail String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  translations SiteSettingTranslation[]
+
+  @@map("site_settings")
+}
+
+model SiteSettingTranslation {
+  id String @id @default(cuid())
+
+  siteSettingId String
+  siteSetting   SiteSetting @relation(fields: [siteSettingId], references: [id], onDelete: Cascade)
+  locale        Locale
+
+  siteName   String @default("STAGER")
+  tagline    String @default("")
+  address    String @default("")
+  footerText String @default("") @db.Text
+
+  metaTitle       String?
+  metaDescription String?
+  ogMediaId       String?
+  ogMedia         Media?  @relation("SiteSettingTranslationOg", fields: [ogMediaId], references: [id], onDelete: SetNull)
+
+  @@unique([siteSettingId, locale])
+  @@map("site_setting_translations")
+}
+
+model SocialLink {
+  id String @id @default(cuid())
+
+  platform SocialPlatform
+  url      String
+  label    String?
+  order    Int            @default(0)
+  isActive Boolean        @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, order])
+  @@map("social_links")
+}
+
+// ---------------------------------------------------------------------------
+// Contact
+// ---------------------------------------------------------------------------
+
+model ContactInquiry {
+  id String @id @default(cuid())
+
+  name    String
+  company String?
+  email   String
+  phone   String?
+
+  interest InquiryInterest
+  message  String          @db.Text
+
+  locale Locale        @default(KA)
+  status InquiryStatus @default(NEW)
+
+  /// Hashed, never the raw address — we only need it for abuse throttling.
+  ipHash    String?
+  userAgent String?
+
+  /// False when Resend rejected the notification, so it can be retried.
+  notifiedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@map("contact_inquiries")
+}

@@ -1,0 +1,65 @@
+{
+  "common": {
+    "brand": "STAGER",
+    "tagline": "Building Better Food Businesses",
+    "positioning": "Culinary & Foodservice Development",
+    "loading": "იტვირთება…",
+    "error": "დაფიქსირდა შეცდომა",
+    "retry": "ხელახლა ცდა",
+    "readMore": "ვრცლად",
+    "backToList": "სიაში დაბრუნება",
+    "notFound": "გვერდი ვერ მოიძებნა"
+  },
+  "nav": {
+    "home": "მთავარი",
+    "about": "ჩვენ შესახებ",
+    "services": "მომსახურება",
+    "projects": "პროექტები",
+    "team": "გუნდი",
+    "insights": "ბლოგი",
+    "contact": "კონტაქტი",
+    "startProject": "დაიწყე პროექტი"
+  },
+  "locale": {
+    "switchLabel": "ენის შეცვლა",
+    "ka": "ქარ",
+    "en": "ENG"
+  },
+  "contact": {
+    "title": "დაიწყე პროექტი",
+    "name": "სახელი",
+    "company": "კომპანია",
+    "email": "ელ. ფოსტა",
+    "phone": "ტელეფონი",
+    "interest": "რა გაინტერესებთ?",
+    "message": "მოგვიყევით თქვენი პროექტის შესახებ",
+    "submit": "დაიწყე საუბარი",
+    "submitting": "იგზავნება…",
+    "success": "მადლობა! თქვენი შეტყობინება მიღებულია.",
+    "failure": "შეტყობინება ვერ გაიგზავნა. სცადეთ ხელახლა.",
+    "interests": {
+      "NEW_FOOD_BUSINESS": "ახალი კვების ბიზნესი",
+      "MENU_DEVELOPMENT": "მენიუს შემუშავება",
+      "KITCHEN_OPERATIONS": "სამზარეულო და ოპერაციები",
+      "TRAINING": "ტრენინგი",
+      "HACCP_FOOD_SAFETY": "HACCP / კვების უსაფრთხოება",
+      "CONSULTING": "კონსულტაცია",
+      "OTHER": "სხვა"
+    }
+  },
+  "validation": {
+    "required": "სავალდებულო ველი",
+    "email": "შეიყვანეთ სწორი ელ. ფოსტა",
+    "tooShort": "ძალიან მოკლეა",
+    "tooLong": "ძალიან გრძელია",
+    "rateLimited": "ძალიან ბევრი მოთხოვნა. სცადეთ მოგვიანებით."
+  },
+  "admin": {
+    "signIn": "შესვლა",
+    "signOut": "გასვლა",
+    "email": "ელ. ფოსტა",
+    "password": "პაროლი",
+    "invalidCredentials": "ელ. ფოსტა ან პაროლი არასწორია",
+    "notAuthorized": "თქვენ არ გაქვთ ადმინ პანელზე წვდომა"
+  }
+}
