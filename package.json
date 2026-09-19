@@ -23,7 +23,8 @@
     "db:seed": "dotenv -e .env.local -- tsx prisma/seed.ts",
     "db:reset": "dotenv -e .env.local -- prisma migrate reset",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

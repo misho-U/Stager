@@ -47,8 +47,9 @@ Do not add a library outside this list without raising it first.
   tag points at an `8.0.0-rc`.
 - Prisma 7 takes no connection URL in `schema.prisma` and requires a driver
   adapter.
-- **`middleware.ts` must be at `src/middleware.ts`.** At the repo root it is
-  silently ignored, taking locale routing, CSP and session refresh with it.
+- **The middleware file is `src/proxy.ts`** (Next 16 renamed the convention;
+  default export). At the repo root it is silently ignored, taking locale
+  routing, CSP and session refresh with it.
 - `revalidateTag(tag, { expire: 0 })` — anything else serves stale content right
   after an admin saves.
 - Where a zod schema uses `.default()`, react-hook-form needs both types:

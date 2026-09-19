@@ -1,5 +1,7 @@
 import type { NextRequest } from 'next/server';
 
+import { isAuthRetryableFetchError } from '@supabase/supabase-js';
+
 import { readJson, recordAudit, withPublic } from '@/app/api/_lib/route-helpers';
 import { loginInputSchema } from '@/entity/session/model/session.model';
 import { getAdminSession } from '@pkg/auth/admin-session';
@@ -50,11 +52,48 @@ export const POST = withPublic(async ({ request }: { request: NextRequest }) => 
       action: 'LOGIN_FAILED',
       entityType: 'AdminUser',
       actorEmail: parsed.data.email.toLowerCase(),
+      diff: { reason: error.code ?? error.name },
     });
 
-    // One message for "no such user" and for "wrong password" alike — telling
-    // them apart would confirm which addresses have accounts.
-    return apiFail('UNAUTHENTICATED', 'Email or password is incorrect');
+    // Always log what Supabase actually said. Without this the server log shows
+    // a bare 401 and whoever is setting the site up has no way to tell a wrong
+    // password from an account that was never created.
+    logger.warn('auth.login_rejected', {
+      email: parsed.data.email.toLowerCase(),
+      supabaseCode: error.code ?? null,
+      supabaseStatus: error.status ?? null,
+      supabaseMessage: error.message,
+    });
+
+    // A transport failure is not a credential failure. Reporting it as one
+    // sends the operator hunting for a password problem when the real fault is
+    // NEXT_PUBLIC_SUPABASE_URL or a network block.
+    if (isAuthRetryableFetchError(error) || !error.status) {
+      return apiFail(
+        'INTERNAL',
+        'Could not reach the authentication service. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local.',
+      );
+    }
+
+    // Setup mistakes get named, because the person hitting them is the one who
+    // can fix them, and nothing is disclosed that an operator does not know.
+    if (error.code === 'email_not_confirmed') {
+      return apiFail(
+        'UNAUTHENTICATED',
+        'This account exists but its email is not confirmed. Confirm it in Supabase → Authentication → Users.',
+      );
+    }
+
+    if (error.code === 'over_request_rate_limit') {
+      return apiFail('RATE_LIMITED', 'Supabase is throttling sign-in attempts. Wait a minute.');
+    }
+
+    // Everything else stays one message: telling "no such user" apart from
+    // "wrong password" would confirm which addresses have accounts.
+    return apiFail(
+      'UNAUTHENTICATED',
+      'Email or password is incorrect. If you have not created this user yet, add it in Supabase → Authentication → Users.',
+    );
   }
 
   // Authenticated with Supabase, but that is only half the test.

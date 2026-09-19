@@ -59,6 +59,36 @@ There is one env file. The Prisma scripts read `.env.local` too, via dotenv-cli.
 
 ---
 
+## Troubleshooting first run
+
+**`/admin/login` says "Email or password is incorrect"** — the seed adds you to
+*our* `AdminUser` allowlist, but that is not a Supabase account. Sign-in needs
+both. Create the account in **Supabase → Authentication → Users → Add user**,
+using the same address as `ADMIN_EMAIL`, and tick *Auto Confirm User*. The
+password there is the one you sign in with — it is unrelated to the database
+password in `DATABASE_URL`.
+
+The terminal running `pnpm dev` logs the precise reason Supabase gave
+(`auth.login_rejected` with `supabaseCode`), so check there first:
+
+| `supabaseCode` | Cause |
+|---|---|
+| `invalid_credentials` | No such user, or the wrong password |
+| `email_not_confirmed` | User exists but was created without *Auto Confirm* |
+| `over_request_rate_limit` | Supabase is throttling; wait a minute |
+
+**"Could not reach the authentication service"** — `NEXT_PUBLIC_SUPABASE_URL` or
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` is wrong or still a placeholder.
+
+**`Cannot find module '.prisma/client/default'`** — the Prisma client has not
+been generated. `pnpm install` does this automatically now; if it was skipped,
+run `pnpm db:generate`.
+
+**`The datasource.url property is required…`** — `.env.local` does not exist or
+has no `DIRECT_URL`. On Windows: `copy .env.example .env.local`.
+
+---
+
 ## Commands
 
 ```bash

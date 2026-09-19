@@ -38,6 +38,8 @@ export function useAdminLoginForm() {
     form,
     onSubmit,
     isSubmitting: loginMutation.isPending || form.formState.isSubmitting,
-    errorMessage: loginMutation.error ? toFormErrorMessage(loginMutation.error) : null,
+    errorMessage: loginMutation.error
+      ? toFormErrorMessage(loginMutation.error, 'signin')
+      : null,
   };
 }

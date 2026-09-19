@@ -10,6 +10,12 @@ const intlMiddleware = createIntlMiddleware(routing);
 const LOGIN_PATH = '/admin/login';
 
 /**
+ * Next 16 renamed this convention from `middleware.ts` to `proxy.ts`.
+ *
+ * It must live beside `src/app`, i.e. at `src/proxy.ts`. At the repository root
+ * it is silently ignored — no locale routing, no CSP, no session refresh, and
+ * no warning to tell you.
+ *
  * Three jobs, split by path because they do not overlap:
  *
  *   /api/*    — nothing. Route handlers do their own auth in the Node runtime,
@@ -21,7 +27,7 @@ const LOGIN_PATH = '/admin/login';
  *               API call, and is what actually protects the data.
  *   everything else — next-intl locale routing.
  */
-export async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith('/api')) {

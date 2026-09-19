@@ -40,9 +40,11 @@ rather than adding a dependency.
   URL lives in `prisma.config.ts`; the runtime URL is passed to the pg driver
   adapter in `pkg/db/prisma.ts`.
 - **Prisma 7 requires a driver adapter.** We use `@prisma/adapter-pg`.
-- **`middleware.ts` must live at `src/middleware.ts`**, next to `src/app`. At the
-  repo root it is silently ignored — no locale routing, no CSP, no session
-  refresh, and no error to tell you.
+- **The middleware file is `src/proxy.ts`.** Next 16 renamed the convention from
+  `middleware.ts` to `proxy.ts` (default export, not a named `middleware`
+  export). It must sit next to `src/app`; at the repo root it is silently
+  ignored — no locale routing, no CSP, no session refresh, and no error to tell
+  you.
 - **ESLint 10 + `eslint-plugin-react`**: the plugin crashes on version
   auto-detection, so `eslint.config.mjs` declares the React version explicitly.
 
@@ -150,10 +152,10 @@ Non-negotiable. Each exists because of a specific failure mode.
 
 1. **`getUser()`, never `getSession()`.** `getSession` does not verify the JWT
    signature. An ESLint rule bans it.
-2. **Middleware is not the auth boundary.** Prisma cannot run on Edge, so
-   middleware only refreshes the session and does a cheap cookie gate. The real
-   check is `requireAdmin()` in the Node runtime, repeated in every admin route
-   handler and in `(dashboard)/layout.tsx`.
+2. **`src/proxy.ts` is not the auth boundary.** Prisma cannot run on Edge, so it
+   only refreshes the session and does a cheap cookie gate. The real check is
+   `requireAdmin()` in the Node runtime, repeated in every admin route handler
+   and in `(dashboard)/layout.tsx`.
 3. **Two conditions for admin access**: a valid Supabase session AND an active
    row in `AdminUser`. A Supabase account alone grants nothing.
 4. **RLS is enabled on every table with no policies.** Prisma owns the tables and
@@ -234,3 +236,13 @@ data-loading pattern in `home-page.service.ts`.
 Also open for the design phase: the Georgian/Latin typeface pairing (currently
 Noto Sans Georgian for both scripts, so headlines match across locales), motion
 language, and the YouTube facade component.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
