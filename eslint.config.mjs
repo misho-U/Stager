@@ -198,7 +198,16 @@ const eslintConfig = [
   {
     // The config package is where process.env is legitimately read, and the
     // middleware runs before the server-only config module can be imported.
-    files: ['pkg/config/**/*.ts', 'prisma.config.ts', 'prisma/seed.ts', '*.config.ts'],
+    // Local operator scripts read process.env directly for the same reason the
+    // seed does: they run under tsx, outside Next.js, where pkg/config's
+    // `server-only` import would throw.
+    files: [
+      'pkg/config/**/*.ts',
+      'prisma.config.ts',
+      'prisma/seed.ts',
+      'scripts/**/*.ts',
+      '*.config.ts',
+    ],
     rules: { 'no-restricted-properties': 'off' },
   },
 

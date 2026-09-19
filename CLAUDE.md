@@ -55,6 +55,14 @@ Do not add a library outside this list without raising it first.
 - Where a zod schema uses `.default()`, react-hook-form needs both types:
   `useForm<z.input<S>, unknown, z.output<S>>`.
 
+## Sign-in needs two systems to agree
+
+A Supabase Auth account (confirmed email, known password) **and** an active
+`AdminUser` row. `pnpm db:seed` only creates the second. `pnpm setup:check`
+reports the state of both; `pnpm admin:set-password` creates or repairs both.
+Most "wrong password" reports are actually an unconfirmed email or a project-ref
+mismatch between `NEXT_PUBLIC_SUPABASE_URL` and `DATABASE_URL`.
+
 ## Before pushing
 
 ```bash

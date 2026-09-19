@@ -158,6 +158,14 @@ Non-negotiable. Each exists because of a specific failure mode.
    and in `(dashboard)/layout.tsx`.
 3. **Two conditions for admin access**: a valid Supabase session AND an active
    row in `AdminUser`. A Supabase account alone grants nothing.
+
+   The cost of that design is that setup can half-succeed, in ways the login
+   form cannot distinguish from a wrong password — an unconfirmed email, an
+   invited user with no password, or a `NEXT_PUBLIC_SUPABASE_URL` pointing at a
+   different project than `DATABASE_URL`. `scripts/doctor.ts` (`pnpm
+   setup:check`) reports all of them; `scripts/set-admin-password.ts`
+   (`pnpm admin:set-password`) repairs both systems at once. Reach for those
+   before debugging credentials by hand.
 4. **RLS is enabled on every table with no policies.** Prisma owns the tables and
    bypasses RLS; the `anon` and `authenticated` roles read zero rows. If you add
    a table, add it to the RLS migration list.
@@ -205,6 +213,8 @@ supporting · `#F3F2EC` / `#F8F8F4` tints. Taken from the official logo artwork.
 ## 6. Commands
 
 ```bash
+pnpm setup:check       # diagnose env, database and the Supabase admin account
+pnpm admin:set-password # create/repair the admin account in BOTH systems
 pnpm dev               # dev server
 pnpm build             # prisma generate + next build
 pnpm lint              # ESLint, including the architecture boundaries

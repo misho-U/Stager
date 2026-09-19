@@ -77,10 +77,13 @@ export const POST = withPublic(async ({ request }: { request: NextRequest }) => 
 
     // Setup mistakes get named, because the person hitting them is the one who
     // can fix them, and nothing is disclosed that an operator does not know.
-    if (error.code === 'email_not_confirmed') {
+    // Matched on the message as well as the code: GoTrue's shape varies with
+    // version and provider settings, and an unconfirmed account reported as a
+    // bad password sends the operator off to reset a password that was fine.
+    if (error.code === 'email_not_confirmed' || /email not confirmed/i.test(error.message)) {
       return apiFail(
         'UNAUTHENTICATED',
-        'This account exists but its email is not confirmed. Confirm it in Supabase → Authentication → Users.',
+        'This account exists but its email is not confirmed. Tick "Auto Confirm User" when creating it, or run `pnpm admin:set-password`.',
       );
     }
 
@@ -92,7 +95,7 @@ export const POST = withPublic(async ({ request }: { request: NextRequest }) => 
     // "wrong password" would confirm which addresses have accounts.
     return apiFail(
       'UNAUTHENTICATED',
-      'Email or password is incorrect. If you have not created this user yet, add it in Supabase → Authentication → Users.',
+      'Email or password is incorrect. Run `pnpm doctor` to check the account, or `pnpm admin:set-password` to set a known one.',
     );
   }
 
