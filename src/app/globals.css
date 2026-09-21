@@ -45,9 +45,18 @@
   /* --- Typography ---
      Noto Sans Georgian covers Georgian and Latin in one family, so headlines
      keep the same voice in both languages instead of diverging at the locale
-     switch. The display face is a separate slot for the design phase. */
-  --font-sans: var(--font-noto-georgian), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-noto-georgian), ui-sans-serif, system-ui, sans-serif;
+     switch. The display face is a separate slot for the design phase.
+
+     Three families rather than one because the font is split by script, each
+     with its own unicode-range — so an English page never downloads the
+     Georgian file. The browser resolves this chain per character, so order is
+     by expected frequency on a Georgian-first site. See brandbook/fonts.ts. */
+  --font-sans:
+    var(--font-noto-georgian), var(--font-noto-latin), var(--font-noto-latin-ext),
+    ui-sans-serif, system-ui, sans-serif;
+  --font-display:
+    var(--font-noto-georgian), var(--font-noto-latin), var(--font-noto-latin-ext),
+    ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
 
   /* Editorial type scale. */

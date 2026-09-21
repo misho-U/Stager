@@ -54,6 +54,11 @@ Do not add a library outside this list without raising it first.
   after an admin saves.
 - Where a zod schema uses `.default()`, react-hook-form needs both types:
   `useForm<z.input<S>, unknown, z.output<S>>`.
+- **The typeface is self-hosted** (`src/shared/brandbook/fonts/`). Do not switch
+  back to `next/font/google`: it downloads at build time, so a machine that
+  cannot reach Google silently ships a system fallback — which is worst for
+  Georgian. `next/font` also rejects spread/shared option objects; write each
+  call out literally.
 
 ## Sign-in needs two systems to agree
 

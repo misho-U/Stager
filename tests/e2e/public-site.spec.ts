@@ -85,3 +85,32 @@ test.describe('security headers', () => {
     await expect(robots).toHaveAttribute('content', /noindex/);
   });
 });
+
+test.describe('typography', () => {
+  test('the Georgian typeface is self-hosted, not fetched from Google', async ({ page }) => {
+    const externalFontRequests: string[] = [];
+
+    page.on('request', (request) => {
+      const url = request.url();
+      if (url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com')) {
+        externalFontRequests.push(url);
+      }
+    });
+
+    await page.goto('/ka');
+    await expect(page.getByTestId('hero-heading')).toBeVisible();
+
+    // A build on a machine that cannot reach Google silently falls back to a
+    // system font, which wrecks Georgian text. Self-hosting is what prevents
+    // that, so this asserts the site never reaches for Google at all.
+    expect(externalFontRequests).toEqual([]);
+
+    // And that the face actually resolves to the bundled family rather than a
+    // bare system stack.
+    const fontFamily = await page
+      .getByTestId('hero-heading')
+      .evaluate((node) => getComputedStyle(node).fontFamily);
+
+    expect(fontFamily).toMatch(/notoGeorgian|noto/i);
+  });
+});

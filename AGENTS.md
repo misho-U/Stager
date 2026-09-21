@@ -197,6 +197,13 @@ Non-negotiable. Each exists because of a specific failure mode.
 - **No hard-coded visual values.** Colours, type sizes and spacing come from the
   `@theme` block in `src/app/globals.css`. `src/shared/brandbook/tokens.ts`
   mirrors the few hexes needed outside the browser (email, OG images).
+- **The typeface is self-hosted**, in `src/shared/brandbook/fonts/` (Noto Sans
+  Georgian, variable, split into georgian / latin / latin-ext subsets with
+  `unicode-range`, SIL OFL 1.1 — see `fonts/OFL.txt`). `next/font/google`
+  downloads at build time and degrades to a system font on any machine that
+  cannot reach Google, which is exactly the failure this avoids: Georgian falls
+  back worst. A Playwright test asserts no request ever goes to Google's font
+  hosts, and the CSP no longer allowlists them.
 - **Bilingual content is authored in both languages at once.** Translation
   tables, `@@unique([<parent>Id, locale])`, KA/EN tabs in the admin form.
 - **Comments explain why, not what.** Do not narrate the code.
