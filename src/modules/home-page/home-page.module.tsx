@@ -13,7 +13,7 @@ import type { DbLocale } from '@/shared/types/enums';
  * home-page.service.ts, which is the part worth copying.
  */
 export async function HomePageModule({ locale }: { locale: DbLocale }) {
-  const { layout, page, projects } = await loadHomePageData(locale);
+  const { layout, page, projects, readFailed } = await loadHomePageData(locale);
 
   const hero = page?.sections.find((section) => section.key === 'hero');
 
@@ -26,12 +26,32 @@ export async function HomePageModule({ locale }: { locale: DbLocale }) {
         </p>
       </div>
 
+      {readFailed ? (
+        <div
+          className="rounded-md border border-danger px-4 py-3"
+          role="alert"
+          data-testid="read-failure"
+        >
+          <p className="text-caption text-danger">
+            <strong>Content failed to load.</strong> This page is showing placeholders, not real
+            data. Check the server log for <code>public.read_failed</code>.
+          </p>
+        </div>
+      ) : null}
+
       <section className="flex flex-col gap-3">
         <p className="text-caption tracking-[0.2em] text-ink-subtle uppercase">
           {layout?.siteName ?? 'STAGER'}
         </p>
+        {/*
+          No brand-shaped fallback string here, deliberately. This used to read
+          `|| 'Building Better Food Businesses.'` — the exact text the seed puts
+          in the KA hero — so when the fetch died the page still looked correct,
+          and "my edits do not show up" was indistinguishable from "the site is
+          fine". A placeholder must never be mistakable for content.
+        */}
         <h1 className="text-headline font-semibold" data-testid="hero-heading">
-          {hero?.heading || layout?.tagline || 'Building Better Food Businesses.'}
+          {hero?.heading || <span className="text-ink-subtle italic">[no hero heading set]</span>}
         </h1>
         {hero?.subheading ? (
           <p className="text-body-lg text-ink-muted">{hero.subheading}</p>

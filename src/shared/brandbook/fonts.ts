@@ -47,7 +47,11 @@ export const notoGeorgian = localFont({
   // site that beats invisible text.
   display: 'swap',
   preload: true,
-  fallback: ['ui-sans-serif', 'system-ui', 'Segoe UI', 'Helvetica', 'Arial', 'sans-serif'],
+  // No fallback family on this face. It is first in the chain, and Next's
+  // generated "<name> Fallback" is local(Arial) with NO unicode-range — it
+  // would match every Latin character the range above rejected, so Latin text
+  // would render in Arial and notoLatin would never be reached.
+  adjustFontFallback: false,
   declarations: [
     {
       prop: 'unicode-range',
@@ -64,7 +68,8 @@ export const notoLatin = localFont({
   style: 'normal',
   display: 'swap',
   preload: true,
-  fallback: ['ui-sans-serif', 'system-ui', 'Segoe UI', 'Helvetica', 'Arial', 'sans-serif'],
+  // Same reasoning as above — it sits ahead of latin-ext in the chain.
+  adjustFontFallback: false,
   declarations: [
     {
       prop: 'unicode-range',
@@ -86,6 +91,9 @@ export const notoLatinExt = localFont({
   style: 'normal',
   display: 'swap',
   preload: false,
+  // Last in the chain, so this is the one face that may carry a fallback.
+  // Everything ahead of it has already had its chance to match, and keeping
+  // one metric-adjusted fallback limits layout shift during the swap.
   fallback: ['ui-sans-serif', 'system-ui', 'Segoe UI', 'Helvetica', 'Arial', 'sans-serif'],
   declarations: [
     {

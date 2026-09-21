@@ -143,6 +143,25 @@ browser, and it is what makes the "only api routes touch the DB" rule hold.
   after they saved. (Next 16 warns if the second argument is omitted, and
   `updateTag` throws in route handlers.)
 - Admin routes are `dynamic = 'force-dynamic'` and never cached.
+- **A public read must never fall back to content-shaped placeholder copy.** The
+  homepage once read `hero?.heading || 'Building Better Food Businesses.'` —
+  the exact string the seed writes — so a completely dead API rendered a page
+  that looked correct, and "my edits do not appear" could not be told apart from
+  a healthy site. Failed reads are logged as `public.read_failed` and say so on
+  the page.
+- **Test the loop, do not reason about it.** `tests/e2e/cache-invalidation.spec.ts`
+  asserts both halves: stale without revalidation, fresh on the very next
+  request after it. It drives `/api/dev/revalidate-probe`, which needs no
+  credentials, so unlike the admin flow spec it actually runs.
+
+### Which origin the server calls itself on
+
+`getSiteOrigin()` in `pkg/http/site-url.ts` picks, in order: `INTERNAL_API_ORIGIN`
+→ `VERCEL_URL` → `NEXT_PUBLIC_SITE_URL`. Server-side rendering therefore does
+**not** depend on the public domain resolving, which means `NEXT_PUBLIC_SITE_URL`
+can be pointed at the final domain before DNS propagates. `NEXT_PUBLIC_SITE_URL`
+is for canonical tags, OG URLs and the sitemap; it is not a fetch target on
+Vercel.
 
 ---
 
@@ -229,7 +248,7 @@ pnpm typecheck         # tsc --noEmit
 pnpm db:migrate        # create + apply a migration (writes SQL to prisma/migrations)
 pnpm db:seed           # idempotent seed
 pnpm db:studio         # browse the database
-pnpm test:e2e          # Playwright
+pnpm test:e2e          # Playwright (loads .env.local; needs a seeded database)
 ```
 
 All `db:*` scripts read `.env.local` through dotenv-cli — there is one env file,

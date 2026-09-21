@@ -34,7 +34,9 @@ export default async function PublicLayout({
     <NextIntlClientProvider>
       <div className="flex min-h-dvh flex-col">
         <header className="flex items-center justify-between border-b border-line px-gutter py-4">
-          <span className="text-body-lg font-semibold tracking-[0.18em]">STAGER</span>
+          <span className="text-body-lg font-semibold tracking-[0.18em]" data-testid="wordmark">
+            STAGER
+          </span>
           <LanguageSwitcher />
         </header>
 

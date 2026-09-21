@@ -42,6 +42,15 @@ const serverEnvSchema = z.object({
   IP_HASH_SALT: z.string().min(32, 'IP_HASH_SALT must be at least 32 characters'),
 
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+
+  // Opt-in for the cache probe (src/app/api/dev/revalidate-probe). Absent by
+  // default: a dev server is often reachable on the LAN, so the endpoint stays
+  // off until someone asks for it by name.
+  ENABLE_CACHE_PROBE: z.literal('1').optional(),
+
+  // Set by Vercel on every deployment, in all three environments. Used only to
+  // guarantee the probe can never be switched on for the live site.
+  VERCEL: z.string().optional(),
 });
 
 const parsed = serverEnvSchema.safeParse(process.env);
@@ -56,3 +65,19 @@ export const serverEnv = parsed.data;
 
 export const isProduction = serverEnv.NODE_ENV === 'production';
 export const isDevelopment = serverEnv.NODE_ENV === 'development';
+
+/**
+ * Two independent gates for the cache probe, because either alone is too weak:
+ *
+ *  - the flag alone would be one stray Vercel variable away from exposing it;
+ *  - NODE_ENV alone would expose it to anyone who can reach a dev server on the
+ *    LAN, and would also disable it under `pnpm start`, which is how CI runs
+ *    the Playwright suite — a guard that breaks the test is a guard that gets
+ *    deleted.
+ *
+ * Keying the second gate on VERCEL rather than NODE_ENV draws the line where
+ * the risk actually is: the deployed site can never turn this on, however its
+ * environment is configured.
+ */
+export const isCacheProbeEnabled =
+  serverEnv.VERCEL === undefined && serverEnv.ENABLE_CACHE_PROBE === '1';

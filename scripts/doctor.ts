@@ -77,8 +77,48 @@ function checkEnvironment() {
   }
 }
 
+/**
+ * The Supabase URL must be a bare origin.
+ *
+ * This is reported before anything else in this section because it is the one
+ * misconfiguration that makes every later check lie: with a `/rest/v1/` suffix
+ * the project ref still parses and the database still connects, but every auth
+ * request 404s and the login form calls it a wrong password.
+ */
+function checkSupabaseUrlShape() {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!raw) return;
+
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    record('fail', 'NEXT_PUBLIC_SUPABASE_URL is a valid URL', `Could not parse "${raw}".`);
+    return;
+  }
+
+  const hasPath = url.pathname !== '' && url.pathname !== '/';
+
+  if (!hasPath && !url.search && !url.hash) {
+    record('pass', 'NEXT_PUBLIC_SUPABASE_URL is a bare origin');
+    return;
+  }
+
+  record(
+    'fail',
+    'NEXT_PUBLIC_SUPABASE_URL is a bare origin',
+    `It is "${raw}". Remove everything after the host — the client appends its own ` +
+      `/auth/v1 and /rest/v1 paths, so a suffix here sends auth to ${url.origin}` +
+      `${url.pathname.replace(/\/$/, '')}/auth/v1/token and Supabase answers ` +
+      '"Invalid path specified in request URL". ' +
+      `Use ${url.origin}`,
+  );
+}
+
 function checkProjectRefs() {
   console.warn('\nSupabase project');
+
+  checkSupabaseUrlShape();
 
   const apiRef = refFromApiUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
   const dbRef =

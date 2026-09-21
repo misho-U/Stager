@@ -52,6 +52,11 @@ Do not add a library outside this list without raising it first.
   routing, CSP and session refresh with it.
 - `revalidateTag(tag, { expire: 0 })` — anything else serves stale content right
   after an admin saves.
+- **Never let a failed read fall back to content-shaped copy.** A placeholder
+  that reads like the real thing turns an outage into a page that merely looks
+  fine, and hid a dead API for days. Log it and say so on the page.
+- `NEXT_PUBLIC_SITE_URL` is **not** what the server fetches itself on — see
+  `getSiteOrigin()`. It may point at a domain whose DNS has not propagated yet.
 - Where a zod schema uses `.default()`, react-hook-form needs both types:
   `useForm<z.input<S>, unknown, z.output<S>>`.
 - **The typeface is self-hosted** (`src/shared/brandbook/fonts/`). Do not switch

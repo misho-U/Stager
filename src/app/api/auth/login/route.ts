@@ -75,6 +75,19 @@ export const POST = withPublic(async ({ request }: { request: NextRequest }) => 
       );
     }
 
+    // The request reached Supabase but landed on a path that does not exist —
+    // which means the URL is wrong, not the password. This is what a
+    // NEXT_PUBLIC_SUPABASE_URL carrying a `/rest/v1/` suffix produces: the
+    // client appends /auth/v1/token to it and Supabase replies 404 "Invalid
+    // path specified in request URL". Reported as a credential failure it cost
+    // three rounds of debugging a password that was always correct.
+    if (error.status === 404 || /invalid path|not found/i.test(error.message)) {
+      return apiFail(
+        'INTERNAL',
+        'The authentication service rejected the request path, which means NEXT_PUBLIC_SUPABASE_URL is wrong. It must be the bare origin — https://<project-ref>.supabase.co, with no /rest/v1 or other path. Run `pnpm setup:check`.',
+      );
+    }
+
     // Setup mistakes get named, because the person hitting them is the one who
     // can fix them, and nothing is disclosed that an operator does not know.
     // Matched on the message as well as the code: GoTrue's shape varies with
@@ -95,7 +108,7 @@ export const POST = withPublic(async ({ request }: { request: NextRequest }) => 
     // "wrong password" would confirm which addresses have accounts.
     return apiFail(
       'UNAUTHENTICATED',
-      'Email or password is incorrect. Run `pnpm doctor` to check the account, or `pnpm admin:set-password` to set a known one.',
+      'Email or password is incorrect. Run `pnpm setup:check` to check the account, or `pnpm admin:set-password` to set a known one.',
     );
   }
 
