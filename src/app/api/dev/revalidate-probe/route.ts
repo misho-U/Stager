@@ -1,11 +1,11 @@
-import { withPublic } from '@/app/api/_lib/route-helpers';
-import { readJson } from '@/app/api/_lib/route-helpers';
-import { CONTENT_ENTITIES, tagsToRevalidate } from '@pkg/cache/tags';
+import { z } from 'zod';
+
+import { readJson, withPublic } from '@/app/api/_lib/route-helpers';
 import { revalidateEntity } from '@pkg/cache/revalidate';
+import { CONTENT_ENTITIES, tagsToRevalidate } from '@pkg/cache/tags';
 import { isCacheProbeEnabled } from '@pkg/config/env.server';
 import { apiFail, apiOk } from '@pkg/http/api-response';
 import { isSameOriginRequest } from '@pkg/security/request';
-import { z } from 'zod';
 
 /**
  * Cache probe — the only way to test the edit→live loop without credentials.

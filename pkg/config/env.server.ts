@@ -17,13 +17,37 @@ const postgresUrl = z
     'Must be a postgres:// or postgresql:// connection string',
   );
 
+/**
+ * An env var that exists but is blank counts as unset.
+ *
+ * Vercel creates a variable with an empty value when one is added to the
+ * dashboard without filling it in, and an empty string is not `undefined`, so
+ * `.optional()` alone still rejects it — which fails the build for a variable
+ * that is genuinely not required. Shell exports behave the same way
+ * (`FOO=` yields `''`), so this is not Vercel-specific.
+ */
+const blankAsUnset = (value: unknown) =>
+  typeof value === 'string' && value.trim() === '' ? undefined : value;
+
 const serverEnvSchema = z.object({
   // Database — pooled at runtime, direct for migrations.
   DATABASE_URL: postgresUrl,
   DIRECT_URL: postgresUrl,
 
   // Supabase privileged key. Never expose.
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY is required'),
+  //
+  // Optional, because the DEPLOYED APP NEVER READS IT. Grep says so: the only
+  // consumers are scripts/doctor.ts and scripts/lib/setup.ts, which run under
+  // tsx outside Next.js and read process.env directly. Requests from the site
+  // itself are authorised by the anon key plus the user's own session, and the
+  // AdminUser allowlist is checked through Prisma — none of that needs a key
+  // that bypasses RLS.
+  //
+  // Requiring it here meant a deployment could not build without pasting the
+  // most dangerous secret in the project into a host that has no use for it.
+  // Set it in .env.local, where `pnpm admin:set-password` and `pnpm
+  // setup:check` need it; leave it out of Vercel.
+  SUPABASE_SERVICE_ROLE_KEY: z.preprocess(blankAsUnset, z.string().min(1).optional()),
 
   // Admin bootstrap — seeded into the AdminUser allowlist.
   ADMIN_EMAIL: z.email({ message: 'ADMIN_EMAIL must be a valid email address' }),
@@ -41,11 +65,12 @@ const serverEnvSchema = z.object({
   //
   // Validated as a group below: a key without a sender address is the one
   // combination that fails at send time instead of at boot.
-  RESEND_API_KEY: z.string().min(1).optional(),
-  MAIL_FROM: z.string().min(1).optional(),
-  CONTACT_INBOX_EMAIL: z
-    .email({ message: 'CONTACT_INBOX_EMAIL must be a valid email address' })
-    .optional(),
+  RESEND_API_KEY: z.preprocess(blankAsUnset, z.string().min(1).optional()),
+  MAIL_FROM: z.preprocess(blankAsUnset, z.string().min(1).optional()),
+  CONTACT_INBOX_EMAIL: z.preprocess(
+    blankAsUnset,
+    z.email({ message: 'CONTACT_INBOX_EMAIL must be a valid email address' }).optional(),
+  ),
 
   // Salt for hashing IP addresses. Long enough that the hash cannot be reversed
   // by enumerating the IPv4 space.
@@ -56,7 +81,7 @@ const serverEnvSchema = z.object({
   // Opt-in for the cache probe (src/app/api/dev/revalidate-probe). Absent by
   // default: a dev server is often reachable on the LAN, so the endpoint stays
   // off until someone asks for it by name.
-  ENABLE_CACHE_PROBE: z.literal('1').optional(),
+  ENABLE_CACHE_PROBE: z.preprocess(blankAsUnset, z.literal('1').optional()),
 
   // Set by Vercel on every deployment, in all three environments. Used only to
   // guarantee the probe can never be switched on for the live site.

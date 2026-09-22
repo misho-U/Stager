@@ -83,6 +83,13 @@ Two extra rules:
 2. **Only `src/app/api/**` may import `@pkg/db` or `@prisma/client`.** Everything
    else reaches data through an entity `.api.ts` that calls `/api`.
 
+   The ESLint rule is scoped to `src/**`, so three places outside the app are
+   exempt by construction and use Prisma directly: `prisma/seed.ts`,
+   `scripts/**` (the operator tools), and `tests/**`. That is deliberate —
+   each runs outside Next.js, where `/api` is not available, and a test that
+   had to go through HTTP could not set up the state it is testing. Nothing
+   under `src/` gets this exemption.
+
 Verify the rules still bite by adding a deliberate bad import and running
 `pnpm lint` — all three fire with clear messages.
 
