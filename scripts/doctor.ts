@@ -115,6 +115,43 @@ function checkSupabaseUrlShape() {
   );
 }
 
+/**
+ * Email is optional, so report its state rather than failing on it. Without
+ * this line an unset RESEND_API_KEY looks like something forgotten, when it is
+ * a supported way to run the site before Resend's DNS verification completes.
+ */
+function checkEmail() {
+  console.warn('\nEmail (optional)');
+
+  const key = process.env.RESEND_API_KEY;
+  const from = process.env.MAIL_FROM;
+  const placeholderKey = !key || key.includes('placeholder') || key.includes('<');
+
+  if (placeholderKey) {
+    record(
+      'warn',
+      'Resend is configured',
+      'Not set. The contact form still records every inquiry and the dashboard still ' +
+        'shows them — only the notification email is skipped. Set RESEND_API_KEY and ' +
+        'MAIL_FROM once your sending domain is verified.',
+    );
+    return;
+  }
+
+  if (!from) {
+    record(
+      'fail',
+      'Resend is configured',
+      'RESEND_API_KEY is set but MAIL_FROM is not, so every send is rejected. ' +
+        'Set MAIL_FROM to an address on a domain verified in Resend.',
+    );
+    return;
+  }
+
+  const inbox = process.env.CONTACT_INBOX_EMAIL ?? process.env.ADMIN_EMAIL;
+  record('pass', `Resend is configured (from ${from}, to ${inbox ?? 'unset'})`);
+}
+
 function checkProjectRefs() {
   console.warn('\nSupabase project');
 
@@ -295,6 +332,7 @@ async function main() {
   console.warn('STAGER setup check');
 
   checkEnvironment();
+  checkEmail();
   checkProjectRefs();
 
   const adminEmail = process.env.ADMIN_EMAIL;

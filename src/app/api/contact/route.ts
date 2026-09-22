@@ -95,7 +95,12 @@ export const POST = withPublic(async ({ request }) => {
     select: { id: true, name: true, company: true, email: true, phone: true, createdAt: true },
   });
 
-  const inbox = (await getInquiryInbox()) ?? serverEnv.CONTACT_INBOX_EMAIL;
+  // Three sources, most specific first: the address the admin set in Settings,
+  // the deployment's own override, then the admin's own email. The last is why
+  // CONTACT_INBOX_EMAIL is optional — one fewer variable to get right on a new
+  // deployment, and notifications still reach a real person by default.
+  const inbox =
+    (await getInquiryInbox()) ?? serverEnv.CONTACT_INBOX_EMAIL ?? serverEnv.ADMIN_EMAIL;
 
   const email = buildInquiryNotification({
     name: inquiry.name,

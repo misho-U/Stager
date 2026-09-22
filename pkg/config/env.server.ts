@@ -32,10 +32,20 @@ const serverEnvSchema = z.object({
   // Vercel Blob.
   BLOB_READ_WRITE_TOKEN: z.string().min(1, 'BLOB_READ_WRITE_TOKEN is required'),
 
-  // Resend.
-  RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
-  MAIL_FROM: z.string().min(1, 'MAIL_FROM is required'),
-  CONTACT_INBOX_EMAIL: z.email({ message: 'CONTACT_INBOX_EMAIL must be a valid email address' }),
+  // Resend. All three optional, because email is not load-bearing: a contact
+  // submission is written to the database first and the notification is a
+  // courtesy on top. sendEmail() already returns a result rather than throwing,
+  // and the route keeps the inquiry with `notifiedAt` unset when it fails — so
+  // demanding these at boot only blocked deployments that would have worked.
+  // Inquiries are always readable in the dashboard.
+  //
+  // Validated as a group below: a key without a sender address is the one
+  // combination that fails at send time instead of at boot.
+  RESEND_API_KEY: z.string().min(1).optional(),
+  MAIL_FROM: z.string().min(1).optional(),
+  CONTACT_INBOX_EMAIL: z
+    .email({ message: 'CONTACT_INBOX_EMAIL must be a valid email address' })
+    .optional(),
 
   // Salt for hashing IP addresses. Long enough that the hash cannot be reversed
   // by enumerating the IPv4 space.
@@ -51,7 +61,20 @@ const serverEnvSchema = z.object({
   // Set by Vercel on every deployment, in all three environments. Used only to
   // guarantee the probe can never be switched on for the live site.
   VERCEL: z.string().optional(),
-});
+})
+  .superRefine((env, ctx) => {
+    // Half-configured email is worse than none: the key makes the app try to
+    // send, and Resend rejects every call for a missing sender. Catch it here
+    // rather than in a log nobody reads.
+    if (env.RESEND_API_KEY && !env.MAIL_FROM) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['MAIL_FROM'],
+        message:
+          'MAIL_FROM is required when RESEND_API_KEY is set — e.g. "STAGER <noreply@stager.ge>", on a domain verified in Resend.',
+      });
+    }
+  });
 
 const parsed = serverEnvSchema.safeParse(process.env);
 
