@@ -41,6 +41,12 @@ test.describe('content comes from the database', () => {
     // Seeded by prisma/seed.ts via the HOME page's hero section.
     await expect(page.getByTestId('hero-heading')).toBeVisible();
     await expect(page.getByTestId('hero-heading')).not.toBeEmpty();
+
+    // `not.toBeEmpty()` alone used to pass against a hardcoded fallback string
+    // that happened to match the seeded copy, so a completely dead API looked
+    // like a healthy page. These two assert the content is real.
+    await expect(page.getByTestId('read-failure')).toHaveCount(0);
+    await expect(page.getByTestId('hero-heading')).not.toHaveText('[no hero heading set]');
   });
 
   test('published projects are listed', async ({ page }) => {
@@ -83,5 +89,72 @@ test.describe('security headers', () => {
     await page.goto('/admin/login');
     const robots = page.locator('meta[name="robots"]');
     await expect(robots).toHaveAttribute('content', /noindex/);
+  });
+});
+
+test.describe('typography', () => {
+  test('the Georgian typeface is self-hosted, not fetched from Google', async ({ page }) => {
+    const externalFontRequests: string[] = [];
+
+    page.on('request', (request) => {
+      const url = request.url();
+      if (url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com')) {
+        externalFontRequests.push(url);
+      }
+    });
+
+    await page.goto('/ka');
+    await expect(page.getByTestId('hero-heading')).toBeVisible();
+
+    // A build on a machine that cannot reach Google silently falls back to a
+    // system font, which wrecks Georgian text. Self-hosting is what prevents
+    // that, so this asserts the site never reaches for Google at all.
+    expect(externalFontRequests).toEqual([]);
+
+    // And that the face actually resolves to the bundled family rather than a
+    // bare system stack.
+    const fontFamily = await page
+      .getByTestId('hero-heading')
+      .evaluate((node) => getComputedStyle(node).fontFamily);
+
+    expect(fontFamily).toMatch(/notoGeorgian|noto/i);
+  });
+
+  test('Latin text uses the bundled Latin subset, not a system fallback', async ({ page }) => {
+    // Every next/font face gets a generated "<name> Fallback" family that is
+    // local(Arial) with NO unicode-range. Chaining three font variables in
+    // --font-sans meant the FIRST one's fallback matched every Latin character
+    // the Georgian unicode-range rejected, so all Latin text rendered in Arial
+    // and notoLatin was never reached. The faces ahead of the last one must
+    // therefore carry no fallback at all.
+    const fontRequests: string[] = [];
+    page.on('request', (request) => {
+      const url = request.url();
+      if (url.includes('noto') && url.endsWith('.woff2')) fontRequests.push(url);
+    });
+
+    await page.goto('/ka');
+    // The wordmark is Latin-only, so rendering it must pull the Latin subset.
+    await expect(page.getByTestId('wordmark')).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+
+    const latinSubset = fontRequests.filter(
+      (url) => /noto[_-]sans[_-]georgian[_-]latin/i.test(url) && !/latin[_-]ext/i.test(url),
+    );
+
+    expect(
+      latinSubset,
+      'Latin text did not fetch the Latin subset — it is rendering in a system font',
+    ).not.toHaveLength(0);
+
+    // And the declared chain must not put any fallback family before notoLatin.
+    const chain = await page
+      .getByTestId('wordmark')
+      .evaluate((node) => getComputedStyle(node).fontFamily);
+
+    const beforeLatin = chain.slice(0, chain.indexOf('notoLatin'));
+    expect(beforeLatin, `fallback family precedes notoLatin in: ${chain}`).not.toMatch(
+      /Fallback|Arial/i,
+    );
   });
 });

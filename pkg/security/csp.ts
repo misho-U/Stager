@@ -28,8 +28,13 @@ function buildDirectives(scriptSrc: string[]): Record<string, string[]> {
     'script-src': scriptSrc,
     // Tailwind and next/font inject inline styles; there is no nonce path for
     // them, and CSS injection is not a code-execution vector here.
-    'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-    'font-src': ["'self'", 'https://fonts.gstatic.com', 'data:'],
+    //
+    // Google's font hosts are deliberately absent: the typeface is self-hosted
+    // (see shared/brandbook/fonts.ts), so nothing should ever be fetched from
+    // them. Leaving them allowlisted would permit a request this site has no
+    // reason to make.
+    'style-src': ["'self'", "'unsafe-inline'"],
+    'font-src': ["'self'", 'data:'],
     'img-src': [
       "'self'",
       'data:',

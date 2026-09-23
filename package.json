@@ -22,8 +22,11 @@
     "db:studio": "dotenv -e .env.local -- prisma studio",
     "db:seed": "dotenv -e .env.local -- tsx prisma/seed.ts",
     "db:reset": "dotenv -e .env.local -- prisma migrate reset",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "setup:check": "dotenv -e .env.local -- tsx scripts/doctor.ts",
+    "admin:set-password": "dotenv -e .env.local -- tsx scripts/set-admin-password.ts",
+    "test:e2e": "dotenv -e .env.local -- playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

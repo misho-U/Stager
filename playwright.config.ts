@@ -34,5 +34,11 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    env: {
+      // Switches on /api/dev/revalidate-probe, which is how
+      // cache-invalidation.spec.ts tests the edit→live loop without a Supabase
+      // account. The endpoint refuses to exist on Vercel regardless of this.
+      ENABLE_CACHE_PROBE: '1',
+    },
   },
 });

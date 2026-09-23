@@ -40,9 +40,11 @@ rather than adding a dependency.
   URL lives in `prisma.config.ts`; the runtime URL is passed to the pg driver
   adapter in `pkg/db/prisma.ts`.
 - **Prisma 7 requires a driver adapter.** We use `@prisma/adapter-pg`.
-- **`middleware.ts` must live at `src/middleware.ts`**, next to `src/app`. At the
-  repo root it is silently ignored — no locale routing, no CSP, no session
-  refresh, and no error to tell you.
+- **The middleware file is `src/proxy.ts`.** Next 16 renamed the convention from
+  `middleware.ts` to `proxy.ts` (default export, not a named `middleware`
+  export). It must sit next to `src/app`; at the repo root it is silently
+  ignored — no locale routing, no CSP, no session refresh, and no error to tell
+  you.
 - **ESLint 10 + `eslint-plugin-react`**: the plugin crashes on version
   auto-detection, so `eslint.config.mjs` declares the React version explicitly.
 
@@ -80,6 +82,13 @@ Two extra rules:
    moves down into `shared/`, or is passed in as props.
 2. **Only `src/app/api/**` may import `@pkg/db` or `@prisma/client`.** Everything
    else reaches data through an entity `.api.ts` that calls `/api`.
+
+   The ESLint rule is scoped to `src/**`, so three places outside the app are
+   exempt by construction and use Prisma directly: `prisma/seed.ts`,
+   `scripts/**` (the operator tools), and `tests/**`. That is deliberate —
+   each runs outside Next.js, where `/api` is not available, and a test that
+   had to go through HTTP could not set up the state it is testing. Nothing
+   under `src/` gets this exemption.
 
 Verify the rules still bite by adding a deliberate bad import and running
 `pnpm lint` — all three fire with clear messages.
@@ -141,6 +150,25 @@ browser, and it is what makes the "only api routes touch the DB" rule hold.
   after they saved. (Next 16 warns if the second argument is omitted, and
   `updateTag` throws in route handlers.)
 - Admin routes are `dynamic = 'force-dynamic'` and never cached.
+- **A public read must never fall back to content-shaped placeholder copy.** The
+  homepage once read `hero?.heading || 'Building Better Food Businesses.'` —
+  the exact string the seed writes — so a completely dead API rendered a page
+  that looked correct, and "my edits do not appear" could not be told apart from
+  a healthy site. Failed reads are logged as `public.read_failed` and say so on
+  the page.
+- **Test the loop, do not reason about it.** `tests/e2e/cache-invalidation.spec.ts`
+  asserts both halves: stale without revalidation, fresh on the very next
+  request after it. It drives `/api/dev/revalidate-probe`, which needs no
+  credentials, so unlike the admin flow spec it actually runs.
+
+### Which origin the server calls itself on
+
+`getSiteOrigin()` in `pkg/http/site-url.ts` picks, in order: `INTERNAL_API_ORIGIN`
+→ `VERCEL_URL` → `NEXT_PUBLIC_SITE_URL`. Server-side rendering therefore does
+**not** depend on the public domain resolving, which means `NEXT_PUBLIC_SITE_URL`
+can be pointed at the final domain before DNS propagates. `NEXT_PUBLIC_SITE_URL`
+is for canonical tags, OG URLs and the sitemap; it is not a fetch target on
+Vercel.
 
 ---
 
@@ -150,12 +178,20 @@ Non-negotiable. Each exists because of a specific failure mode.
 
 1. **`getUser()`, never `getSession()`.** `getSession` does not verify the JWT
    signature. An ESLint rule bans it.
-2. **Middleware is not the auth boundary.** Prisma cannot run on Edge, so
-   middleware only refreshes the session and does a cheap cookie gate. The real
-   check is `requireAdmin()` in the Node runtime, repeated in every admin route
-   handler and in `(dashboard)/layout.tsx`.
+2. **`src/proxy.ts` is not the auth boundary.** Prisma cannot run on Edge, so it
+   only refreshes the session and does a cheap cookie gate. The real check is
+   `requireAdmin()` in the Node runtime, repeated in every admin route handler
+   and in `(dashboard)/layout.tsx`.
 3. **Two conditions for admin access**: a valid Supabase session AND an active
    row in `AdminUser`. A Supabase account alone grants nothing.
+
+   The cost of that design is that setup can half-succeed, in ways the login
+   form cannot distinguish from a wrong password — an unconfirmed email, an
+   invited user with no password, or a `NEXT_PUBLIC_SUPABASE_URL` pointing at a
+   different project than `DATABASE_URL`. `scripts/doctor.ts` (`pnpm
+   setup:check`) reports all of them; `scripts/set-admin-password.ts`
+   (`pnpm admin:set-password`) repairs both systems at once. Reach for those
+   before debugging credentials by hand.
 4. **RLS is enabled on every table with no policies.** Prisma owns the tables and
    bypasses RLS; the `anon` and `authenticated` roles read zero rows. If you add
    a table, add it to the RLS migration list.
@@ -187,6 +223,13 @@ Non-negotiable. Each exists because of a specific failure mode.
 - **No hard-coded visual values.** Colours, type sizes and spacing come from the
   `@theme` block in `src/app/globals.css`. `src/shared/brandbook/tokens.ts`
   mirrors the few hexes needed outside the browser (email, OG images).
+- **The typeface is self-hosted**, in `src/shared/brandbook/fonts/` (Noto Sans
+  Georgian, variable, split into georgian / latin / latin-ext subsets with
+  `unicode-range`, SIL OFL 1.1 — see `fonts/OFL.txt`). `next/font/google`
+  downloads at build time and degrades to a system font on any machine that
+  cannot reach Google, which is exactly the failure this avoids: Georgian falls
+  back worst. A Playwright test asserts no request ever goes to Google's font
+  hosts, and the CSP no longer allowlists them.
 - **Bilingual content is authored in both languages at once.** Translation
   tables, `@@unique([<parent>Id, locale])`, KA/EN tabs in the admin form.
 - **Comments explain why, not what.** Do not narrate the code.
@@ -203,6 +246,8 @@ supporting · `#F3F2EC` / `#F8F8F4` tints. Taken from the official logo artwork.
 ## 6. Commands
 
 ```bash
+pnpm setup:check       # diagnose env, database and the Supabase admin account
+pnpm admin:set-password # create/repair the admin account in BOTH systems
 pnpm dev               # dev server
 pnpm build             # prisma generate + next build
 pnpm lint              # ESLint, including the architecture boundaries
@@ -210,7 +255,7 @@ pnpm typecheck         # tsc --noEmit
 pnpm db:migrate        # create + apply a migration (writes SQL to prisma/migrations)
 pnpm db:seed           # idempotent seed
 pnpm db:studio         # browse the database
-pnpm test:e2e          # Playwright
+pnpm test:e2e          # Playwright (loads .env.local; needs a seeded database)
 ```
 
 All `db:*` scripts read `.env.local` through dotenv-cli — there is one env file,
@@ -234,3 +279,13 @@ data-loading pattern in `home-page.service.ts`.
 Also open for the design phase: the Georgian/Latin typeface pairing (currently
 Noto Sans Georgian for both scripts, so headlines match across locales), motion
 language, and the YouTube facade component.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

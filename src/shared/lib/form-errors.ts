@@ -8,15 +8,28 @@ import { isApiError } from '@pkg/http/api-error';
  * surface the specific, useful messages: a duplicate slug, a rate limit, a
  * session that has expired.
  */
-export function toFormErrorMessage(error: unknown): string {
+export type ErrorContext = 'dashboard' | 'signin';
+
+export function toFormErrorMessage(
+  error: unknown,
+  context: ErrorContext = 'dashboard',
+): string {
   if (isApiError(error)) {
+    // On the sign-in form the server's message is the precise one — "Email or
+    // password is incorrect", "email is not confirmed". Replacing it with
+    // "your session has expired" is nonsense to someone sitting on the sign-in
+    // page, and hides the only information that would let them fix it.
+    const isSignIn = context === 'signin';
+
     switch (error.code) {
       case 'UNAUTHENTICATED':
-        return 'Your session has expired. Please sign in again.';
+        return isSignIn ? error.message : 'Your session has expired. Please sign in again.';
       case 'FORBIDDEN':
-        return 'You do not have permission to do that.';
+        return isSignIn ? error.message : 'You do not have permission to do that.';
       case 'RATE_LIMITED':
-        return 'Too many requests. Please wait a moment and try again.';
+        return isSignIn
+          ? error.message
+          : 'Too many requests. Please wait a moment and try again.';
       default:
         return error.message;
     }

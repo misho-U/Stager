@@ -7,8 +7,11 @@ import { logger, serialiseError } from '@pkg/logger';
 
 let client: Resend | null = null;
 
-function getResend(): Resend {
-  client ??= new Resend(serverEnv.RESEND_API_KEY);
+/** Both are optional, so email is simply off until they are set. */
+export const isEmailConfigured = Boolean(serverEnv.RESEND_API_KEY && serverEnv.MAIL_FROM);
+
+function getResend(apiKey: string): Resend {
+  client ??= new Resend(apiKey);
   return client;
 }
 
@@ -32,9 +35,23 @@ export type SendEmailResult = { ok: true; id: string | null } | { ok: false; err
  * minute would be the worse outcome.
  */
 export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
+  const { RESEND_API_KEY: apiKey, MAIL_FROM: from } = serverEnv;
+
+  // Not an error: the site is deployable before Resend's DNS verification
+  // completes, and a contact form that records submissions without emailing
+  // them is still a working contact form. Logged at warn so it is visible in
+  // the deployment log rather than silently forgotten.
+  if (!apiKey || !from) {
+    logger.warn('mail.not_configured', {
+      subject: input.subject,
+      detail: 'RESEND_API_KEY/MAIL_FROM are unset — the inquiry is stored but no email was sent.',
+    });
+    return { ok: false, error: 'Email is not configured' };
+  }
+
   try {
-    const { data, error } = await getResend().emails.send({
-      from: serverEnv.MAIL_FROM,
+    const { data, error } = await getResend(apiKey).emails.send({
+      from,
       to: input.to,
       subject: input.subject,
       html: input.html,

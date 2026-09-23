@@ -47,12 +47,31 @@ Do not add a library outside this list without raising it first.
   tag points at an `8.0.0-rc`.
 - Prisma 7 takes no connection URL in `schema.prisma` and requires a driver
   adapter.
-- **`middleware.ts` must be at `src/middleware.ts`.** At the repo root it is
-  silently ignored, taking locale routing, CSP and session refresh with it.
+- **The middleware file is `src/proxy.ts`** (Next 16 renamed the convention;
+  default export). At the repo root it is silently ignored, taking locale
+  routing, CSP and session refresh with it.
 - `revalidateTag(tag, { expire: 0 })` — anything else serves stale content right
   after an admin saves.
+- **Never let a failed read fall back to content-shaped copy.** A placeholder
+  that reads like the real thing turns an outage into a page that merely looks
+  fine, and hid a dead API for days. Log it and say so on the page.
+- `NEXT_PUBLIC_SITE_URL` is **not** what the server fetches itself on — see
+  `getSiteOrigin()`. It may point at a domain whose DNS has not propagated yet.
 - Where a zod schema uses `.default()`, react-hook-form needs both types:
   `useForm<z.input<S>, unknown, z.output<S>>`.
+- **The typeface is self-hosted** (`src/shared/brandbook/fonts/`). Do not switch
+  back to `next/font/google`: it downloads at build time, so a machine that
+  cannot reach Google silently ships a system fallback — which is worst for
+  Georgian. `next/font` also rejects spread/shared option objects; write each
+  call out literally.
+
+## Sign-in needs two systems to agree
+
+A Supabase Auth account (confirmed email, known password) **and** an active
+`AdminUser` row. `pnpm db:seed` only creates the second. `pnpm setup:check`
+reports the state of both; `pnpm admin:set-password` creates or repairs both.
+Most "wrong password" reports are actually an unconfirmed email or a project-ref
+mismatch between `NEXT_PUBLIC_SUPABASE_URL` and `DATABASE_URL`.
 
 ## Before pushing
 

@@ -59,6 +59,67 @@ There is one env file. The Prisma scripts read `.env.local` too, via dotenv-cli.
 
 ---
 
+## Troubleshooting
+
+```bash
+pnpm setup:check
+```
+
+Run this first. It reports the real state of everything sign-in depends on and
+names what is wrong — it is far faster than reading error messages on the login
+form, which cannot tell most of these cases apart:
+
+- every env var present, and no `.env.example` placeholders left
+- **the API URL and the database URL point at the same Supabase project** — if
+  they do not, sign-in checks a different project from the one holding your
+  data, and Supabase reports that as `invalid_credentials`, indistinguishable
+  from a wrong password
+- database reachable, migrations applied, `AdminUser` allowlist row active
+- the Supabase account for `ADMIN_EMAIL`: does it exist, is the email
+  **confirmed**, is it banned, was it invited but never given a password
+
+### Can't sign in
+
+```bash
+pnpm admin:set-password
+```
+
+This is the fix for almost every sign-in problem. It creates or repairs the
+Supabase account with a password you choose, marks the email confirmed, and
+activates the `AdminUser` row — all in one step.
+
+Sign-in needs **two** things to be true, and the login form cannot tell you
+which one is missing:
+
+1. a Supabase Auth account with a confirmed email and a known password
+2. an active row in our own `AdminUser` allowlist
+
+`pnpm db:seed` only does #2. Creating a user in the Supabase dashboard only does
+#1 — and only if you tick **"Auto Confirm User"**, which is easy to miss.
+
+The terminal running `pnpm dev` also logs the precise reason
+(`auth.login_rejected` with `supabaseCode`):
+
+| `supabaseCode` | Cause |
+|---|---|
+| `invalid_credentials` | No such user in *this* project, or the wrong password |
+| `email_not_confirmed` | User exists but was created without *Auto Confirm* |
+| `over_request_rate_limit` | Supabase is throttling; wait a minute |
+
+### Other first-run errors
+
+**"Could not reach the authentication service"** — `NEXT_PUBLIC_SUPABASE_URL` or
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` is wrong or still a placeholder.
+
+**`Cannot find module '.prisma/client/default'`** — the Prisma client has not
+been generated. `pnpm install` does this automatically now; if it was skipped,
+run `pnpm db:generate`.
+
+**`The datasource.url property is required…`** — `.env.local` does not exist or
+has no `DIRECT_URL`. On Windows: `copy .env.example .env.local`.
+
+---
+
 ## Commands
 
 ```bash
@@ -70,6 +131,9 @@ pnpm test:e2e       # Playwright
 pnpm db:migrate     # create and apply a migration
 pnpm db:seed        # idempotent seed — safe to re-run
 pnpm db:studio      # browse the database
+
+pnpm setup:check         # diagnose the whole setup (env, database, Supabase account)
+pnpm admin:set-password  # create/repair the admin account in both systems
 ```
 
 The authenticated end-to-end tests are skipped unless you supply a real account:

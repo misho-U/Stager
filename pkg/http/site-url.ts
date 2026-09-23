@@ -1,14 +1,26 @@
 import { SITE_ORIGIN } from '@pkg/config/env.client';
-import { VERCEL_URL } from '@pkg/config/runtime';
+import { INTERNAL_API_ORIGIN, VERCEL_URL } from '@pkg/config/runtime';
 
 /**
- * Absolute origin for this deployment.
+ * Origin the SERVER uses to call this app's own /api routes.
  *
- * Server components fetch their own /api routes, and `fetch` on the server
- * needs an absolute URL. On Vercel preview deployments the public site URL is
- * not the URL actually serving the request, so VERCEL_URL wins there.
+ * Deliberately not the public domain. Server components fetch their own API,
+ * and `fetch` on the server needs an absolute URL — but the host that serves
+ * visitors and the host the server can reach are different questions:
+ *
+ *   1. INTERNAL_API_ORIGIN — an explicit override, e.g. a loopback address.
+ *   2. VERCEL_URL — the deployment actually serving this request. Set in every
+ *      Vercel environment, so a domain whose DNS has not propagated yet (or is
+ *      not configured at all) never breaks server-side rendering, and a preview
+ *      fetches itself rather than production.
+ *   3. NEXT_PUBLIC_SITE_URL — local development, and any non-Vercel host.
+ *
+ * The practical consequence: NEXT_PUBLIC_SITE_URL can be set to the final
+ * domain before that domain resolves. It is read for canonical and OG URLs,
+ * which are strings in the markup, not requests anybody makes during a build.
  */
 export function getSiteOrigin(): string {
+  if (INTERNAL_API_ORIGIN) return INTERNAL_API_ORIGIN.replace(/\/$/, '');
   if (VERCEL_URL) return `https://${VERCEL_URL}`;
   return SITE_ORIGIN;
 }
