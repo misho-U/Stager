@@ -44,8 +44,8 @@ export const mediaListResponseSchema = listResponseSchema(mediaSchema);
 
 /** Alt text is required — an image with no alt text is a bug, not a preference. */
 export const mediaTranslationInputSchema = z.object({
-  alt: z.string().max(300),
-  caption: z.string().max(500).default(''),
+  alt: z.string().trim().max(300),
+  caption: z.string().trim().max(500).default(''),
 });
 
 export const mediaUpdateInputSchema = z.object({
@@ -67,7 +67,7 @@ export const mediaRegisterInputSchema = z.object({
   width: z.number().int().positive().nullish(),
   height: z.number().int().positive().nullish(),
   blurDataUrl: z.string().nullish(),
-  alt: z.string().max(300).default(''),
+  alt: z.string().trim().max(300).default(''),
 });
 
 export type MediaRegisterInput = z.infer<typeof mediaRegisterInputSchema>;

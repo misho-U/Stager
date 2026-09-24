@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { isoDateTime, listResponseSchema } from '@/shared/types/api';
+import { isoDateTime, listResponseSchema, urlInput } from '@/shared/types/api';
 import { socialPlatformSchema } from '@/shared/types/enums';
 
 export const adminSocialLinkSchema = z.object({
@@ -30,8 +30,8 @@ export type PublicSocialLink = z.infer<typeof publicSocialLinkSchema>;
 
 export const socialLinkInputSchema = z.object({
   platform: socialPlatformSchema,
-  url: z.url('Enter a full URL, including https://'),
-  label: z.string().max(80).nullish(),
+  url: urlInput('Enter a full URL, including https://'),
+  label: z.string().trim().max(80).nullish(),
   order: z.number().int().min(0).default(0),
   isActive: z.boolean().default(true),
 });

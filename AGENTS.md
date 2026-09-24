@@ -227,6 +227,11 @@ Non-negotiable. Each exists because of a specific failure mode.
 - **Types are inferred from zod**, not declared alongside it. Where a schema has
   `.default()`, the form type is `z.input<…>` and the validated type is
   `z.output<…>` — `useForm<FormValues, unknown, Input>` needs both.
+- **Input schemas trim every string a person types**: `z.string().trim()`, and
+  `emailInput()` / `urlInput()` (plus `optional…` variants) from
+  `shared/types/api.ts` for emails and URLs. The trim runs before validation,
+  so `.min(1)` rejects whitespace-only values. Leave ids, machine-generated
+  values, honeypots and passwords untrimmed. Output schemas need none of this.
 - **No hard-coded visual values.** Colours, type sizes and spacing come from the
   `@theme` block in `src/app/globals.css`. `src/shared/brandbook/tokens.ts`
   mirrors the few hexes needed outside the browser (email, OG images).
