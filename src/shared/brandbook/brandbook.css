@@ -5,7 +5,7 @@
    here and it changes everywhere: every public page, the admin dashboard, the
    notification email and the colour of the phone's browser bar.
 
-   YOURS TO EDIT — every value in the @theme block below:
+   YOURS TO EDIT — every value in the @theme blocks below:
      - Brand palette           --color-brand-*   (hex only: the email needs hex)
      - Which colour does what  --color-surface, --color-ink, --color-line, …
      - Status colours          --color-success, --color-warning, --color-danger
@@ -14,6 +14,8 @@
      - Letter-spacing          --tracking-*
      - Spacing, radii, shadow  --spacing-*, --radius-*, --shadow-*
      - Motion                  --ease-*, --duration-*
+     - Admin dark theme        --admin-dark-*  (mostly mixes of the brand
+                               palette, so it follows a brand edit by itself)
 
    EDIT ONLY WHEN SWAPPING THE TYPEFACE — the @font-face block at the bottom.
 
@@ -21,6 +23,9 @@
      - Rename or delete a token. Components refer to tokens by name, so that is
        a code change, not a design change.
      - Put a colour or size anywhere else. If a value is missing, add it here.
+     - Change the selectors in "Admin theme wiring" — only the values above
+       them. The public site is light-only by decision; only the dashboard
+       switches.
 
    GENERATED FROM THIS FILE — never edit these by hand:
      - pkg/brand/hex.generated.ts — hex copies of --color-brand-* for the email
@@ -33,7 +38,10 @@
        browser-bar colours catch up on its next start. Pages update at once.
    =========================================================================== */
 
-@theme {
+/* `static`: always emitted as CSS variables, even a colour no role uses yet —
+   the admin dark palette below mixes from these, and Tailwind otherwise drops
+   theme variables it does not see a utility for. */
+@theme static {
   /* --- Brand palette, from the official logo artwork
          (LOGO_CONCEPT_COLOR_VARIATIONS.pdf). --- */
   --color-brand-teal: #1d464a; /* primary — logo mark, headings, dark surfaces */
@@ -44,7 +52,9 @@
   --color-brand-cream-tint: #f3f2ec; /* light surface, one step up */
   --color-brand-cream-light: #f8f8f4; /* light surface, lightest */
   --color-brand-white: #ffffff; /* cards and inputs */
+}
 
+@theme {
   /* --- Which colour does what. Components use these roles, never the raw
          brand names above, so re-pointing a role re-colours every place that
          plays it. --- */
@@ -120,6 +130,129 @@
   --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
   --duration-fast: 150ms;
   --duration-base: 250ms;
+}
+
+/* ---------------------------------------------------------------------------
+   Admin dark theme — the dashboard only
+   ---------------------------------------------------------------------------
+   Every colour is mixed from the brand palette, so a brand edit carries into
+   dark mode without touching this block: surfaces are the logo teal taken
+   toward black, lines are sage mixed into the card colour, and cream becomes
+   both the text and the primary colour — the logo's own inverted pairing.
+   The percentages are the design decision; edit those.
+
+   The status colours are the exception: dark versions of the light ones,
+   lightened by hand so they stay readable on the dark cards.
+
+   Contrast is checked by tests/e2e/admin-theme.spec.ts in both themes, so an
+   edit that makes text unreadable fails the test suite instead of shipping.
+
+   (--admin-dark-* sits outside Tailwind's colour namespace on purpose: no
+   `bg-admin-dark-…` utility exists to tempt a component into bypassing the
+   roles. `static` keeps them emitted although no utility uses them.)
+--------------------------------------------------------------------------- */
+@theme static {
+  --admin-dark-surface: color-mix(in oklab, var(--color-brand-teal) 55%, black);
+  --admin-dark-surface-inset: color-mix(in oklab, var(--color-brand-teal) 62%, black);
+  --admin-dark-surface-raised: color-mix(in oklab, var(--color-brand-teal) 70%, black);
+  --admin-dark-surface-muted: color-mix(in oklab, var(--color-brand-teal) 88%, black);
+  --admin-dark-ink: var(--color-brand-cream);
+  --admin-dark-ink-muted: color-mix(
+    in oklab,
+    var(--color-brand-cream) 70%,
+    var(--color-brand-sage)
+  );
+  --admin-dark-ink-subtle: color-mix(
+    in oklab,
+    var(--color-brand-sage) 80%,
+    var(--color-brand-cream)
+  );
+  --admin-dark-line: color-mix(
+    in oklab,
+    var(--color-brand-sage) 28%,
+    var(--admin-dark-surface-raised)
+  );
+  --admin-dark-line-strong: color-mix(
+    in oklab,
+    var(--color-brand-sage) 55%,
+    var(--admin-dark-surface-raised)
+  );
+  --admin-dark-primary: var(--color-brand-cream);
+  --admin-dark-primary-hover: color-mix(
+    in oklab,
+    var(--color-brand-cream) 80%,
+    var(--color-brand-sage)
+  );
+  --admin-dark-primary-disabled: color-mix(
+    in oklab,
+    var(--color-brand-sage) 45%,
+    var(--admin-dark-surface-raised)
+  );
+  --admin-dark-on-primary: var(--color-brand-teal);
+  --admin-dark-focus: var(--color-brand-cream);
+  --admin-dark-success: #6fbf94;
+  --admin-dark-warning: #d9b45f;
+  --admin-dark-danger: #e58b8b;
+}
+
+/* ---------------------------------------------------------------------------
+   Admin theme wiring — do not edit
+   ---------------------------------------------------------------------------
+   The dashboard wraps itself in [data-admin-theme="system|light|dark"]
+   (src/shared/components/admin-theme-provider.tsx); public pages never do.
+   Keying off :root:has(…) re-colours the whole document, html and body
+   included, and `color-scheme` makes scrollbars and native inputs follow.
+
+   The two blocks below must stay identical. CSS cannot share one declaration
+   list between a selector and a media query; the theme test compares their
+   computed colours and fails if they drift.
+--------------------------------------------------------------------------- */
+:root:has([data-admin-theme='dark']) {
+  color-scheme: dark;
+  --color-surface: var(--admin-dark-surface);
+  --color-surface-raised: var(--admin-dark-surface-raised);
+  --color-surface-muted: var(--admin-dark-surface-muted);
+  --color-surface-inset: var(--admin-dark-surface-inset);
+  --color-surface-inverse: var(--admin-dark-ink);
+  --color-ink: var(--admin-dark-ink);
+  --color-ink-muted: var(--admin-dark-ink-muted);
+  --color-ink-subtle: var(--admin-dark-ink-subtle);
+  --color-ink-inverse: var(--admin-dark-surface);
+  --color-line: var(--admin-dark-line);
+  --color-line-strong: var(--admin-dark-line-strong);
+  --color-primary: var(--admin-dark-primary);
+  --color-primary-hover: var(--admin-dark-primary-hover);
+  --color-primary-disabled: var(--admin-dark-primary-disabled);
+  --color-on-primary: var(--admin-dark-on-primary);
+  --color-focus: var(--admin-dark-focus);
+  --color-success: var(--admin-dark-success);
+  --color-warning: var(--admin-dark-warning);
+  --color-danger: var(--admin-dark-danger);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:has([data-admin-theme='system']) {
+    color-scheme: dark;
+    --color-surface: var(--admin-dark-surface);
+    --color-surface-raised: var(--admin-dark-surface-raised);
+    --color-surface-muted: var(--admin-dark-surface-muted);
+    --color-surface-inset: var(--admin-dark-surface-inset);
+    --color-surface-inverse: var(--admin-dark-ink);
+    --color-ink: var(--admin-dark-ink);
+    --color-ink-muted: var(--admin-dark-ink-muted);
+    --color-ink-subtle: var(--admin-dark-ink-subtle);
+    --color-ink-inverse: var(--admin-dark-surface);
+    --color-line: var(--admin-dark-line);
+    --color-line-strong: var(--admin-dark-line-strong);
+    --color-primary: var(--admin-dark-primary);
+    --color-primary-hover: var(--admin-dark-primary-hover);
+    --color-primary-disabled: var(--admin-dark-primary-disabled);
+    --color-on-primary: var(--admin-dark-on-primary);
+    --color-focus: var(--admin-dark-focus);
+    --color-success: var(--admin-dark-success);
+    --color-warning: var(--admin-dark-warning);
+    --color-danger: var(--admin-dark-danger);
+  }
 }
 
 /* ---------------------------------------------------------------------------

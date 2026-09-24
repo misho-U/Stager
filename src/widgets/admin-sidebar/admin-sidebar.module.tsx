@@ -9,6 +9,7 @@ import {
   ADMIN_NAV_GROUPS,
 } from '@/widgets/admin-sidebar/admin-sidebar.constants';
 import { useAdminSidebar } from '@/widgets/admin-sidebar/admin-sidebar.service';
+import { AdminThemeSwitch } from '@/widgets/admin-theme-switch/admin-theme-switch.module';
 
 type AdminSidebarProps = {
   email: string;
@@ -57,6 +58,10 @@ export function AdminSidebar({ email, name, role }: AdminSidebarProps) {
       </div>
 
       <div className="flex flex-col gap-2 border-t border-line pt-4">
+        <div className="flex items-center justify-between px-2">
+          <span className="text-caption text-ink-subtle">Theme</span>
+          <AdminThemeSwitch />
+        </div>
         <div className="px-2">
           <p className="truncate text-body-sm text-ink">{name ?? email}</p>
           <p className="truncate text-caption text-ink-subtle">

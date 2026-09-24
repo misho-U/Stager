@@ -1,4 +1,8 @@
-@import 'tailwindcss';
+/* source('..'): scan src/ only. Tailwind generates a utility for every
+   class-like string it finds, and the docs and the design skill's examples are
+   full of them (`bg-zinc-950`, `bg-brand-teal`) — CSS for classes no component
+   uses, including exactly the raw brand utilities the roles replace. */
+@import 'tailwindcss' source('..');
 
 /* ---------------------------------------------------------------------------
    Wiring only. Every design value — colour, typeface, type scale, spacing,

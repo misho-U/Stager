@@ -27,6 +27,7 @@ rather than adding a dependency.
 | Video | **YouTube embeds** — never self-hosted video files |
 | Email | **Resend** |
 | Rich-text sanitising | **sanitize-html** — DOM-free. Never a jsdom-based sanitizer (see below) |
+| Icons | **@phosphor-icons/react** — per-icon imports: `…/dist/csr/<Name>` in client components, `…/dist/ssr/<Name>` in server components (the root re-exports ~1,500 icons) |
 | i18n | **next-intl 4** |
 | Tests | **Playwright** |
 | Hosting | **Vercel** |
@@ -244,6 +245,10 @@ Non-negotiable. Each exists because of a specific failure mode.
   dark theme redefines, so a raw brand utility is a spot that stays light in
   dark mode. No arbitrary values either (`tracking-[…]`, `min-w-[…]`,
   `aspect-[…]`): use a Tailwind scale step or add a token.
+- **Tailwind scans `src/` only** (`source('..')` in `globals.css`). It emits a
+  utility for every class-like string it finds, and the docs and the design
+  skill's examples are full of them; scanning the whole repo shipped CSS for
+  classes no component uses.
 - **Hex copies of the brand colours are generated, never edited.** The
   notification email and the theme-color meta tag cannot read CSS, so
   `scripts/brand-tokens.ts` writes the `--color-brand-*` values to
@@ -304,6 +309,25 @@ and CLAUDE.md win wherever they disagree. The resolved conflicts:
 - **Dials:** DESIGN_VARIANCE 5 / MOTION_INTENSITY 3 / VISUAL_DENSITY 3. At
   MOTION 3 the skill itself prescribes CSS hover and press states only.
 - **Out of scope:** the admin dashboard — the skill excludes admin panels.
+
+### Theme
+
+The **public site is light-only**, by decision. Only the **dashboard** has a
+theme switch — System / Light / Dark, in the sidebar; System follows the OS.
+
+- The choice is a cookie, `stager-admin-theme` (`Path=/admin`), read on the
+  server in `src/app/admin/layout.tsx`, so the first byte is already themed:
+  no flash, and no inline script for the nonce CSP to authorise.
+- `AdminThemeProvider` renders `[data-admin-theme]`. `brandbook.css` keys off
+  `:root:has([data-admin-theme=…])` and remaps the colour roles to the
+  `--admin-dark-*` palette, which is mixed from the brand colours. Public
+  pages never render the attribute.
+- **A new colour role needs a dark value too:** a light value in the `@theme`
+  block and a line in BOTH wiring blocks. A role missing from them shows its
+  light colour in dark mode.
+- `tests/e2e/admin-theme.spec.ts` covers the modes, checks the two wiring
+  blocks have not drifted, and asserts the main text pairs stay readable in
+  both themes.
 
 ---
 
