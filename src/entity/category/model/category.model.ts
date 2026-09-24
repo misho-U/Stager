@@ -28,7 +28,9 @@ export const publicCategoryListResponseSchema = listResponseSchema(publicCategor
 export const categoryInputSchema = z.object({
   slug: slugSchema,
   order: z.number().int().min(0).default(0),
-  translations: bothLocales(z.object({ name: z.string().min(1, 'Name is required').max(120) })),
+  translations: bothLocales(
+    z.object({ name: z.string().trim().min(1, 'Name is required').max(120) }),
+  ),
 });
 
 /** Validated values, with schema defaults applied. */

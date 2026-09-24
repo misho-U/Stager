@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { isoDateTime, listResponseSchema } from '@/shared/types/api';
+import { emailInput, isoDateTime, listResponseSchema } from '@/shared/types/api';
 import { dbLocaleSchema, inquiryInterestSchema, inquiryStatusSchema } from '@/shared/types/enums';
 
 export const adminContactInquirySchema = z.object({
@@ -31,12 +31,12 @@ export const adminContactInquiryListResponseSchema = listResponseSchema(adminCon
  * could read the form.
  */
 export const contactSubmissionSchema = z.object({
-  name: z.string().min(2, 'Please enter your name').max(160),
-  company: z.string().max(160).nullish(),
-  email: z.email('Enter a valid email address').max(254),
-  phone: z.string().max(60).nullish(),
+  name: z.string().trim().min(2, 'Please enter your name').max(160),
+  company: z.string().trim().max(160).nullish(),
+  email: emailInput('Enter a valid email address'),
+  phone: z.string().trim().max(60).nullish(),
   interest: inquiryInterestSchema,
-  message: z.string().min(10, 'Please tell us a little more').max(5000),
+  message: z.string().trim().min(10, 'Please tell us a little more').max(5000),
   locale: dbLocaleSchema,
   website: z.string().max(0, 'Unexpected value').optional(),
   elapsedMs: z.number().int().nonnegative().optional(),

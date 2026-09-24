@@ -65,6 +65,10 @@ Do not add a library outside this list without raising it first.
   without; report optional misconfiguration in `pnpm setup:check` instead.
 - Where a zod schema uses `.default()`, react-hook-form needs both types:
   `useForm<z.input<S>, unknown, z.output<S>>`.
+- **Trim typed input in the schema — and never as `z.email().trim()`.** zod 4
+  validates the format before a chained trim runs, so that still rejects
+  " me@x.com ". Use `emailInput()` / `urlInput()` from `shared/types/api.ts`.
+  Never trim passwords.
 - **The typeface is self-hosted** (`src/shared/brandbook/fonts/`). Do not switch
   back to `next/font/google`: it downloads at build time, so a machine that
   cannot reach Google silently ships a system fallback — which is worst for

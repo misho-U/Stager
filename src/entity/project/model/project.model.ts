@@ -85,18 +85,18 @@ export const publicProjectListResponseSchema = listResponseSchema(publicProjectL
 // ---------------------------------------------------------------------------
 
 export const projectTranslationInputSchema = seoInputSchema.extend({
-  title: z.string().min(1, 'Title is required').max(200),
-  summary: z.string().max(600).default(''),
+  title: z.string().trim().min(1, 'Title is required').max(200),
+  summary: z.string().trim().max(600).default(''),
   /** Sanitized server-side before it is stored — see pkg/security/sanitize. */
-  body: z.string().max(80_000).default(''),
+  body: z.string().trim().max(80_000).default(''),
 });
 
 export const projectInputSchema = z.object({
   slug: slugSchema,
   coverMediaId: mediaIdSchema,
   youtubeUrl: youtubeUrlSchema.nullish(),
-  client: z.string().max(160).nullish(),
-  location: z.string().max(160).nullish(),
+  client: z.string().trim().max(160).nullish(),
+  location: z.string().trim().max(160).nullish(),
   year: z.number().int().min(1900).max(2200).nullish(),
   status: contentStatusSchema.default('DRAFT'),
   featured: z.boolean().default(false),

@@ -6,6 +6,8 @@ import {
   isoDateTime,
   listResponseSchema,
   mediaIdSchema,
+  optionalEmailInput,
+  optionalUrlInput,
   slugSchema,
 } from '@/shared/types/api';
 import { contentStatusSchema } from '@/shared/types/enums';
@@ -51,17 +53,17 @@ export type PublicTeamMember = z.infer<typeof publicTeamMemberSchema>;
 export const publicTeamMemberListResponseSchema = listResponseSchema(publicTeamMemberSchema);
 
 export const teamMemberTranslationInputSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(160),
-  position: z.string().max(160).default(''),
-  bio: z.string().max(4000).default(''),
-  expertise: z.string().max(600).default(''),
+  name: z.string().trim().min(1, 'Name is required').max(160),
+  position: z.string().trim().max(160).default(''),
+  bio: z.string().trim().max(4000).default(''),
+  expertise: z.string().trim().max(600).default(''),
 });
 
 export const teamMemberInputSchema = z.object({
   slug: slugSchema,
   photoMediaId: mediaIdSchema,
-  email: z.email().nullish().or(z.literal('')),
-  linkedinUrl: z.url().nullish().or(z.literal('')),
+  email: optionalEmailInput(),
+  linkedinUrl: optionalUrlInput(),
   status: contentStatusSchema.default('DRAFT'),
   order: z.number().int().min(0).default(0),
   translations: bothLocales(teamMemberTranslationInputSchema),

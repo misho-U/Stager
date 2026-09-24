@@ -2,7 +2,13 @@ import { z } from 'zod';
 
 import { mediaSummarySchema } from '@/entity/media/model/media.model';
 import { publicSocialLinkSchema } from '@/entity/social-link/model/social-link.model';
-import { bothLocales, mediaIdSchema, seoFieldsSchema, seoInputSchema } from '@/shared/types/api';
+import {
+  bothLocales,
+  mediaIdSchema,
+  optionalEmailInput,
+  seoFieldsSchema,
+  seoInputSchema,
+} from '@/shared/types/api';
 
 export const siteSettingTranslationSchema = seoFieldsSchema.extend({
   siteName: z.string(),
@@ -50,15 +56,15 @@ export type PublicLayoutData = z.infer<typeof publicLayoutDataSchema>;
 export const siteSettingUpdateInputSchema = z.object({
   logoMediaId: mediaIdSchema,
   logoLightMediaId: mediaIdSchema,
-  contactEmail: z.email().nullish().or(z.literal('')),
-  phone: z.string().max(60).nullish(),
-  inquiryInboxEmail: z.email().nullish().or(z.literal('')),
+  contactEmail: optionalEmailInput(),
+  phone: z.string().trim().max(60).nullish(),
+  inquiryInboxEmail: optionalEmailInput(),
   translations: bothLocales(
     seoInputSchema.extend({
-      siteName: z.string().min(1).max(120).default('STAGER'),
-      tagline: z.string().max(300).default(''),
-      address: z.string().max(300).default(''),
-      footerText: z.string().max(2000).default(''),
+      siteName: z.string().trim().min(1).max(120).default('STAGER'),
+      tagline: z.string().trim().max(300).default(''),
+      address: z.string().trim().max(300).default(''),
+      footerText: z.string().trim().max(2000).default(''),
     }),
   ).optional(),
 });

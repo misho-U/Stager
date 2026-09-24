@@ -82,18 +82,19 @@ export const pageSectionInputSchema = z.object({
   mediaId: mediaIdSchema,
   translations: bothLocales(
     z.object({
-      heading: z.string().max(300).default(''),
-      subheading: z.string().max(1000).default(''),
-      body: z.string().max(40_000).default(''),
-      ctaLabel: z.string().max(80).default(''),
-      ctaHref: z.string().max(300).default(''),
+      heading: z.string().trim().max(300).default(''),
+      subheading: z.string().trim().max(1000).default(''),
+      body: z.string().trim().max(40_000).default(''),
+      ctaLabel: z.string().trim().max(80).default(''),
+      ctaHref: z.string().trim().max(300).default(''),
     }),
   ),
 });
 
 export const pageUpdateInputSchema = z.object({
-  translations: bothLocales(seoInputSchema.extend({ title: z.string().max(200).default('') }))
-    .optional(),
+  translations: bothLocales(
+    seoInputSchema.extend({ title: z.string().trim().max(200).default('') }),
+  ).optional(),
   sections: z.array(pageSectionInputSchema).optional(),
 });
 

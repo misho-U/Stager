@@ -23,6 +23,50 @@ export const bothLocales = <T extends z.ZodTypeAny>(translation: T) =>
 
 export type Translated<T> = Record<DbLocale, T>;
 
+/*
+ * TRIMMING — every string a person types is trimmed BEFORE it is validated.
+ *
+ * Pasted text routinely carries a stray leading or trailing space. Untrimmed,
+ * it is stored verbatim (a hero heading went live as "…Businesses. "), and a
+ * whitespace-only value passes `.min(1)` as though it were content.
+ *
+ * Plain text: `z.string().trim()`. The trim runs first, so `.min()`, `.max()`
+ * and `.regex()` all see the trimmed value.
+ *
+ * Emails and URLs: use the helpers below, never `z.email().trim()`. zod 4
+ * validates the format BEFORE a chained `.trim()` runs, so that spelling still
+ * rejects " me@x.com " — trimming as a plain string and piping into the format
+ * is what puts the two in the right order.
+ *
+ * Leave alone: ids, machine-generated values, honeypots — and passwords, where
+ * a leading or trailing space is part of the secret.
+ */
+
+/** 254 is the longest an address can be (RFC 5321), whatever the field. */
+const EMAIL_MAX = 254;
+
+export const emailInput = (message?: string) =>
+  z.string().trim().max(EMAIL_MAX).pipe(z.email(message));
+
+/** May be left blank; "   " is treated as blank rather than as an invalid address. */
+export const optionalEmailInput = () =>
+  z
+    .string()
+    .trim()
+    .max(EMAIL_MAX)
+    .pipe(z.email().or(z.literal('')))
+    .nullish();
+
+export const urlInput = (message?: string) => z.string().trim().pipe(z.url(message));
+
+/** May be left blank; "   " is treated as blank rather than as an invalid URL. */
+export const optionalUrlInput = () =>
+  z
+    .string()
+    .trim()
+    .pipe(z.url().or(z.literal('')))
+    .nullish();
+
 /** SEO fields shared by every translatable record. */
 export const seoFieldsSchema = z.object({
   metaTitle: z.string().max(70, 'Search engines truncate titles past ~70 characters').nullable(),
@@ -34,8 +78,8 @@ export const seoFieldsSchema = z.object({
 });
 
 export const seoInputSchema = z.object({
-  metaTitle: z.string().max(70).nullish(),
-  metaDescription: z.string().max(180).nullish(),
+  metaTitle: z.string().trim().max(70).nullish(),
+  metaDescription: z.string().trim().max(180).nullish(),
   ogMediaId: z.string().min(1).nullish(),
 });
 
@@ -54,6 +98,9 @@ export type PublicListQuery = z.infer<typeof publicListQuerySchema>;
 /** Slug rules: lowercase, digits and single hyphens. Used in URLs, so no unicode. */
 export const slugSchema = z
   .string()
+  // Before the regex: " kitchen-ops" would otherwise fail with "use lowercase
+  // letters…", which says nothing about the space that actually caused it.
+  .trim()
   .min(1, 'Slug is required')
   .max(120)
   .regex(
@@ -64,6 +111,7 @@ export const slugSchema = z
 /** Optional YouTube URL — the only video source the site supports. */
 export const youtubeUrlSchema = z
   .string()
+  .trim()
   .url()
   .refine((value) => {
     try {

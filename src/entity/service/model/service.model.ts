@@ -52,14 +52,14 @@ export type PublicService = z.infer<typeof publicServiceSchema>;
 export const publicServiceListResponseSchema = listResponseSchema(publicServiceSchema);
 
 export const serviceTranslationInputSchema = seoInputSchema.extend({
-  title: z.string().min(1, 'Title is required').max(200),
-  shortDescription: z.string().max(600).default(''),
-  body: z.string().max(80_000).default(''),
+  title: z.string().trim().min(1, 'Title is required').max(200),
+  shortDescription: z.string().trim().max(600).default(''),
+  body: z.string().trim().max(80_000).default(''),
 });
 
 export const serviceInputSchema = z.object({
   slug: slugSchema,
-  icon: z.string().max(60).nullish(),
+  icon: z.string().trim().max(60).nullish(),
   coverMediaId: mediaIdSchema,
   status: contentStatusSchema.default('DRAFT'),
   order: z.number().int().min(0).default(0),
