@@ -149,3 +149,32 @@ test.describe('upload constraints', () => {
     expect(response.status()).toBe(400);
   });
 });
+
+test.describe('dashboard theme switch', () => {
+  test.skip(!CREDENTIALS_PRESENT, 'Requires an authenticated admin session.');
+
+  // admin-theme.spec.ts covers the wiring without credentials, by presetting
+  // the cookie. This covers the one part it cannot reach: the switch itself,
+  // which only renders inside the dashboard.
+  test('a choice applies at once and survives a reload', async ({ page }) => {
+    await page.goto('/admin/login');
+    await page.getByLabel('Email').fill(ADMIN_EMAIL!);
+    await page.getByLabel('Password').fill(ADMIN_PASSWORD!);
+    await page.getByRole('button', { name: 'Sign in' }).click();
+    await expect(page).toHaveURL(/\/admin$/);
+
+    const colorScheme = () =>
+      page.evaluate(() => getComputedStyle(document.documentElement).colorScheme);
+    const dark = page.getByRole('button', { name: 'Dark', exact: true });
+
+    await dark.click();
+    expect(await colorScheme()).toBe('dark');
+
+    await page.reload();
+    await expect(dark).toHaveAttribute('aria-pressed', 'true');
+    expect(await colorScheme()).toBe('dark');
+
+    await page.getByRole('button', { name: 'Light', exact: true }).click();
+    expect(await colorScheme()).toBe('normal');
+  });
+});
