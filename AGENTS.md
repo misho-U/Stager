@@ -26,6 +26,7 @@ rather than adding a dependency.
 | Images | **Vercel Blob** |
 | Video | **YouTube embeds** — never self-hosted video files |
 | Email | **Resend** |
+| Rich-text sanitising | **sanitize-html** — DOM-free. Never a jsdom-based sanitizer (see below) |
 | i18n | **next-intl 4** |
 | Tests | **Playwright** |
 | Hosting | **Vercel** |
@@ -47,6 +48,12 @@ rather than adding a dependency.
   you.
 - **ESLint 10 + `eslint-plugin-react`**: the plugin crashes on version
   auto-detection, so `eslint.config.mjs` declares the React version explicitly.
+- **jsdom crashes inside Vercel functions.** `isomorphic-dompurify` pulls it in
+  on the server, and every route that imported the sanitizer returned an
+  empty-body 500 in production — public page reads and admin saves alike —
+  while the same build passed locally, on Node 24, and as a standalone build.
+  The tell was the split: routes that never imported the sanitizer worked. Use
+  `sanitize-html`, which parses with htmlparser2 and needs no DOM.
 
 ---
 

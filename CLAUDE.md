@@ -15,7 +15,7 @@ drift.
 
 Next.js 16 · React 19 · TypeScript strict · Tailwind 4 · TanStack Query ·
 Zustand · react-hook-form · zod 4 · Prisma 7 · Supabase · Vercel Blob · Resend ·
-next-intl · Playwright · pnpm.
+next-intl · sanitize-html · Playwright · pnpm.
 
 Do not add a library outside this list without raising it first.
 
@@ -57,6 +57,12 @@ Do not add a library outside this list without raising it first.
   fine, and hid a dead API for days. Log it and say so on the page.
 - `NEXT_PUBLIC_SITE_URL` is **not** what the server fetches itself on — see
   `getSiteOrigin()`. It may point at a domain whose DNS has not propagated yet.
+- **Never add a jsdom-based dependency** (`isomorphic-dompurify`, `jsdom`). It
+  crashes at import inside Vercel functions — every route importing it returned
+  an empty 500 in production while passing every local test.
+- **Env validation runs during `next build`.** A rule that fails there takes the
+  whole site down. Only require what the deployed app genuinely cannot run
+  without; report optional misconfiguration in `pnpm setup:check` instead.
 - Where a zod schema uses `.default()`, react-hook-form needs both types:
   `useForm<z.input<S>, unknown, z.output<S>>`.
 - **The typeface is self-hosted** (`src/shared/brandbook/fonts/`). Do not switch
