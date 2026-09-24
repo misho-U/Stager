@@ -70,7 +70,8 @@ src/
   modules/       one folder per page
   entity/        per-domain model + api + query
   widgets/       reusable composite UI (header, media picker, …)
-  shared/        genuinely shared primitives, brandbook, types
+  shared/        genuinely shared primitives, types, and brandbook/
+                 (brandbook.css holds every visual value — see §5)
 tests/e2e/       Playwright
 ```
 
@@ -232,16 +233,28 @@ Non-negotiable. Each exists because of a specific failure mode.
   `shared/types/api.ts` for emails and URLs. The trim runs before validation,
   so `.min(1)` rejects whitespace-only values. Leave ids, machine-generated
   values, honeypots and passwords untrimmed. Output schemas need none of this.
-- **No hard-coded visual values.** Colours, type sizes and spacing come from the
-  `@theme` block in `src/app/globals.css`. `src/shared/brandbook/tokens.ts`
-  mirrors the few hexes needed outside the browser (email, OG images).
-- **The typeface is self-hosted**, in `src/shared/brandbook/fonts/` (Noto Sans
-  Georgian, variable, split into georgian / latin / latin-ext subsets with
-  `unicode-range`, SIL OFL 1.1 — see `fonts/OFL.txt`). `next/font/google`
-  downloads at build time and degrades to a system font on any machine that
-  cannot reach Google, which is exactly the failure this avoids: Georgian falls
-  back worst. A Playwright test asserts no request ever goes to Google's font
-  hosts, and the CSP no longer allowlists them.
+- **One file holds every visual value: `src/shared/brandbook/brandbook.css`.**
+  Colour, typeface, type scale, spacing, radii and motion are tokens in its
+  `@theme` block; `src/app/globals.css` only imports it. Never hard-code a
+  colour or size anywhere else — if a value is missing, add a token there. Its
+  header comment says which parts are for hand-editing.
+- **Hex copies of the brand colours are generated, never edited.** The
+  notification email and the theme-color meta tag cannot read CSS, so
+  `scripts/brand-tokens.ts` writes the `--color-brand-*` values to
+  `pkg/brand/hex.generated.ts` on install, dev and build (gitignored; import it
+  through `src/shared/brandbook/tokens.ts`, or directly from `pkg`). Brand
+  colours must therefore be hex — the script fails the build otherwise.
+- **The typeface is self-hosted**, declared with `@font-face` at the bottom of
+  `brandbook.css`: Noto Sans Georgian, variable, one family split into
+  georgian / latin / latin-ext files by `unicode-range` (files in
+  `src/shared/brandbook/fonts/`, SIL OFL 1.1 — see `fonts/OFL.txt`).
+  `next/font/google` downloads at build time and degrades to a system font on
+  any machine that cannot reach Google — Georgian falls back worst.
+  `next/font/local` is gone too: it generated a `local(Arial)` "Fallback"
+  family per face with no `unicode-range`, which rendered all Latin text in
+  Arial. Playwright asserts that no request goes to Google's font hosts, that
+  Georgian and Latin both load the bundled family, and that the files stay
+  split by script. The CSP does not allowlist Google's font hosts.
 - **Bilingual content is authored in both languages at once.** Translation
   tables, `@@unique([<parent>Id, locale])`, KA/EN tabs in the admin form.
 - **Comments explain why, not what.** Do not narrate the code.
@@ -251,7 +264,40 @@ Non-negotiable. Each exists because of a specific failure mode.
 ### Brand palette
 
 `#1D464A` deep teal · `#8EA3A5` sage · `#EFEEE6` cream · `#4D6266` / `#567578`
-supporting · `#F3F2EC` / `#F8F8F4` tints. Taken from the official logo artwork.
+supporting · `#F3F2EC` / `#F8F8F4` tints. Taken from the official logo artwork;
+defined as `--color-brand-*` in `brandbook.css`.
+
+### Design skill (`design-taste-frontend`)
+
+`.claude/skills/design-taste-frontend` is design direction for the **public
+site only**: layout, type scale, spacing rhythm, hierarchy, motion. This file
+and CLAUDE.md win wherever they disagree. The resolved conflicts:
+
+- **No extra packages.** No Motion, GSAP, design system or shadcn. Motion is
+  CSS only (see the dials below).
+- **Its values go into `brandbook.css` first.** Its examples use raw palette
+  utilities and arbitrary values (`text-gray-600`, `max-w-[1400px]`,
+  `tracking-[0.18em]`, `z-[60]`); translate each into a token, never inline.
+  A z-index scale is tokens too.
+- **Images are CMS media only.** No generated, stock (picsum, Unsplash) or CDN
+  (Simple Icons) imagery: the CSP and `next/image` allow only Vercel Blob and
+  YouTube thumbnails, and invented photos of a real consultancy's work would
+  misrepresent it. An empty slot is an honest empty state.
+- **A skill "block" is a widget** (used on several pages, props only) **or a
+  module `elements/` entry** (one page). No `blocks/` folder; data still flows
+  through the module service.
+- **Copy is the client's.** Never cut or rewrite CMS content to meet the
+  skill's word limits — layouts must survive the schema maximums in both
+  locales. The skill's em-dash ban applies only to strings written in code.
+- **Georgian.** No `uppercase` as a label style: Chromium leaves Mkhedruli
+  unchanged, so a label is capitals on /en and not on /ka. No italic: the faces
+  are upright only, so the browser would fake the slant. No tracking or leading
+  below the brandbook's values without checking /ka. A future display face
+  needs a matching Georgian design. Verify every typography change on /ka as
+  well as /en.
+- **Dials:** DESIGN_VARIANCE 5 / MOTION_INTENSITY 3 / VISUAL_DENSITY 3. At
+  MOTION 3 the skill itself prescribes CSS hover and press states only.
+- **Out of scope:** the admin dashboard — the skill excludes admin panels.
 
 ---
 
@@ -268,6 +314,7 @@ pnpm db:migrate        # create + apply a migration (writes SQL to prisma/migrat
 pnpm db:seed           # idempotent seed
 pnpm db:studio         # browse the database
 pnpm test:e2e          # Playwright (loads .env.local; needs a seeded database)
+pnpm brand:tokens      # regenerate the brand hex copies (runs on install/dev/build anyway)
 ```
 
 All `db:*` scripts read `.env.local` through dotenv-cli — there is one env file,
@@ -288,9 +335,9 @@ The public API endpoints it needs already exist, so the design phase is frontend
 work only. Delete the scaffold when the real homepage lands; keep the
 data-loading pattern in `home-page.service.ts`.
 
-Also open for the design phase: the Georgian/Latin typeface pairing (currently
-Noto Sans Georgian for both scripts, so headlines match across locales), motion
-language, and the YouTube facade component.
+Decided for the design phase: Noto Sans Georgian for both scripts, so headlines
+match across locales, and CSS-only motion (dials 5/3/3 — see § Design skill).
+Still open: the YouTube facade component.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

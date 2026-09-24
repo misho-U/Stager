@@ -36,8 +36,9 @@ Do not add a library outside this list without raising it first.
    row. A Supabase account alone grants nothing.
 7. **`process.env` is read only inside `pkg/config`**, where zod validates it.
 8. **Sanitize rich text on write**, so the database only ever holds safe HTML.
-9. **No hard-coded colours or sizes.** They live in the `@theme` block in
-   `src/app/globals.css`.
+9. **No hard-coded colours or sizes.** They live in ONE file,
+   `src/shared/brandbook/brandbook.css` — colour, typeface, type scale,
+   spacing. `globals.css` only imports it.
 10. **Schema changes go through `pnpm db:migrate`** and the generated SQL is
     committed. Never edit the database by hand.
 
@@ -69,11 +70,18 @@ Do not add a library outside this list without raising it first.
   validates the format before a chained trim runs, so that still rejects
   " me@x.com ". Use `emailInput()` / `urlInput()` from `shared/types/api.ts`.
   Never trim passwords.
-- **The typeface is self-hosted** (`src/shared/brandbook/fonts/`). Do not switch
-  back to `next/font/google`: it downloads at build time, so a machine that
-  cannot reach Google silently ships a system fallback — which is worst for
-  Georgian. `next/font` also rejects spread/shared option objects; write each
-  call out literally.
+- **The typeface is self-hosted**, declared with `@font-face` in `brandbook.css`
+  (files in `src/shared/brandbook/fonts/`). Do not switch to `next/font/google`:
+  it downloads at build time, so a machine that cannot reach Google silently
+  ships a system fallback — which is worst for Georgian. Do not bring back
+  `next/font/local` either: its per-face "Fallback" family rendered all Latin
+  text in Arial.
+- **`pkg/brand/hex.generated.ts` is generated** from `brandbook.css` on install,
+  dev and build, for the email and the theme-color meta tag. Never edit it.
+  Brand colours must be hex, or the build fails.
+- **The design skill (`design-taste-frontend`) is direction only.** AGENTS.md
+  § Design skill lists what it may not change — dependencies, tokens, images
+  and the CSP, folder structure, CMS copy — and the Georgian checks.
 
 ## Sign-in needs two systems to agree
 
