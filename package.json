@@ -7,8 +7,8 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "next dev",
-    "build": "prisma generate && next build",
+    "dev": "tsx scripts/brand-tokens.ts && next dev",
+    "build": "prisma generate && tsx scripts/brand-tokens.ts && next build",
     "start": "next start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -24,15 +24,17 @@
     "db:reset": "dotenv -e .env.local -- prisma migrate reset",
     "setup:check": "dotenv -e .env.local -- tsx scripts/doctor.ts",
     "admin:set-password": "dotenv -e .env.local -- tsx scripts/set-admin-password.ts",
-    "test:e2e": "dotenv -e .env.local -- playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "postinstall": "prisma generate"
+    "test:e2e": "tsx scripts/brand-tokens.ts && dotenv -e .env.local -- playwright test",
+    "test:e2e:ui": "tsx scripts/brand-tokens.ts && playwright test --ui",
+    "brand:tokens": "tsx scripts/brand-tokens.ts",
+    "postinstall": "prisma generate && tsx scripts/brand-tokens.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "5.9.1",
+    "@phosphor-icons/react": "2.1.10",
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
     "@supabase/ssr": "0.12.7",

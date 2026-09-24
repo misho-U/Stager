@@ -92,6 +92,11 @@ test.describe('security headers', () => {
   });
 });
 
+// Emitted font file names carry a hash, and dev and production builds may join
+// the words with "-" or "_".
+const GEORGIAN_FILE = /noto[_-]sans[_-]georgian[_-]georgian/i;
+const LATIN_FILE = /noto[_-]sans[_-]georgian[_-]latin(?![_-]ext)/i;
+
 test.describe('typography', () => {
   test('the Georgian typeface is self-hosted, not fetched from Google', async ({ page }) => {
     const externalFontRequests: string[] = [];
@@ -111,50 +116,65 @@ test.describe('typography', () => {
     // that, so this asserts the site never reaches for Google at all.
     expect(externalFontRequests).toEqual([]);
 
-    // And that the face actually resolves to the bundled family rather than a
-    // bare system stack.
+    // And that text resolves to the bundled family first, not a system stack.
     const fontFamily = await page
       .getByTestId('hero-heading')
       .evaluate((node) => getComputedStyle(node).fontFamily);
 
-    expect(fontFamily).toMatch(/notoGeorgian|noto/i);
+    expect(fontFamily).toMatch(/^"?Noto Sans Georgian"?,/);
   });
 
-  test('Latin text uses the bundled Latin subset, not a system fallback', async ({ page }) => {
-    // Every next/font face gets a generated "<name> Fallback" family that is
-    // local(Arial) with NO unicode-range. Chaining three font variables in
-    // --font-sans meant the FIRST one's fallback matched every Latin character
-    // the Georgian unicode-range rejected, so all Latin text rendered in Arial
-    // and notoLatin was never reached. The faces ahead of the last one must
-    // therefore carry no fallback at all.
-    const fontRequests: string[] = [];
+  test('Georgian and Latin text both render in the bundled typeface', async ({ page }) => {
+    // Latin text once rendered in Arial: next/font gave every face a generated
+    // "<name> Fallback" family — local(Arial) with no unicode-range — and the
+    // first one in the chain matched every Latin character. The typeface is
+    // now declared once, in brandbook.css, as a single family whose three
+    // files are split by unicode-range, so no fallback sits ahead of it.
+    const fontFiles: string[] = [];
     page.on('request', (request) => {
       const url = request.url();
-      if (url.includes('noto') && url.endsWith('.woff2')) fontRequests.push(url);
+      if (url.endsWith('.woff2')) fontFiles.push(url);
     });
 
     await page.goto('/ka');
-    // The wordmark is Latin-only, so rendering it must pull the Latin subset.
     await expect(page.getByTestId('wordmark')).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
 
-    const latinSubset = fontRequests.filter(
-      (url) => /noto[_-]sans[_-]georgian[_-]latin/i.test(url) && !/latin[_-]ext/i.test(url),
-    );
+    const fetched = (subset: RegExp) => fontFiles.some((url) => subset.test(url));
+    expect(fetched(GEORGIAN_FILE), 'Georgian subset was not fetched').toBe(true);
+    expect(fetched(LATIN_FILE), 'Latin subset was not fetched').toBe(true);
 
-    expect(
-      latinSubset,
-      'Latin text did not fetch the Latin subset — it is rendering in a system font',
-    ).not.toHaveLength(0);
+    // Loaded, not merely requested: false here means the text is on a
+    // system fallback.
+    const loaded = await page.evaluate(() => ({
+      latin: document.fonts.check('16px "Noto Sans Georgian"', 'STAGER'),
+      georgian: document.fonts.check('16px "Noto Sans Georgian"', 'ქართული'),
+    }));
+    expect(loaded).toEqual({ latin: true, georgian: true });
 
-    // And the declared chain must not put any fallback family before notoLatin.
     const chain = await page
       .getByTestId('wordmark')
       .evaluate((node) => getComputedStyle(node).fontFamily);
-
-    const beforeLatin = chain.slice(0, chain.indexOf('notoLatin'));
-    expect(beforeLatin, `fallback family precedes notoLatin in: ${chain}`).not.toMatch(
-      /Fallback|Arial/i,
+    expect(chain, `something precedes the bundled family in: ${chain}`).toMatch(
+      /^"?Noto Sans Georgian"?,/,
     );
+  });
+
+  test('the typeface files are split by script', async ({ page }) => {
+    // The unicode-range split means a page downloads a file only when it
+    // contains that script. The login page has no Georgian text, so fetching
+    // the Georgian file there means the split has been lost and every page
+    // is paying for every script.
+    const fontFiles: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().endsWith('.woff2')) fontFiles.push(request.url());
+    });
+
+    await page.goto('/admin/login');
+    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+
+    expect(fontFiles.some((url) => LATIN_FILE.test(url))).toBe(true);
+    expect(fontFiles.filter((url) => GEORGIAN_FILE.test(url))).toEqual([]);
   });
 });

@@ -43,9 +43,9 @@ export function AdminDashboardModule({ name, counts }: AdminDashboardModuleProps
       {counts.newInquiries > 0 ? (
         <Link
           href="/admin/inquiries"
-          className="rounded-lg border border-brand-teal/30 bg-brand-teal/8 px-5 py-4 transition-colors hover:bg-brand-teal/12"
+          className="rounded-lg border border-primary/30 bg-primary/8 px-5 py-4 transition-colors hover:bg-primary/12"
         >
-          <p className="text-body-sm font-medium text-brand-teal">
+          <p className="text-body-sm font-medium text-primary">
             {counts.newInquiries} new{' '}
             {counts.newInquiries === 1 ? 'inquiry' : 'inquiries'} waiting
           </p>
@@ -72,7 +72,7 @@ export function AdminDashboardModule({ name, counts }: AdminDashboardModuleProps
             <li key={shortcut.href}>
               <Link
                 href={shortcut.href}
-                className="flex flex-col rounded-md px-2 py-2 transition-colors hover:bg-brand-cream-tint"
+                className="flex flex-col rounded-md px-2 py-2 transition-colors hover:bg-surface-muted"
               >
                 <span className="text-body-sm text-ink">{shortcut.label}</span>
                 <span className="text-caption text-ink-subtle">{shortcut.description}</span>

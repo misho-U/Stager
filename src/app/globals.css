@@ -1,101 +1,22 @@
-@import 'tailwindcss';
+/* source('..'): scan src/ only. Tailwind generates a utility for every
+   class-like string it finds, and the docs and the design skill's examples are
+   full of them (`bg-zinc-950`, `bg-brand-teal`) — CSS for classes no component
+   uses, including exactly the raw brand utilities the roles replace. */
+@import 'tailwindcss' source('..');
 
 /* ---------------------------------------------------------------------------
-   STAGER brandbook
-   ---------------------------------------------------------------------------
-   THE single place visual values are defined. Change a colour, a font size or a
-   spacing step here and it changes everywhere — never hard-code a hex value or
-   a pixel size in a component.
+   Wiring only. Every design value — colour, typeface, type scale, spacing,
+   radii, motion — lives in ONE file:
 
-   Colours are taken from the official logo artwork
-   (LOGO_CONCEPT_COLOR_VARIATIONS.pdf).
+       src/shared/brandbook/brandbook.css
 
-   Tailwind 4 turns every token below into both a utility class and a CSS
-   variable, so `bg-brand-teal` and `var(--color-brand-teal)` are the same
-   value. src/shared/brandbook/tokens.ts mirrors the handful of raw hexes that
-   are needed outside the browser (emails, OG images, the web manifest).
+   This file loads Tailwind and the brandbook, then applies base rules that
+   refer to its tokens. Never put a colour or size here.
+
+   Tailwind 4 turns every brandbook token into both a utility class and a CSS
+   variable, so `bg-surface` and `var(--color-surface)` are the same value.
 --------------------------------------------------------------------------- */
-
-@theme {
-  /* --- Brand palette --- */
-  --color-brand-teal: #1d464a; /* primary — logo mark, headings, dark surfaces */
-  --color-brand-teal-soft: #4d6266; /* supporting mid-tone */
-  --color-brand-teal-muted: #567578; /* supporting mid-tone, lighter */
-  --color-brand-sage: #8ea3a5; /* secondary — rules, captions, meta */
-  --color-brand-cream: #efeee6; /* light surface — page background */
-  --color-brand-cream-tint: #f3f2ec; /* light surface, one step up */
-  --color-brand-cream-light: #f8f8f4; /* light surface, lightest */
-
-  /* --- Semantic aliases. Components use these, not the raw brand names. --- */
-  --color-surface: var(--color-brand-cream);
-  --color-surface-raised: #ffffff;
-  --color-surface-inverse: var(--color-brand-teal);
-  --color-ink: var(--color-brand-teal);
-  --color-ink-muted: var(--color-brand-teal-soft);
-  --color-ink-subtle: var(--color-brand-sage);
-  --color-ink-inverse: var(--color-brand-cream);
-  --color-line: #dcdcd2;
-  --color-line-strong: var(--color-brand-sage);
-
-  /* --- Status --- */
-  --color-success: #2f6b4f;
-  --color-warning: #8a6a1f;
-  --color-danger: #8f2f2f;
-
-  /* --- Typography ---
-     Noto Sans Georgian covers Georgian and Latin in one family, so headlines
-     keep the same voice in both languages instead of diverging at the locale
-     switch. The display face is a separate slot for the design phase.
-
-     Three families rather than one because the font is split by script, each
-     with its own unicode-range — so an English page never downloads the
-     Georgian file. The browser resolves this chain per character, so order is
-     by expected frequency on a Georgian-first site. See brandbook/fonts.ts. */
-  --font-sans:
-    var(--font-noto-georgian), var(--font-noto-latin), var(--font-noto-latin-ext),
-    ui-sans-serif, system-ui, sans-serif;
-  --font-display:
-    var(--font-noto-georgian), var(--font-noto-latin), var(--font-noto-latin-ext),
-    ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
-
-  /* Editorial type scale. */
-  --text-caption: 0.75rem;
-  --text-caption--line-height: 1.4;
-  --text-body-sm: 0.875rem;
-  --text-body-sm--line-height: 1.6;
-  --text-body: 1rem;
-  --text-body--line-height: 1.7;
-  --text-body-lg: 1.125rem;
-  --text-body-lg--line-height: 1.7;
-  --text-title-sm: 1.375rem;
-  --text-title-sm--line-height: 1.3;
-  --text-title: 1.75rem;
-  --text-title--line-height: 1.25;
-  --text-headline: 2.5rem;
-  --text-headline--line-height: 1.15;
-  --text-display: 4rem;
-  --text-display--line-height: 1.05;
-  --text-display--letter-spacing: -0.02em;
-
-  /* --- Spacing, radii, elevation --- */
-  --spacing-gutter: 1.25rem;
-  --spacing-section: 5rem;
-  --spacing-section-lg: 8rem;
-
-  --radius-sm: 2px;
-  --radius-md: 4px;
-  --radius-lg: 8px;
-
-  --shadow-card: 0 1px 2px rgb(29 70 74 / 0.06), 0 8px 24px rgb(29 70 74 / 0.06);
-
-  /* --- Motion. Minimal by brief: nothing bouncy, nothing slow. --- */
-  --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
-  --duration-fast: 150ms;
-  --duration-base: 250ms;
-}
-
-/* --------------------------------------------------------------------------- */
+@import '../shared/brandbook/brandbook.css';
 
 @layer base {
   html {
@@ -114,7 +35,7 @@
 
   /* Visible focus for keyboard users, suppressed for mouse clicks. */
   :focus-visible {
-    outline: 2px solid var(--color-brand-teal);
+    outline: 2px solid var(--color-focus);
     outline-offset: 2px;
   }
 

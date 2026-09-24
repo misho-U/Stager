@@ -19,7 +19,7 @@ type SeoFieldsProps = {
  */
 export function SeoFields({ metaTitle, metaDescription, errors }: SeoFieldsProps) {
   return (
-    <div className="flex flex-col gap-4 rounded-md border border-line bg-brand-cream-light p-4">
+    <div className="flex flex-col gap-4 rounded-md border border-line bg-surface-inset p-4">
       <p className="text-caption font-medium tracking-wide text-ink-subtle uppercase">
         Search &amp; social
       </p>

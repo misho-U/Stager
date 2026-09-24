@@ -31,6 +31,9 @@ dist/
 # typescript
 *.tsbuildinfo
 
+# generated from src/shared/brandbook/brandbook.css on install/dev/build
+/pkg/brand/hex.generated.ts
+
 # os / editor
 .DS_Store
 Thumbs.db

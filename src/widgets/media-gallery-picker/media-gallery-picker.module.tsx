@@ -103,7 +103,7 @@ export function MediaGalleryPicker({ label, value, onChange }: MediaGalleryPicke
       )}
 
       {isOpen ? (
-        <div className="rounded-md border border-line bg-brand-cream-light p-3">
+        <div className="rounded-md border border-line bg-surface-inset p-3">
           {isLoading ? (
             <p className="text-body-sm text-ink-subtle">Loading library…</p>
           ) : items.length === 0 ? (
@@ -120,7 +120,7 @@ export function MediaGalleryPicker({ label, value, onChange }: MediaGalleryPicke
                     className={cn(
                       'relative block aspect-square w-full overflow-hidden rounded-md border transition-colors',
                       value.includes(item.id)
-                        ? 'border-brand-teal ring-2 ring-brand-teal/30'
+                        ? 'border-primary ring-2 ring-primary/30'
                         : 'border-line hover:border-line-strong',
                     )}
                   >
