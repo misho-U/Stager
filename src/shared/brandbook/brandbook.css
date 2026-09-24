@@ -11,6 +11,7 @@
      - Status colours          --color-success, --color-warning, --color-danger
      - Typeface                --font-sans, --font-display
      - Type scale              --text-*
+     - Letter-spacing          --tracking-*
      - Spacing, radii, shadow  --spacing-*, --radius-*, --shadow-*
      - Motion                  --ease-*, --duration-*
 
@@ -47,15 +48,22 @@
   /* --- Which colour does what. Components use these roles, never the raw
          brand names above, so re-pointing a role re-colours every place that
          plays it. --- */
-  --color-surface: var(--color-brand-cream);
-  --color-surface-raised: var(--color-brand-white);
-  --color-surface-inverse: var(--color-brand-teal);
-  --color-ink: var(--color-brand-teal);
-  --color-ink-muted: var(--color-brand-teal-soft);
-  --color-ink-subtle: var(--color-brand-sage);
-  --color-ink-inverse: var(--color-brand-cream);
-  --color-line: #dcdcd2;
-  --color-line-strong: var(--color-brand-sage);
+  --color-surface: var(--color-brand-cream); /* page background */
+  --color-surface-raised: var(--color-brand-white); /* cards, inputs */
+  --color-surface-muted: var(--color-brand-cream-tint); /* hover, disabled */
+  --color-surface-inset: var(--color-brand-cream-light); /* boxes inside cards */
+  --color-surface-inverse: var(--color-brand-teal); /* dark bands */
+  --color-ink: var(--color-brand-teal); /* text */
+  --color-ink-muted: var(--color-brand-teal-soft); /* secondary text */
+  --color-ink-subtle: var(--color-brand-sage); /* captions, meta */
+  --color-ink-inverse: var(--color-brand-cream); /* text on dark bands */
+  --color-line: #dcdcd2; /* hairlines, input borders */
+  --color-line-strong: var(--color-brand-sage); /* emphasised borders */
+  --color-primary: var(--color-brand-teal); /* main buttons, selection */
+  --color-primary-hover: var(--color-brand-teal-soft);
+  --color-primary-disabled: var(--color-brand-sage);
+  --color-on-primary: var(--color-brand-cream); /* text on primary */
+  --color-focus: var(--color-brand-teal); /* keyboard focus ring */
 
   /* --- Status --- */
   --color-success: #2f6b4f;
@@ -90,6 +98,12 @@
   --text-display: 4rem;
   --text-display--line-height: 1.05;
   --text-display--letter-spacing: -0.02em;
+
+  /* --- Letter-spacing ---
+     Wide tracking is for Latin capitals. Georgian has no capitals to space
+     out, so check /ka before using these on anything Georgian. */
+  --tracking-wordmark: 0.18em; /* the STAGER wordmark */
+  --tracking-label: 0.2em; /* small Latin labels */
 
   /* --- Spacing, radii, elevation --- */
   --spacing-gutter: 1.25rem;

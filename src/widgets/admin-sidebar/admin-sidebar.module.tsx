@@ -25,7 +25,7 @@ export function AdminSidebar({ email, name, role }: AdminSidebarProps) {
       className="flex shrink-0 flex-col gap-6 border-line bg-surface-raised p-4 lg:h-dvh lg:w-60 lg:overflow-y-auto lg:border-r border-b lg:border-b-0"
     >
       <Link href="/admin" className="px-2">
-        <span className="text-body-lg font-semibold tracking-[0.16em] text-ink">STAGER</span>
+        <span className="text-body-lg font-semibold tracking-wordmark text-ink">STAGER</span>
         <span className="block text-caption tracking-wide text-ink-subtle uppercase">
           Dashboard
         </span>
@@ -45,8 +45,8 @@ export function AdminSidebar({ email, name, role }: AdminSidebarProps) {
                 className={cn(
                   'rounded-md px-2 py-1.5 text-body-sm transition-colors',
                   isActive(item.href)
-                    ? 'bg-brand-teal text-brand-cream'
-                    : 'text-ink-muted hover:bg-brand-cream-tint hover:text-ink',
+                    ? 'bg-primary text-on-primary'
+                    : 'text-ink-muted hover:bg-surface-muted hover:text-ink',
                 )}
               >
                 {item.label}

@@ -122,9 +122,9 @@ export function AdminMediaModule() {
             {items.map((media) => (
               <li
                 key={media.id}
-                className="flex gap-3 rounded-md border border-line bg-brand-cream-light p-3"
+                className="flex gap-3 rounded-md border border-line bg-surface-inset p-3"
               >
-                <div className="relative size-20 shrink-0 overflow-hidden rounded-sm bg-brand-cream-tint">
+                <div className="relative size-20 shrink-0 overflow-hidden rounded-sm bg-surface-muted">
                   <Image
                     src={media.url}
                     alt={media.translations.KA.alt || media.translations.EN.alt || ''}

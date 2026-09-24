@@ -41,7 +41,7 @@ export function LocaleTabs({ invalidLocales = [], children }: LocaleTabsProps) {
               className={cn(
                 '-mb-px border-b-2 px-3 py-2 text-body-sm font-medium transition-colors',
                 isActive
-                  ? 'border-brand-teal text-ink'
+                  ? 'border-primary text-ink'
                   : 'border-transparent text-ink-subtle hover:text-ink-muted',
               )}
             >

@@ -31,7 +31,7 @@
 
   /* Visible focus for keyboard users, suppressed for mouse clicks. */
   :focus-visible {
-    outline: 2px solid var(--color-brand-teal);
+    outline: 2px solid var(--color-focus);
     outline-offset: 2px;
   }
 

@@ -47,7 +47,7 @@ export function MediaPicker({ label, value, onChange, hint }: MediaPickerProps) 
       <span className="text-caption font-medium text-ink-muted">{label}</span>
 
       <div className="flex items-center gap-3">
-        <div className="relative size-16 shrink-0 overflow-hidden rounded-md border border-line bg-brand-cream-tint">
+        <div className="relative size-16 shrink-0 overflow-hidden rounded-md border border-line bg-surface-muted">
           {selected ? (
             <Image
               src={selected.url}
@@ -81,7 +81,7 @@ export function MediaPicker({ label, value, onChange, hint }: MediaPickerProps) 
       {hint ? <p className="text-caption text-ink-subtle">{hint}</p> : null}
 
       {isOpen ? (
-        <div className="flex flex-col gap-3 rounded-md border border-line bg-brand-cream-light p-3">
+        <div className="flex flex-col gap-3 rounded-md border border-line bg-surface-inset p-3">
           {loadError ? <ErrorNotice message={loadError} /> : null}
           {uploadError ? <ErrorNotice message={uploadError} /> : null}
 
@@ -142,7 +142,7 @@ export function MediaPicker({ label, value, onChange, hint }: MediaPickerProps) 
                     className={cn(
                       'relative block aspect-square w-full overflow-hidden rounded-md border transition-colors',
                       item.id === value
-                        ? 'border-brand-teal ring-2 ring-brand-teal/30'
+                        ? 'border-primary ring-2 ring-primary/30'
                         : 'border-line hover:border-line-strong',
                     )}
                   >

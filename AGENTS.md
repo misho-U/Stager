@@ -238,6 +238,12 @@ Non-negotiable. Each exists because of a specific failure mode.
   `@theme` block; `src/app/globals.css` only imports it. Never hard-code a
   colour or size anywhere else — if a value is missing, add a token there. Its
   header comment says which parts are for hand-editing.
+- **Components use colour roles, never raw brand colours.** `bg-surface`,
+  `text-ink-muted`, `bg-primary`, `text-on-primary`, `bg-surface-muted` — not
+  `bg-brand-teal` or `hover:bg-brand-cream-tint`. The roles are what the admin
+  dark theme redefines, so a raw brand utility is a spot that stays light in
+  dark mode. No arbitrary values either (`tracking-[…]`, `min-w-[…]`,
+  `aspect-[…]`): use a Tailwind scale step or add a token.
 - **Hex copies of the brand colours are generated, never edited.** The
   notification email and the theme-color meta tag cannot read CSS, so
   `scripts/brand-tokens.ts` writes the `--color-brand-*` values to
