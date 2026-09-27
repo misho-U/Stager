@@ -71,7 +71,8 @@ test.describe('upload permissions', () => {
  * It writes to the Blob store and the database configured in .env.local — on a
  * machine pointed at production, that is production — so it needs an explicit
  * opt-in on top of the admin credentials, and it deletes what it uploaded even
- * when an assertion fails. It never attaches the image to site content.
+ * when an assertion fails or the test runs out of time. It never attaches the
+ * image to site content.
  *
  *   E2E_ADMIN_EMAIL=… E2E_ADMIN_PASSWORD=… E2E_ALLOW_UPLOADS=1 pnpm test:e2e admin-media-upload
  */
@@ -120,58 +121,86 @@ test.describe('media upload against the real services', () => {
     'Uploads a real file to Vercel Blob. Set E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD and E2E_ALLOW_UPLOADS=1; it deletes what it uploads.',
   );
 
+  /** Alt text of the upload the test has started. The cleanup deletes nothing else. */
+  let uploadAlt: string | undefined;
+
+  // Deletes what the test uploaded, however the test ended. It is a hook, not a
+  // `finally` in the test, because a hook gets time of its own: once the test is
+  // over — failed, or out of time — Playwright runs afterEach on a fresh
+  // allowance, and only then closes the browser context. A `finally` shares the
+  // test's time, and a test that timed out had its context closed under it: the
+  // cleanup died on its first request and the upload stayed behind.
+  test.afterEach(async ({ page }) => {
+    const alt = uploadAlt;
+    uploadAlt = undefined;
+    if (!alt) return;
+
+    // Closed first, so an upload still in flight cannot register the image
+    // after the check below has looked for it.
+    await page.close();
+    const api = page.context().request;
+    const leftovers = async () => {
+      const response = await api.get('/api/admin/media');
+      await expect(response, 'could not list the media library to clean up').toBeOK();
+      const { items } = (await response.json()) as { items: MediaItem[] };
+      return items.filter((entry) => entry.translations.KA.alt === alt);
+    };
+
+    for (const leftover of await leftovers()) {
+      await api.delete(`/api/admin/media/${leftover.id}`);
+    }
+    expect(
+      (await leftovers()).map((entry) => entry.url),
+      `this test's upload is still in the media library; delete "${alt}" by hand`,
+    ).toEqual([]);
+  });
+
   test('uploads, lists, edits and deletes an image', async ({ page }) => {
-    const alt = `E2E upload ${Date.now()}`;
+    // Room for the 30 s wait for the upload to run out and report itself. Under
+    // the default 30 s test timeout it never could: the test ran out first.
+    test.setTimeout(90_000);
+    // The project name keeps the parallel desktop and mobile runs apart.
+    const alt = `E2E upload ${test.info().project.name} ${Date.now()}`;
     const png = solidPng(320, 200, [29, 70, 74]);
 
     await signIn(page);
     await page.goto('/admin/media');
     await page.getByLabel('Describe the image (alt text)').fill(alt);
+    uploadAlt = alt;
     await page
       .locator('input[type="file"]')
       .setInputFiles({ name: 'e2e-upload.png', mimeType: 'image/png', buffer: png });
 
-    try {
-      const item = page.locator('li', { hasText: alt });
-      await expect(item).toBeVisible({ timeout: 30_000 });
-      await expect(item.getByText('320×200')).toBeVisible();
+    const item = page.locator('li', { hasText: alt });
+    await expect(item).toBeVisible({ timeout: 30_000 });
+    await expect(item.getByText('320×200')).toBeVisible();
 
-      // The thumbnail comes from the Blob CDN through next/image.
-      await expect
-        .poll(() => item.locator('img').evaluate((img: HTMLImageElement) => img.naturalWidth))
-        .toBeGreaterThan(0);
+    // The thumbnail comes from the Blob CDN through next/image.
+    await expect
+      .poll(() => item.locator('img').evaluate((img: HTMLImageElement) => img.naturalWidth))
+      .toBeGreaterThan(0);
 
-      // The stored URL is public and serves exactly the uploaded bytes.
-      const media = (await (await page.request.get('/api/admin/media')).json()) as {
-        items: MediaItem[];
-      };
-      const uploaded = media.items.find((entry) => entry.translations.KA.alt === alt);
-      expect(uploaded?.url).toMatch(
-        /^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/media\//,
-      );
-      const file = await page.request.get(uploaded!.url);
-      expect(file.status()).toBe(200);
-      expect(Buffer.compare(await file.body(), png)).toBe(0);
+    // The stored URL is public and serves exactly the uploaded bytes.
+    const media = (await (await page.request.get('/api/admin/media')).json()) as {
+      items: MediaItem[];
+    };
+    const uploaded = media.items.find((entry) => entry.translations.KA.alt === alt);
+    expect(uploaded?.url).toMatch(
+      /^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/media\//,
+    );
+    const file = await page.request.get(uploaded!.url);
+    expect(file.status()).toBe(200);
+    expect(Buffer.compare(await file.body(), png)).toBe(0);
 
-      await item.getByRole('button', { name: 'Edit alt text' }).click();
-      await page.getByPlaceholder('Alt text (English)').fill(`${alt} (EN)`);
-      await page.getByRole('button', { name: 'Save', exact: true }).click();
-      await expect(
-        page.locator('li', { hasText: alt }).getByRole('button', { name: 'Edit alt text' }),
-      ).toBeVisible();
+    await item.getByRole('button', { name: 'Edit alt text' }).click();
+    await page.getByPlaceholder('Alt text (English)').fill(`${alt} (EN)`);
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(
+      page.locator('li', { hasText: alt }).getByRole('button', { name: 'Edit alt text' }),
+    ).toBeVisible();
 
-      await item.getByRole('button', { name: 'Delete' }).click();
-      await item.getByRole('button', { name: 'Confirm' }).click();
-      await expect(item).toHaveCount(0);
-    } finally {
-      // Whatever happened above, nothing this test uploaded stays behind.
-      const response = await page.request.get('/api/admin/media');
-      if (response.ok()) {
-        const { items } = (await response.json()) as { items: MediaItem[] };
-        for (const leftover of items.filter((entry) => entry.translations.KA.alt === alt)) {
-          await page.request.delete(`/api/admin/media/${leftover.id}`);
-        }
-      }
-    }
+    await item.getByRole('button', { name: 'Delete' }).click();
+    await item.getByRole('button', { name: 'Confirm' }).click();
+    await expect(item).toHaveCount(0);
   });
 });
