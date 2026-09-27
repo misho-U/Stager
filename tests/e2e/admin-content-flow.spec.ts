@@ -1,4 +1,6 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+
+import { ADMIN_SESSION, CREDENTIALS_PRESENT } from './admin-session';
 
 /**
  * The whole point of the build: an admin edits content and the public site
@@ -9,19 +11,17 @@ import { expect, test, type Page } from '@playwright/test';
  *
  *   E2E_ADMIN_EMAIL=you@stager.ge E2E_ADMIN_PASSWORD=… pnpm test:e2e
  *
- * Skipping rather than failing is deliberate — a missing local credential is
- * not a broken build, and a suite that always fails is a suite nobody reads.
+ * It writes to whatever database .env.local points at, so never run it with
+ * production settings. Every test starts signed in, from the session
+ * admin-session.setup.ts saved.
  */
-const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL;
-const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD;
-
-const CREDENTIALS_PRESENT = Boolean(ADMIN_EMAIL && ADMIN_PASSWORD);
 
 test.describe('admin content flow', () => {
   test.skip(
     !CREDENTIALS_PRESENT,
     'Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD to run the authenticated flow.',
   );
+  test.use({ storageState: ADMIN_SESSION });
 
   // The suite creates, publishes and deletes one project in order.
   test.describe.configure({ mode: 'serial' });
@@ -30,28 +30,20 @@ test.describe('admin content flow', () => {
   const titleKa = `E2E ქეისი ${slug}`;
   const titleEn = `E2E case study ${slug}`;
 
-  test('signs in', async ({ page }) => {
-    await page.goto('/admin/login');
-
-    await page.getByLabel('Email').fill(ADMIN_EMAIL!);
-    await page.getByLabel('Password').fill(ADMIN_PASSWORD!);
-    await page.getByRole('button', { name: 'Sign in' }).click();
-
-    await expect(page).toHaveURL(/\/admin$/);
-    await expect(page.getByRole('navigation', { name: 'Dashboard' })).toBeVisible();
-
-    await page.context().storageState({ path: 'tests/e2e/.auth/admin.json' });
-  });
-
   test('creates and publishes a project', async ({ page }) => {
     await page.goto('/admin/projects/new');
 
+    // Both language panels stay mounted, the inactive one hidden, so fields are
+    // found in the visible panel — and by /^Title/, because "Meta title"
+    // contains the word too.
+    const panel = page.getByRole('tabpanel');
+
     // Georgian tab is open by default.
-    await page.getByLabel('Title').fill(titleKa);
-    await page.getByLabel('Summary').fill('Created by the end-to-end test.');
+    await panel.getByLabel(/^Title/).fill(titleKa);
+    await panel.getByLabel('Summary').fill('Created by the end-to-end test.');
 
     await page.getByRole('tab', { name: 'English' }).click();
-    await page.getByLabel('Title').nth(1).fill(titleEn);
+    await panel.getByLabel(/^Title/).fill(titleEn);
 
     await page.getByLabel('Slug').fill(slug);
     await page.getByLabel('Status').selectOption('PUBLISHED');
@@ -77,6 +69,9 @@ test.describe('admin content flow', () => {
     await page.goto('/admin/projects');
     await page.getByRole('link', { name: titleKa }).click();
 
+    // The form mounts empty and fills itself once the record loads; a change
+    // made before that would be overwritten.
+    await expect(page.getByRole('tabpanel').getByLabel(/^Title/)).toHaveValue(titleKa);
     await page.getByLabel('Status').selectOption('DRAFT');
     await page.getByRole('button', { name: 'Save project' }).click();
     await expect(page).toHaveURL(/\/admin\/projects$/);
@@ -98,21 +93,14 @@ test.describe('admin content flow', () => {
 
 test.describe('upload constraints', () => {
   test.skip(!CREDENTIALS_PRESENT, 'Requires an authenticated admin session.');
+  test.use({ storageState: ADMIN_SESSION });
 
-  test('a disallowed file type is refused', async ({ page, request }) => {
-    await page.goto('/admin/login');
-    await page.getByLabel('Email').fill(ADMIN_EMAIL!);
-    await page.getByLabel('Password').fill(ADMIN_PASSWORD!);
-    await page.getByRole('button', { name: 'Sign in' }).click();
-    await expect(page).toHaveURL(/\/admin$/);
-
-    const cookies = await page.context().cookies();
-    const cookieHeader = cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join('; ');
-
+  // page.request sends the browser context's cookies, so these calls carry
+  // the saved admin session.
+  test('a disallowed file type is refused', async ({ page }) => {
     // Registering a Media row for a PDF must be refused even with a valid
     // session — the upload token's own allowlist is not the only control.
-    const response = await request.post('/api/admin/media', {
-      headers: { cookie: cookieHeader },
+    const response = await page.request.post('/api/admin/media', {
       data: {
         url: 'https://example.public.blob.vercel-storage.com/media/evil.pdf',
         pathname: 'media/evil.pdf',
@@ -125,18 +113,8 @@ test.describe('upload constraints', () => {
     expect(response.status()).toBe(415);
   });
 
-  test('a media URL outside the blob store is refused', async ({ page, request }) => {
-    await page.goto('/admin/login');
-    await page.getByLabel('Email').fill(ADMIN_EMAIL!);
-    await page.getByLabel('Password').fill(ADMIN_PASSWORD!);
-    await page.getByRole('button', { name: 'Sign in' }).click();
-    await expect(page).toHaveURL(/\/admin$/);
-
-    const cookies = await page.context().cookies();
-    const cookieHeader = cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join('; ');
-
-    const response = await request.post('/api/admin/media', {
-      headers: { cookie: cookieHeader },
+  test('a media URL outside the blob store is refused', async ({ page }) => {
+    const response = await page.request.post('/api/admin/media', {
       data: {
         url: 'https://attacker.example.com/tracking-pixel.png',
         pathname: 'media/tracking-pixel.png',
@@ -152,6 +130,7 @@ test.describe('upload constraints', () => {
 
 test.describe('dashboard theme switch', () => {
   test.skip(!CREDENTIALS_PRESENT, 'Requires an authenticated admin session.');
+  test.use({ storageState: ADMIN_SESSION });
 
   // admin-theme.spec.ts covers the wiring without credentials, by presetting
   // the cookie. This covers the one part it cannot reach: the switch itself,
@@ -159,7 +138,7 @@ test.describe('dashboard theme switch', () => {
   test('offers light and dark, and a choice survives a reload', async ({ page }) => {
     // Nothing chosen yet, so the dashboard follows the operating system.
     await page.emulateMedia({ colorScheme: 'dark' });
-    await signIn(page);
+    await page.goto('/admin');
 
     const colorScheme = () =>
       page.evaluate(() => getComputedStyle(document.documentElement).colorScheme);
@@ -185,6 +164,7 @@ test.describe('dashboard theme switch', () => {
 
 test.describe('dashboard sidebar', () => {
   test.skip(!CREDENTIALS_PRESENT, 'Requires an authenticated admin session.');
+  test.use({ storageState: ADMIN_SESSION });
 
   test('fits a small laptop screen and stays in view', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium', 'desktop browser widths only');
@@ -192,7 +172,7 @@ test.describe('dashboard sidebar', () => {
     // A 1366×768 laptop, less the taskbar and the browser's tabs, toolbar and
     // bookmarks bar.
     await page.setViewportSize({ width: 1366, height: 600 });
-    await signIn(page);
+    await page.goto('/admin');
 
     const sidebar = page.getByRole('navigation', { name: 'Dashboard' });
     const overflow = await sidebar.evaluate((nav) => nav.scrollHeight - nav.clientHeight);
@@ -204,11 +184,3 @@ test.describe('dashboard sidebar', () => {
     await expect(sidebar.getByRole('link', { name: 'Inquiries' })).toBeInViewport();
   });
 });
-
-async function signIn(page: Page) {
-  await page.goto('/admin/login');
-  await page.getByLabel('Email').fill(ADMIN_EMAIL!);
-  await page.getByLabel('Password').fill(ADMIN_PASSWORD!);
-  await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page).toHaveURL(/\/admin$/);
-}

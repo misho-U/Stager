@@ -334,6 +334,23 @@ picked, the dashboard follows the OS (the `system` cookie state).
   blocks have not drifted, and asserts the main text pairs stay readable in
   both themes.
 
+### Credential-gated tests
+
+Tests that need a signed-in admin are skipped unless `E2E_ADMIN_EMAIL` and
+`E2E_ADMIN_PASSWORD` are set.
+
+- **They sign in once per run, never per test.** The `setup` project
+  (`tests/e2e/admin-session.setup.ts`) signs in before `chromium` and `mobile`
+  start and saves the session to `tests/e2e/.auth/admin.json` (gitignored: it
+  holds live tokens). A test opts in with
+  `test.use({ storageState: ADMIN_SESSION })` from `tests/e2e/admin-session.ts`.
+  The login route allows ten sign-ins per 15 minutes per IP, and signing in per
+  test used up a whole window in a single run.
+- **Never sign out in one.** `signOut()` defaults to scope `global`, so it
+  would end the session every other test is using.
+- **They write to whatever database `.env.local` points at.** Run them against
+  a local database or a disposable Supabase branch, never production.
+
 ---
 
 ## 6. Commands
