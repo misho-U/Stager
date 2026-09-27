@@ -7,6 +7,13 @@ export type AppLocale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: AppLocale = 'ka';
 
 /**
+ * The language of the dashboard's own interface — separate from the KA/EN
+ * content an admin edits. Admin routes carry no locale segment, so this is
+ * what `<html lang>` and next-intl use there.
+ */
+export const ADMIN_UI_LOCALE: AppLocale = 'en';
+
+/**
  * KA/EN with an always-on prefix: `/ka/...` and `/en/...`, with `/` redirecting
  * to `/ka`. Every page therefore has exactly one canonical URL per language,
  * which keeps hreflang unambiguous and avoids a rewrite layer.

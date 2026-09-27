@@ -22,6 +22,26 @@ test.describe('locale routing', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   });
 
+  test('the dashboard declares the language of its own interface', async ({ page }) => {
+    // Admin routes have no locale segment. They used to fall back to the site
+    // default and serve English text as lang="ka", which screen readers then
+    // pronounce as Georgian.
+    await page.goto('/admin/login');
+    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  });
+
+  test('a missing page answers in the language of its URL', async ({ page }) => {
+    // The 404 copy was English everywhere, so /ka served it under lang="ka".
+    const ka = await page.goto('/ka/no-such-page');
+    expect(ka?.status()).toBe(404);
+    await expect(page.getByRole('heading', { name: 'გვერდი ვერ მოიძებნა' })).toBeVisible();
+
+    const en = await page.goto('/en/no-such-page');
+    expect(en?.status()).toBe(404);
+    await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
+  });
+
   test('the language switcher keeps the visitor on the same page', async ({ page }) => {
     await page.goto('/ka');
     await page.getByRole('link', { name: 'ENG' }).click();

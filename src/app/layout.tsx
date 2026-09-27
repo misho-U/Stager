@@ -11,8 +11,8 @@ import { toCanonicalUrl } from '@pkg/http/site-url';
  *
  * `/admin` is not locale-prefixed, so the lang attribute cannot come from a
  * route param — `getLocale()` reads it from the request context that the
- * next-intl middleware sets, and falls back to the default locale for admin
- * routes.
+ * next-intl middleware sets. Admin routes have none, and resolve to the
+ * dashboard's interface language (ADMIN_UI_LOCALE, see pkg/i18n/request.ts).
  */
 export const metadata: Metadata = {
   metadataBase: new URL(toCanonicalUrl('/')),
