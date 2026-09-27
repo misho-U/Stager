@@ -68,6 +68,13 @@
 }
 
 @layer utilities {
+  /* A thin scrollbar in the theme's own colours, for panels that only scroll
+     when the window is unusually short (the dashboard sidebar). */
+  .scrollbar-subtle {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-ink-subtle) transparent;
+  }
+
   /* Visible only to screen readers. */
   .sr-only-focusable:not(:focus):not(:focus-within) {
     position: absolute;

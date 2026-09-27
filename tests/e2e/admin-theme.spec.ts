@@ -4,8 +4,8 @@ import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * The dashboard's light / dark / system theme — and the rule that the public
- * site never follows it.
+ * The dashboard's light / dark theme, which follows the operating system until
+ * one is picked — and the rule that the public site never follows it.
  *
  * Runs without credentials: the login page lives under the admin layout, so it
  * carries exactly the same theme wiring as the dashboard.
