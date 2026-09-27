@@ -1,6 +1,6 @@
 import { getRequestConfig } from 'next-intl/server';
 
-import { DEFAULT_LOCALE, isAppLocale } from '@pkg/i18n/routing';
+import { ADMIN_UI_LOCALE, DEFAULT_LOCALE, isAppLocale } from '@pkg/i18n/routing';
 
 /**
  * Per-request i18n configuration, wired up by the next-intl plugin in
@@ -12,7 +12,13 @@ import { DEFAULT_LOCALE, isAppLocale } from '@pkg/i18n/routing';
  */
 export default getRequestConfig(async ({ requestLocale }) => {
   const requested = await requestLocale;
-  const locale = requested && isAppLocale(requested) ? requested : DEFAULT_LOCALE;
+
+  // Every public route carries a locale (/ka, /en). A request without one is
+  // the dashboard or the root 404, and both have an English interface. They
+  // used to fall back to DEFAULT_LOCALE, which served English text as
+  // <html lang="ka"> — so screen readers read it with Georgian pronunciation.
+  const locale =
+    requested === undefined ? ADMIN_UI_LOCALE : isAppLocale(requested) ? requested : DEFAULT_LOCALE;
 
   return {
     locale,

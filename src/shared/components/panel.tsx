@@ -41,10 +41,10 @@ export function EmptyState({ title, description }: { title: string; description?
 
 const STATUS_STYLES: Record<string, string> = {
   PUBLISHED: 'bg-success/12 text-success',
-  DRAFT: 'bg-brand-sage/20 text-ink-muted',
+  DRAFT: 'bg-ink-subtle/20 text-ink-muted',
   ARCHIVED: 'bg-warning/12 text-warning',
-  NEW: 'bg-brand-teal/12 text-brand-teal',
-  READ: 'bg-brand-sage/20 text-ink-muted',
+  NEW: 'bg-primary/12 text-primary',
+  READ: 'bg-ink-subtle/20 text-ink-muted',
 };
 
 export function StatusBadge({ status }: { status: string }) {
@@ -52,7 +52,7 @@ export function StatusBadge({ status }: { status: string }) {
     <span
       className={cn(
         'inline-flex items-center rounded-sm px-2 py-0.5 text-caption font-medium tracking-wide uppercase',
-        STATUS_STYLES[status] ?? 'bg-brand-sage/20 text-ink-muted',
+        STATUS_STYLES[status] ?? 'bg-ink-subtle/20 text-ink-muted',
       )}
     >
       {status.toLowerCase()}

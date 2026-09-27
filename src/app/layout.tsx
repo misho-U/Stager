@@ -4,7 +4,6 @@ import { getLocale } from 'next-intl/server';
 import './globals.css';
 
 import { BRAND, THEME_COLOR } from '@/shared/brandbook/tokens';
-import { fontVariables } from '@/shared/brandbook/fonts';
 import { toCanonicalUrl } from '@pkg/http/site-url';
 
 /**
@@ -12,8 +11,8 @@ import { toCanonicalUrl } from '@pkg/http/site-url';
  *
  * `/admin` is not locale-prefixed, so the lang attribute cannot come from a
  * route param — `getLocale()` reads it from the request context that the
- * next-intl middleware sets, and falls back to the default locale for admin
- * routes.
+ * next-intl middleware sets. Admin routes have none, and resolve to the
+ * dashboard's interface language (ADMIN_UI_LOCALE, see pkg/i18n/request.ts).
  */
 export const metadata: Metadata = {
   metadataBase: new URL(toCanonicalUrl('/')),
@@ -37,7 +36,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const locale = await getLocale();
 
   return (
-    <html lang={locale} className={fontVariables} suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body className="min-h-dvh bg-surface text-ink antialiased">{children}</body>
     </html>
   );

@@ -12,8 +12,8 @@ import { cn } from '@/shared/lib/cn';
 
 const CONTROL_CLASS =
   'w-full rounded-md border border-line bg-surface-raised px-3 py-2 text-body-sm text-ink ' +
-  'placeholder:text-ink-subtle focus:border-brand-teal focus:outline-none ' +
-  'disabled:cursor-not-allowed disabled:bg-brand-cream-tint';
+  'placeholder:text-ink-subtle focus:border-primary focus:outline-none ' +
+  'disabled:cursor-not-allowed disabled:bg-surface-muted';
 
 type FieldShellProps = {
   label: string;
@@ -153,7 +153,7 @@ export function CheckboxField({ label, hint, ...props }: CheckboxFieldProps) {
       <input
         id={id}
         type="checkbox"
-        className="mt-0.5 size-4 rounded-sm border-line accent-brand-teal"
+        className="mt-0.5 size-4 rounded-sm border-line accent-primary"
         {...props}
       />
       <div className="flex flex-col gap-0.5">

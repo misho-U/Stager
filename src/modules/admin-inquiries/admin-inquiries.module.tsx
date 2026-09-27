@@ -117,7 +117,7 @@ export function AdminInquiriesModule() {
                   </div>
                 </dl>
 
-                <p className="rounded-md bg-brand-cream-light p-3 text-body-sm whitespace-pre-wrap">
+                <p className="rounded-md bg-surface-inset p-3 text-body-sm whitespace-pre-wrap">
                   {inquiry.message}
                 </p>
 

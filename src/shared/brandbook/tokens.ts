@@ -1,24 +1,16 @@
+import { BRAND_HEX } from '@pkg/brand/hex.generated';
+
 /**
- * Brand tokens for contexts that cannot use CSS.
+ * Brand values for the few places no stylesheet reaches: the theme-color meta
+ * tag, generated OG images, transactional email.
  *
- * src/app/globals.css is the source of truth for anything rendered in a
- * browser — use the Tailwind utilities (`bg-brand-teal`, `text-ink-subtle`) or
- * `var(--color-…)` there. This file exists only for the handful of places where
- * no stylesheet applies: transactional email HTML, generated OG images, the web
- * manifest and theme-color meta tag.
- *
- * KEEP IN SYNC with the @theme block in globals.css.
+ * The hexes are NOT defined here. They are generated from
+ * src/shared/brandbook/brandbook.css — the one file every visual value lives
+ * in — by scripts/brand-tokens.ts, on install, dev and build. Change a colour
+ * there, never here. Anything rendered in a browser should use the Tailwind
+ * utilities (`bg-surface`, `text-ink-subtle`) or `var(--color-…)` instead.
  */
-export const BRAND_HEX = {
-  teal: '#1D464A',
-  tealSoft: '#4D6266',
-  tealMuted: '#567578',
-  sage: '#8EA3A5',
-  cream: '#EFEEE6',
-  creamTint: '#F3F2EC',
-  creamLight: '#F8F8F4',
-  white: '#FFFFFF',
-} as const;
+export { BRAND_HEX };
 
 export type BrandColor = keyof typeof BRAND_HEX;
 

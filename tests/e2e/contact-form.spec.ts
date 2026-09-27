@@ -111,9 +111,13 @@ test.describe('happy path and rate limiting', () => {
 
   test('accepts a valid submission, then throttles repeats', async ({ request }) => {
     // A unique synthetic client address per run. The limiter buckets by hashed
-    // IP, so without this the previous run's five submissions would still be
-    // counted and the very first request here would come back 429.
-    const clientIp = `203.0.113.${Math.floor(Math.random() * 254) + 1}`;
+    // IP for an hour, so reusing an address an earlier run exhausted makes the
+    // very first request here come back 429. This drew from 203.0.113.1–254,
+    // and every run exhausts two of those (one per browser project), so a few
+    // runs in an hour collided often enough to fail. The IPv6 documentation
+    // range gives 2^64 addresses instead.
+    const group = () => Math.floor(Math.random() * 0x10000).toString(16);
+    const clientIp = `2001:db8:${group()}:${group()}:${group()}:${group()}::1`;
     const headers = { 'x-forwarded-for': clientIp };
 
     const first = await request.post('/api/contact', { headers, data: validSubmission() });

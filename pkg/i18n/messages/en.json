@@ -8,7 +8,8 @@
     "retry": "Try again",
     "readMore": "Read more",
     "backToList": "Back to list",
-    "notFound": "Page not found"
+    "notFound": "Page not found",
+    "backHome": "Go to the homepage"
   },
   "nav": {
     "home": "Home",

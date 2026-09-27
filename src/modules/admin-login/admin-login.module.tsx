@@ -15,7 +15,7 @@ export function AdminLoginModule() {
     <main className="flex min-h-dvh items-center justify-center px-gutter py-12">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <p className="text-title font-semibold tracking-[0.18em] text-ink">{BRAND.name}</p>
+          <p className="text-title font-semibold tracking-wordmark text-ink">{BRAND.name}</p>
           <p className="mt-1 text-caption tracking-wide text-ink-subtle uppercase">
             {BRAND.positioning}
           </p>

@@ -32,7 +32,7 @@ export function DataTable<T>({
 
   return (
     <div className="-mx-5 overflow-x-auto px-5">
-      <table className="w-full min-w-[32rem] border-collapse text-left">
+      <table className="w-full min-w-lg border-collapse text-left">
         <thead>
           <tr className="border-b border-line">
             {columns.map((column) => (

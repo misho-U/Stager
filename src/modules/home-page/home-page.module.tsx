@@ -19,7 +19,7 @@ export async function HomePageModule({ locale }: { locale: DbLocale }) {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-10 px-gutter py-16">
-      <div className="rounded-md border border-dashed border-line-strong bg-brand-cream-tint px-4 py-3">
+      <div className="rounded-md border border-dashed border-line-strong bg-surface-muted px-4 py-3">
         <p className="text-caption text-ink-muted">
           <strong>Scaffold page.</strong> No design has been applied yet — this renders live
           database content to prove that dashboard edits reach the site.
@@ -40,7 +40,7 @@ export async function HomePageModule({ locale }: { locale: DbLocale }) {
       ) : null}
 
       <section className="flex flex-col gap-3">
-        <p className="text-caption tracking-[0.2em] text-ink-subtle uppercase">
+        <p className="text-caption tracking-label text-ink-subtle uppercase">
           {layout?.siteName ?? 'STAGER'}
         </p>
         {/*
@@ -73,7 +73,7 @@ export async function HomePageModule({ locale }: { locale: DbLocale }) {
             {projects.items.map((project) => (
               <li key={project.id} className="flex flex-col gap-2">
                 {project.cover ? (
-                  <div className="relative aspect-[3/2] w-full overflow-hidden rounded-md bg-brand-cream-tint">
+                  <div className="relative aspect-3/2 w-full overflow-hidden rounded-md bg-surface-muted">
                     <Image
                       src={project.cover.url}
                       alt={project.cover.alt}

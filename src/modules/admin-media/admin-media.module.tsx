@@ -21,7 +21,8 @@ import { formatBytes } from '@/widgets/media-picker/media-picker.utils';
  * deleting, not fetching.
  */
 export function AdminMediaModule() {
-  const { items, isLoading, loadError, uploadFile, isUploading, uploadError } = useMediaPicker();
+  const { items, isLoading, loadError, uploadFile, isUploading, uploadProgress, uploadError } =
+    useMediaPicker();
   const updateMedia = useUpdateMedia();
   const deleteMedia = useDeleteMedia();
 
@@ -108,7 +109,11 @@ export function AdminMediaModule() {
               Add alt text before choosing a file — it cannot be filled in properly later.
             </p>
           ) : null}
-          {isUploading ? <p className="text-caption text-ink-subtle">Uploading…</p> : null}
+          {isUploading ? (
+            <p className="text-caption text-ink-subtle" role="status">
+              Uploading… {uploadProgress ?? 0}%
+            </p>
+          ) : null}
         </div>
       </Panel>
 
@@ -122,9 +127,9 @@ export function AdminMediaModule() {
             {items.map((media) => (
               <li
                 key={media.id}
-                className="flex gap-3 rounded-md border border-line bg-brand-cream-light p-3"
+                className="flex gap-3 rounded-md border border-line bg-surface-inset p-3"
               >
-                <div className="relative size-20 shrink-0 overflow-hidden rounded-sm bg-brand-cream-tint">
+                <div className="relative size-20 shrink-0 overflow-hidden rounded-sm bg-surface-muted">
                   <Image
                     src={media.url}
                     alt={media.translations.KA.alt || media.translations.EN.alt || ''}

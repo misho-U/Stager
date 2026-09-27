@@ -26,13 +26,14 @@ function buildDirectives(scriptSrc: string[]): Record<string, string[]> {
   return {
     'default-src': ["'self'"],
     'script-src': scriptSrc,
-    // Tailwind and next/font inject inline styles; there is no nonce path for
-    // them, and CSS injection is not a code-execution vector here.
+    // React `style` attributes and Next's own injected styles are inline;
+    // there is no nonce path for them, and CSS injection is not a
+    // code-execution vector here.
     //
     // Google's font hosts are deliberately absent: the typeface is self-hosted
-    // (see shared/brandbook/fonts.ts), so nothing should ever be fetched from
-    // them. Leaving them allowlisted would permit a request this site has no
-    // reason to make.
+    // (see src/shared/brandbook/brandbook.css), so nothing should ever be
+    // fetched from them. Leaving them allowlisted would permit a request this
+    // site has no reason to make.
     'style-src': ["'self'", "'unsafe-inline'"],
     'font-src': ["'self'", 'data:'],
     'img-src': [
@@ -49,6 +50,12 @@ function buildDirectives(scriptSrc: string[]): Record<string, string[]> {
       supabaseOrigin,
       // Supabase realtime, if it is ever switched on.
       supabaseOrigin.replace('https://', 'wss://'),
+      // Admin uploads go from the browser straight to the Vercel Blob API.
+      // @vercel/blob 2.x sends them to vercel.com/api/blob; without this entry
+      // every upload was refused by this policy. Path-limited, so the rest of
+      // vercel.com stays unreachable. tests/e2e/admin-media-upload.spec.ts
+      // reads the library's own URL and fails if the two drift apart.
+      'https://vercel.com/api/blob/',
       'https://blob.vercel-storage.com',
       'https://*.public.blob.vercel-storage.com',
       ...(IS_DEVELOPMENT ? ['ws://localhost:*', 'http://localhost:*'] : []),

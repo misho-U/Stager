@@ -14,11 +14,38 @@ import {
   sanitizeFilename,
 } from '@pkg/blob/constraints';
 
+/**
+ * How long an upload may take to get its first bytes out before it is stopped.
+ *
+ * When the browser cannot reach Blob at all (the upload is blocked, or the
+ * connection is down), the Blob client retries ten times with growing waits,
+ * about seventeen minutes in all, and the dashboard showed "Uploading…" for
+ * that whole time with no explanation. Nothing is sent in that case, so a short
+ * limit catches it without any risk to an upload that works.
+ */
+const UPLOAD_START_MS = 30_000;
+
+/**
+ * How long an upload that has started may then go without reporting progress.
+ *
+ * Far longer, because silence is normal once bytes are moving: Chrome reads
+ * the file up to about 2 MB ahead of what the network has sent and reports
+ * nothing while that drains, which on a slow connection takes well over 30
+ * seconds. A 30-second limit here cancelled working uploads.
+ */
+const UPLOAD_SILENCE_MS = 120_000;
+
+const STALLED_MESSAGE =
+  'The upload stopped making progress, so it was cancelled. Check the connection and try again. If it keeps happening, uploads are being blocked: contact whoever maintains the site.';
+
+class UploadStalledError extends Error {}
+
 export function useMediaPicker() {
   const { data, isLoading, error } = useQuery(mediaListQuery());
   const registerMedia = useRegisterMedia();
 
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   /**
@@ -27,8 +54,8 @@ export function useMediaPicker() {
    * The file bypasses our server entirely — `upload()` asks
    * /api/admin/media/upload for a scoped token and then talks to Blob directly.
    * Only the resulting URL comes back through our API, which is why the Media
-   * row is created in a second step rather than in Blob's completion webhook
-   * (that webhook cannot reach a localhost dev server).
+   * row is created in a second step rather than in a Blob completion webhook
+   * (Vercel's callback carries no admin session, so it could never pass).
    */
   const uploadFile = async (file: File, alt: string) => {
     setUploadError(null);
@@ -45,15 +72,50 @@ export function useMediaPicker() {
     }
 
     setIsUploading(true);
+    setUploadProgress(0);
+
+    // Stops the upload, and reports it, once no progress has arrived within
+    // the current limit. Re-armed by every progress event.
+    const controller = new AbortController();
+    let watchdog: ReturnType<typeof setTimeout> | undefined;
+    let bytesAreMoving = false;
+    let reportStall: (error: UploadStalledError) => void = () => {};
+    const stalled = new Promise<never>((_, reject) => {
+      reportStall = reject;
+    });
+    const rearmWatchdog = () => {
+      clearTimeout(watchdog);
+      watchdog = setTimeout(
+        () => {
+          controller.abort();
+          reportStall(new UploadStalledError());
+        },
+        bytesAreMoving ? UPLOAD_SILENCE_MS : UPLOAD_START_MS,
+      );
+    };
 
     try {
       const metadata = await readImageMetadata(file);
 
-      const blob = await upload(`${BLOB_PATH_PREFIX}/${sanitizeFilename(file.name)}`, file, {
-        access: 'public',
-        handleUploadUrl: '/api/admin/media/upload',
-        contentType: file.type,
-      });
+      rearmWatchdog();
+      const blob = await Promise.race([
+        upload(`${BLOB_PATH_PREFIX}/${sanitizeFilename(file.name)}`, file, {
+          access: 'public',
+          handleUploadUrl: '/api/admin/media/upload',
+          contentType: file.type,
+          abortSignal: controller.signal,
+          onUploadProgress: ({ loaded, percentage }) => {
+            bytesAreMoving ||= loaded > 0;
+            // Held at 99 until the upload finishes: in Chrome the figure runs
+            // up to 2 MB ahead of the network, so "100%" could otherwise sit
+            // on screen for as long as the real upload takes.
+            setUploadProgress(Math.min(99, Math.floor(percentage)));
+            rearmWatchdog();
+          },
+        }),
+        stalled,
+      ]);
+      clearTimeout(watchdog);
 
       return await registerMedia.mutateAsync({
         url: blob.url,
@@ -66,10 +128,14 @@ export function useMediaPicker() {
         alt,
       });
     } catch (caught) {
-      setUploadError(toFormErrorMessage(caught));
+      setUploadError(
+        caught instanceof UploadStalledError ? STALLED_MESSAGE : toFormErrorMessage(caught),
+      );
       return null;
     } finally {
+      clearTimeout(watchdog);
       setIsUploading(false);
+      setUploadProgress(null);
     }
   };
 
@@ -79,6 +145,8 @@ export function useMediaPicker() {
     loadError: error ? toFormErrorMessage(error) : null,
     uploadFile,
     isUploading,
+    /** 0–100 while an upload is running, otherwise null. */
+    uploadProgress,
     uploadError,
   };
 }

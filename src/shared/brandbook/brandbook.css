@@ -1,0 +1,317 @@
+/* ===========================================================================
+   STAGER BRANDBOOK
+   ===========================================================================
+   The ONE file for colour, typeface, type scale and spacing. Change a value
+   here and it changes everywhere: every public page, the admin dashboard, the
+   notification email and the colour of the phone's browser bar.
+
+   YOURS TO EDIT — every value in the @theme blocks below:
+     - Brand palette           --color-brand-*   (hex only: the email needs hex)
+     - Which colour does what  --color-surface, --color-ink, --color-line, …
+     - Status colours          --color-success, --color-warning, --color-danger
+     - Typeface                --font-sans, --font-display
+     - Type scale              --text-*
+     - Letter-spacing          --tracking-*
+     - Spacing, radii, shadow  --spacing-*, --radius-*, --shadow-*
+     - Motion                  --ease-*, --duration-*
+     - Admin dark theme        --admin-dark-*  (mostly mixes of the brand
+                               palette, so it follows a brand edit by itself)
+
+   EDIT ONLY WHEN SWAPPING THE TYPEFACE — the @font-face block at the bottom.
+
+   DON'T:
+     - Rename or delete a token. Components refer to tokens by name, so that is
+       a code change, not a design change.
+     - Put a colour or size anywhere else. If a value is missing, add it here.
+     - Change the selectors in "Admin theme wiring" — only the values above
+       them. The public site is light-only by decision; only the dashboard
+       switches.
+
+   GENERATED FROM THIS FILE — never edit these by hand:
+     - pkg/brand/hex.generated.ts — hex copies of --color-brand-* for the email
+       and the browser-bar colour, which cannot read CSS.
+
+   HOW A CHANGE GOES LIVE — there is nothing to run:
+     - Locally: save, and `pnpm dev` reloads the page.
+     - Production: push, and the Vercel build regenerates everything.
+     - The one lag: in a `pnpm dev` that is already running, the email and
+       browser-bar colours catch up on its next start. Pages update at once.
+   =========================================================================== */
+
+/* `static`: always emitted as CSS variables, even a colour no role uses yet —
+   the admin dark palette below mixes from these, and Tailwind otherwise drops
+   theme variables it does not see a utility for. */
+@theme static {
+  /* --- Brand palette, from the official logo artwork
+         (LOGO_CONCEPT_COLOR_VARIATIONS.pdf). --- */
+  --color-brand-teal: #1d464a; /* primary — logo mark, headings, dark surfaces */
+  --color-brand-teal-soft: #4d6266; /* supporting mid-tone */
+  --color-brand-teal-muted: #567578; /* supporting mid-tone, lighter */
+  --color-brand-sage: #8ea3a5; /* secondary — rules, captions, meta */
+  --color-brand-cream: #efeee6; /* light surface — page background */
+  --color-brand-cream-tint: #f3f2ec; /* light surface, one step up */
+  --color-brand-cream-light: #f8f8f4; /* light surface, lightest */
+  --color-brand-white: #ffffff; /* cards and inputs */
+}
+
+@theme {
+  /* --- Which colour does what. Components use these roles, never the raw
+         brand names above, so re-pointing a role re-colours every place that
+         plays it. --- */
+  --color-surface: var(--color-brand-cream); /* page background */
+  --color-surface-raised: var(--color-brand-white); /* cards, inputs */
+  --color-surface-muted: var(--color-brand-cream-tint); /* hover, disabled */
+  --color-surface-inset: var(--color-brand-cream-light); /* boxes inside cards */
+  --color-surface-inverse: var(--color-brand-teal); /* dark bands */
+  --color-ink: var(--color-brand-teal); /* text */
+  --color-ink-muted: var(--color-brand-teal-soft); /* secondary text */
+  --color-ink-subtle: var(--color-brand-sage); /* captions, meta */
+  --color-ink-inverse: var(--color-brand-cream); /* text on dark bands */
+  --color-line: #dcdcd2; /* hairlines, input borders */
+  --color-line-strong: var(--color-brand-sage); /* emphasised borders */
+  --color-primary: var(--color-brand-teal); /* main buttons, selection */
+  --color-primary-hover: var(--color-brand-teal-soft);
+  --color-primary-disabled: var(--color-brand-sage);
+  --color-on-primary: var(--color-brand-cream); /* text on primary */
+  --color-focus: var(--color-brand-teal); /* keyboard focus ring */
+
+  /* --- Status --- */
+  --color-success: #2f6b4f;
+  --color-warning: #8a6a1f;
+  --color-danger: #8f2f2f;
+
+  /* --- Typeface ---
+     Noto Sans Georgian covers Georgian and Latin in one design, so headlines
+     keep the same voice in both languages instead of diverging at the locale
+     switch. The files are declared at the bottom of this file. The display
+     slot is separate so a headline face can differ later without touching
+     body text. */
+  --font-sans: 'Noto Sans Georgian', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Noto Sans Georgian', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* --- Editorial type scale --- */
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.4;
+  --text-body-sm: 0.875rem;
+  --text-body-sm--line-height: 1.6;
+  --text-body: 1rem;
+  --text-body--line-height: 1.7;
+  --text-body-lg: 1.125rem;
+  --text-body-lg--line-height: 1.7;
+  --text-title-sm: 1.375rem;
+  --text-title-sm--line-height: 1.3;
+  --text-title: 1.75rem;
+  --text-title--line-height: 1.25;
+  --text-headline: 2.5rem;
+  --text-headline--line-height: 1.15;
+  --text-display: 4rem;
+  --text-display--line-height: 1.05;
+  --text-display--letter-spacing: -0.02em;
+
+  /* --- Letter-spacing ---
+     Wide tracking is for Latin capitals. Georgian has no capitals to space
+     out, so check /ka before using these on anything Georgian. */
+  --tracking-wordmark: 0.18em; /* the STAGER wordmark */
+  --tracking-label: 0.2em; /* small Latin labels */
+
+  /* --- Spacing, radii, elevation --- */
+  --spacing-gutter: 1.25rem;
+  --spacing-section: 5rem;
+  --spacing-section-lg: 8rem;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+
+  --shadow-card: 0 1px 2px rgb(29 70 74 / 0.06), 0 8px 24px rgb(29 70 74 / 0.06);
+
+  /* --- Motion. Minimal by brief: nothing bouncy, nothing slow. --- */
+  --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+}
+
+/* ---------------------------------------------------------------------------
+   Admin dark theme — the dashboard only
+   ---------------------------------------------------------------------------
+   Every colour is mixed from the brand palette, so a brand edit carries into
+   dark mode without touching this block: surfaces are the logo teal taken
+   toward black, lines are sage mixed into the card colour, and cream becomes
+   both the text and the primary colour — the logo's own inverted pairing.
+   The percentages are the design decision; edit those.
+
+   The status colours are the exception: dark versions of the light ones,
+   lightened by hand so they stay readable on the dark cards.
+
+   Contrast is checked by tests/e2e/admin-theme.spec.ts in both themes, so an
+   edit that makes text unreadable fails the test suite instead of shipping.
+
+   (--admin-dark-* sits outside Tailwind's colour namespace on purpose: no
+   `bg-admin-dark-…` utility exists to tempt a component into bypassing the
+   roles. `static` keeps them emitted although no utility uses them.)
+--------------------------------------------------------------------------- */
+@theme static {
+  --admin-dark-surface: color-mix(in oklab, var(--color-brand-teal) 55%, black);
+  --admin-dark-surface-inset: color-mix(in oklab, var(--color-brand-teal) 62%, black);
+  --admin-dark-surface-raised: color-mix(in oklab, var(--color-brand-teal) 70%, black);
+  --admin-dark-surface-muted: color-mix(in oklab, var(--color-brand-teal) 88%, black);
+  --admin-dark-ink: var(--color-brand-cream);
+  --admin-dark-ink-muted: color-mix(
+    in oklab,
+    var(--color-brand-cream) 70%,
+    var(--color-brand-sage)
+  );
+  --admin-dark-ink-subtle: color-mix(
+    in oklab,
+    var(--color-brand-sage) 80%,
+    var(--color-brand-cream)
+  );
+  --admin-dark-line: color-mix(
+    in oklab,
+    var(--color-brand-sage) 28%,
+    var(--admin-dark-surface-raised)
+  );
+  --admin-dark-line-strong: color-mix(
+    in oklab,
+    var(--color-brand-sage) 55%,
+    var(--admin-dark-surface-raised)
+  );
+  --admin-dark-primary: var(--color-brand-cream);
+  --admin-dark-primary-hover: color-mix(
+    in oklab,
+    var(--color-brand-cream) 80%,
+    var(--color-brand-sage)
+  );
+  --admin-dark-primary-disabled: color-mix(
+    in oklab,
+    var(--color-brand-sage) 45%,
+    var(--admin-dark-surface-raised)
+  );
+  --admin-dark-on-primary: var(--color-brand-teal);
+  --admin-dark-focus: var(--color-brand-cream);
+  --admin-dark-success: #6fbf94;
+  --admin-dark-warning: #d9b45f;
+  --admin-dark-danger: #e58b8b;
+}
+
+/* ---------------------------------------------------------------------------
+   Admin theme wiring — do not edit
+   ---------------------------------------------------------------------------
+   The dashboard wraps itself in [data-admin-theme="system|light|dark"]
+   (src/shared/components/admin-theme-provider.tsx); public pages never do.
+   Keying off :root:has(…) re-colours the whole document, html and body
+   included, and `color-scheme` makes scrollbars and native inputs follow.
+
+   The two blocks below must stay identical. CSS cannot share one declaration
+   list between a selector and a media query; the theme test compares their
+   computed colours and fails if they drift.
+--------------------------------------------------------------------------- */
+:root:has([data-admin-theme='dark']) {
+  color-scheme: dark;
+  --color-surface: var(--admin-dark-surface);
+  --color-surface-raised: var(--admin-dark-surface-raised);
+  --color-surface-muted: var(--admin-dark-surface-muted);
+  --color-surface-inset: var(--admin-dark-surface-inset);
+  --color-surface-inverse: var(--admin-dark-ink);
+  --color-ink: var(--admin-dark-ink);
+  --color-ink-muted: var(--admin-dark-ink-muted);
+  --color-ink-subtle: var(--admin-dark-ink-subtle);
+  --color-ink-inverse: var(--admin-dark-surface);
+  --color-line: var(--admin-dark-line);
+  --color-line-strong: var(--admin-dark-line-strong);
+  --color-primary: var(--admin-dark-primary);
+  --color-primary-hover: var(--admin-dark-primary-hover);
+  --color-primary-disabled: var(--admin-dark-primary-disabled);
+  --color-on-primary: var(--admin-dark-on-primary);
+  --color-focus: var(--admin-dark-focus);
+  --color-success: var(--admin-dark-success);
+  --color-warning: var(--admin-dark-warning);
+  --color-danger: var(--admin-dark-danger);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:has([data-admin-theme='system']) {
+    color-scheme: dark;
+    --color-surface: var(--admin-dark-surface);
+    --color-surface-raised: var(--admin-dark-surface-raised);
+    --color-surface-muted: var(--admin-dark-surface-muted);
+    --color-surface-inset: var(--admin-dark-surface-inset);
+    --color-surface-inverse: var(--admin-dark-ink);
+    --color-ink: var(--admin-dark-ink);
+    --color-ink-muted: var(--admin-dark-ink-muted);
+    --color-ink-subtle: var(--admin-dark-ink-subtle);
+    --color-ink-inverse: var(--admin-dark-surface);
+    --color-line: var(--admin-dark-line);
+    --color-line-strong: var(--admin-dark-line-strong);
+    --color-primary: var(--admin-dark-primary);
+    --color-primary-hover: var(--admin-dark-primary-hover);
+    --color-primary-disabled: var(--admin-dark-primary-disabled);
+    --color-on-primary: var(--admin-dark-on-primary);
+    --color-focus: var(--admin-dark-focus);
+    --color-success: var(--admin-dark-success);
+    --color-warning: var(--admin-dark-warning);
+    --color-danger: var(--admin-dark-danger);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Typeface files — edit only when swapping the typeface
+   ---------------------------------------------------------------------------
+   Noto Sans Georgian, self-hosted (SIL Open Font License 1.1, see
+   fonts/OFL.txt). Variable, so one file per script covers every weight.
+
+   The files are split by script exactly as Google serves them, each with its
+   own unicode-range, so the browser downloads a file only when the page
+   contains characters from it. The dashboard, which has no Georgian text,
+   never loads the Georgian file; no page loads latin-ext until an accented
+   name appears. (Both public locales do load Georgian: the language
+   switcher's "ქარ" label is Georgian on every page.)
+
+   All three faces share ONE family name, so there is nothing for a stray
+   fallback to slot in between. (next/font generated a "<name> Fallback" per
+   face — local(Arial) with no unicode-range — which is how Latin text once
+   rendered in Arial.)
+
+   To swap the typeface: add the new woff2 files to ./fonts, point the src
+   lines here at them, and rename the family here and in --font-sans. Never
+   load fonts from Google's servers: next/font/google downloads them at build
+   time and silently ships a system font when it cannot, and the Georgian
+   fallback is the worst of all.
+--------------------------------------------------------------------------- */
+
+/* Georgian — the primary locale. */
+@font-face {
+  font-family: 'Noto Sans Georgian';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('./fonts/noto-sans-georgian-georgian.woff2') format('woff2');
+  unicode-range: U+0589, U+10A0-10FF, U+1C90-1CBA, U+1CBD-1CBF, U+205A, U+2D00-2D2F, U+2E31;
+}
+
+/* Basic Latin — every page needs it; the wordmark alone does. */
+@font-face {
+  font-family: 'Noto Sans Georgian';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('./fonts/noto-sans-georgian-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Extended Latin — accented letters in client names, currency symbols. Only
+   fetched when one of these characters actually appears. */
+@font-face {
+  font-family: 'Noto Sans Georgian';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('./fonts/noto-sans-georgian-latin-ext.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}

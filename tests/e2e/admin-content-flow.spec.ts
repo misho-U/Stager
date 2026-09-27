@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 /**
  * The whole point of the build: an admin edits content and the public site
@@ -149,3 +149,66 @@ test.describe('upload constraints', () => {
     expect(response.status()).toBe(400);
   });
 });
+
+test.describe('dashboard theme switch', () => {
+  test.skip(!CREDENTIALS_PRESENT, 'Requires an authenticated admin session.');
+
+  // admin-theme.spec.ts covers the wiring without credentials, by presetting
+  // the cookie. This covers the one part it cannot reach: the switch itself,
+  // which only renders inside the dashboard.
+  test('offers light and dark, and a choice survives a reload', async ({ page }) => {
+    // Nothing chosen yet, so the dashboard follows the operating system.
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await signIn(page);
+
+    const colorScheme = () =>
+      page.evaluate(() => getComputedStyle(document.documentElement).colorScheme);
+    const themeSwitch = page.getByRole('group', { name: 'Colour theme' });
+    const light = themeSwitch.getByRole('button', { name: 'Light', exact: true });
+    const dark = themeSwitch.getByRole('button', { name: 'Dark', exact: true });
+
+    await expect(themeSwitch.getByRole('button')).toHaveCount(2);
+    await expect(dark, 'shows the mode the OS picked').toHaveAttribute('aria-pressed', 'true');
+
+    await light.click();
+    await expect.poll(colorScheme).toBe('normal');
+
+    // Saved: after a reload it still beats the operating system.
+    await page.reload();
+    await expect(light).toHaveAttribute('aria-pressed', 'true');
+    expect(await colorScheme()).toBe('normal');
+
+    await dark.click();
+    await expect.poll(colorScheme).toBe('dark');
+  });
+});
+
+test.describe('dashboard sidebar', () => {
+  test.skip(!CREDENTIALS_PRESENT, 'Requires an authenticated admin session.');
+
+  test('fits a small laptop screen and stays in view', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium', 'desktop browser widths only');
+
+    // A 1366×768 laptop, less the taskbar and the browser's tabs, toolbar and
+    // bookmarks bar.
+    await page.setViewportSize({ width: 1366, height: 600 });
+    await signIn(page);
+
+    const sidebar = page.getByRole('navigation', { name: 'Dashboard' });
+    const overflow = await sidebar.evaluate((nav) => nav.scrollHeight - nav.clientHeight);
+    expect(overflow, 'the sidebar would need its own scrollbar').toBeLessThanOrEqual(0);
+
+    // Pinned while a long page scrolls under it.
+    await page.goto('/admin/settings');
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await expect(sidebar.getByRole('link', { name: 'Inquiries' })).toBeInViewport();
+  });
+});
+
+async function signIn(page: Page) {
+  await page.goto('/admin/login');
+  await page.getByLabel('Email').fill(ADMIN_EMAIL!);
+  await page.getByLabel('Password').fill(ADMIN_PASSWORD!);
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(page).toHaveURL(/\/admin$/);
+}
