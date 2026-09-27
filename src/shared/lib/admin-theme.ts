@@ -9,6 +9,10 @@ import { z } from 'zod';
  * render the right theme in the first byte: no flash of light before a script
  * runs, and no inline script for the admin's nonce-based CSP to authorise.
  */
+/**
+ * `system` is the state before anyone picks: the dashboard follows the OS. The
+ * switch itself offers only light and dark, and saves the pick.
+ */
 export const ADMIN_THEMES = ['system', 'light', 'dark'] as const;
 export type AdminTheme = (typeof ADMIN_THEMES)[number];
 

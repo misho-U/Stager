@@ -313,7 +313,8 @@ and CLAUDE.md win wherever they disagree. The resolved conflicts:
 ### Theme
 
 The **public site is light-only**, by decision. Only the **dashboard** has a
-theme switch — System / Light / Dark, in the sidebar; System follows the OS.
+theme switch — Light / Dark, beside the wordmark in the sidebar. Until one is
+picked, the dashboard follows the OS (the `system` cookie state).
 
 - The choice is a cookie, `stager-admin-theme` (`Path=/admin`), read on the
   server in `src/app/admin/layout.tsx`, so the first byte is already themed:
