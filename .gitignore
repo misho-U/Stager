@@ -24,6 +24,8 @@ dist/
 /playwright-report/
 /playwright/.cache/
 /blob-report/
+# A signed-in admin session saved by admin-content-flow.spec.ts: live tokens.
+/tests/e2e/.auth/
 
 # vercel
 .vercel/
