@@ -25,7 +25,8 @@ type MediaPickerProps = {
  * attributes is impossible to fix later.
  */
 export function MediaPicker({ label, value, onChange, hint }: MediaPickerProps) {
-  const { items, isLoading, loadError, uploadFile, isUploading, uploadError } = useMediaPicker();
+  const { items, isLoading, loadError, uploadFile, isUploading, uploadProgress, uploadError } =
+    useMediaPicker();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [altText, setAltText] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -102,7 +103,7 @@ export function MediaPicker({ label, value, onChange, hint }: MediaPickerProps) 
                 disabled={altText.trim().length === 0}
                 onClick={() => fileInputRef.current?.click()}
               >
-                {isUploading ? 'Uploading…' : 'Upload new image'}
+                {isUploading ? `Uploading… ${uploadProgress ?? 0}%` : 'Upload new image'}
               </Button>
               {altText.trim().length === 0 ? (
                 <span className="text-caption text-ink-subtle">
