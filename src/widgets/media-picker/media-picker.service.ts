@@ -15,15 +15,25 @@ import {
 } from '@pkg/blob/constraints';
 
 /**
- * How long an upload may go without sending a byte before it is stopped.
+ * How long an upload may take to get its first bytes out before it is stopped.
  *
- * When the connection to Blob fails, the Blob client retries ten times with
- * growing waits, about seventeen minutes in all, and the dashboard showed
- * "Uploading…" for that whole time with no explanation. Measured from upload
- * progress rather than from the start, so a large photo on a slow connection
- * is never cut off while its bytes are still moving.
+ * When the browser cannot reach Blob at all (the upload is blocked, or the
+ * connection is down), the Blob client retries ten times with growing waits,
+ * about seventeen minutes in all, and the dashboard showed "Uploading…" for
+ * that whole time with no explanation. Nothing is sent in that case, so a short
+ * limit catches it without any risk to an upload that works.
  */
-const UPLOAD_STALL_MS = 30_000;
+const UPLOAD_START_MS = 30_000;
+
+/**
+ * How long an upload that has started may then go without reporting progress.
+ *
+ * Far longer, because silence is normal once bytes are moving: Chrome reads
+ * the file up to about 2 MB ahead of what the network has sent and reports
+ * nothing while that drains, which on a slow connection takes well over 30
+ * seconds. A 30-second limit here cancelled working uploads.
+ */
+const UPLOAD_SILENCE_MS = 120_000;
 
 const STALLED_MESSAGE =
   'The upload stopped making progress, so it was cancelled. Check the connection and try again. If it keeps happening, uploads are being blocked: contact whoever maintains the site.';
@@ -64,20 +74,24 @@ export function useMediaPicker() {
     setIsUploading(true);
     setUploadProgress(0);
 
-    // Stops the upload, and reports it, once no progress has arrived for
-    // UPLOAD_STALL_MS. Re-armed by every progress event.
+    // Stops the upload, and reports it, once no progress has arrived within
+    // the current limit. Re-armed by every progress event.
     const controller = new AbortController();
     let watchdog: ReturnType<typeof setTimeout> | undefined;
+    let bytesAreMoving = false;
     let reportStall: (error: UploadStalledError) => void = () => {};
     const stalled = new Promise<never>((_, reject) => {
       reportStall = reject;
     });
     const rearmWatchdog = () => {
       clearTimeout(watchdog);
-      watchdog = setTimeout(() => {
-        controller.abort();
-        reportStall(new UploadStalledError());
-      }, UPLOAD_STALL_MS);
+      watchdog = setTimeout(
+        () => {
+          controller.abort();
+          reportStall(new UploadStalledError());
+        },
+        bytesAreMoving ? UPLOAD_SILENCE_MS : UPLOAD_START_MS,
+      );
     };
 
     try {
@@ -90,8 +104,12 @@ export function useMediaPicker() {
           handleUploadUrl: '/api/admin/media/upload',
           contentType: file.type,
           abortSignal: controller.signal,
-          onUploadProgress: ({ percentage }) => {
-            setUploadProgress(Math.round(percentage));
+          onUploadProgress: ({ loaded, percentage }) => {
+            bytesAreMoving ||= loaded > 0;
+            // Held at 99 until the upload finishes: in Chrome the figure runs
+            // up to 2 MB ahead of the network, so "100%" could otherwise sit
+            // on screen for as long as the real upload takes.
+            setUploadProgress(Math.min(99, Math.floor(percentage)));
             rearmWatchdog();
           },
         }),
