@@ -50,6 +50,12 @@ function buildDirectives(scriptSrc: string[]): Record<string, string[]> {
       supabaseOrigin,
       // Supabase realtime, if it is ever switched on.
       supabaseOrigin.replace('https://', 'wss://'),
+      // Admin uploads go from the browser straight to the Vercel Blob API.
+      // @vercel/blob 2.x sends them to vercel.com/api/blob; without this entry
+      // every upload was refused by this policy. Path-limited, so the rest of
+      // vercel.com stays unreachable. tests/e2e/admin-media-upload.spec.ts
+      // reads the library's own URL and fails if the two drift apart.
+      'https://vercel.com/api/blob/',
       'https://blob.vercel-storage.com',
       'https://*.public.blob.vercel-storage.com',
       ...(IS_DEVELOPMENT ? ['ws://localhost:*', 'http://localhost:*'] : []),

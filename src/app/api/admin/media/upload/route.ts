@@ -1,11 +1,7 @@
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 
 import { withAdmin } from '@/app/api/_lib/route-helpers';
-import {
-  ALLOWED_IMAGE_TYPES,
-  BLOB_PATH_PREFIX,
-  MAX_UPLOAD_BYTES,
-} from '@pkg/blob/constraints';
+import { ALLOWED_IMAGE_TYPES, BLOB_PATH_PREFIX, MAX_UPLOAD_BYTES } from '@pkg/blob/constraints';
 import { serverEnv } from '@pkg/config/env.server';
 import { apiFail, apiOk } from '@pkg/http/api-response';
 import { logger } from '@pkg/logger';
@@ -54,17 +50,14 @@ export const POST = withAdmin(async ({ request, session }) => {
         // Prevents one upload from overwriting another by guessing its name.
         addRandomSuffix: true,
         validUntil: Date.now() + 60_000,
-        tokenPayload: JSON.stringify({ adminUserId: session.adminUserId }),
       };
     },
 
-    onUploadCompleted: async ({ blob }) => {
-      // Vercel calls this by webhook, which cannot reach a localhost dev
-      // server — so it is only for observability. The Media row is created by
-      // the browser calling POST /api/admin/media once the upload resolves,
-      // which works identically in development and production.
-      logger.info('blob.upload_completed', { pathname: blob.pathname });
-    },
+    // Deliberately no onUploadCompleted. With it, Vercel calls this route
+    // back after every upload, and the call can never succeed: it carries no
+    // admin session, so withAdmin answers 401 each time. The Media row is
+    // created by the browser calling POST /api/admin/media once the upload
+    // resolves, which works the same in development and production.
   });
 
   return apiOk(result);
