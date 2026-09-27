@@ -66,6 +66,10 @@ Do not add a library outside this list without raising it first.
   without; report optional misconfiguration in `pnpm setup:check` instead.
 - Where a zod schema uses `.default()`, react-hook-form needs both types:
   `useForm<z.input<S>, unknown, z.output<S>>`.
+- **An optional number input uses `setValueAs: toOptionalNumber`**
+  (`shared/lib/form-values.ts`). react-hook-form also runs `setValueAs` on the
+  stored value, and `Number(null)` is 0 — which blocked saving a project with
+  no year.
 - **Trim typed input in the schema — and never as `z.email().trim()`.** zod 4
   validates the format before a chained trim runs, so that still rejects
   " me@x.com ". Use `emailInput()` / `urlInput()` from `shared/types/api.ts`.

@@ -11,6 +11,7 @@ import { LocaleTabs } from '@/shared/components/locale-tabs';
 import { PageHeader } from '@/shared/components/page-header';
 import { ErrorNotice, Panel } from '@/shared/components/panel';
 import { SeoFields } from '@/shared/components/seo-fields';
+import { toOptionalNumber } from '@/shared/lib/form-values';
 import type { DbLocale } from '@/shared/types/enums';
 import { MediaGalleryPicker } from '@/widgets/media-gallery-picker/media-gallery-picker.module';
 import { MediaPicker } from '@/widgets/media-picker/media-picker.module';
@@ -166,9 +167,7 @@ export function AdminProjectFormModule({ projectId }: { projectId?: string }) {
             label="Year"
             type="number"
             error={errors.year?.message}
-            {...form.register('year', {
-              setValueAs: (value: string) => (value === '' ? null : Number(value)),
-            })}
+            {...form.register('year', { setValueAs: toOptionalNumber })}
           />
 
           <TextField

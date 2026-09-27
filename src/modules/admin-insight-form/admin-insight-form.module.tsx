@@ -11,6 +11,7 @@ import { PageHeader } from '@/shared/components/page-header';
 import { ErrorNotice, Panel } from '@/shared/components/panel';
 import { SeoFields } from '@/shared/components/seo-fields';
 import { slugify, STATUS_OPTIONS } from '@/shared/constants/content';
+import { toOptionalNumber } from '@/shared/lib/form-values';
 import type { DbLocale } from '@/shared/types/enums';
 import { MediaPicker } from '@/widgets/media-picker/media-picker.module';
 
@@ -120,9 +121,7 @@ export function AdminInsightFormModule({ insightId }: { insightId?: string }) {
             label="Reading time (minutes)"
             type="number"
             error={errors.readingMinutes?.message}
-            {...form.register('readingMinutes', {
-              setValueAs: (value: string) => (value === '' ? null : Number(value)),
-            })}
+            {...form.register('readingMinutes', { setValueAs: toOptionalNumber })}
           />
         </div>
 

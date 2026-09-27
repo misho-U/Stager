@@ -229,6 +229,10 @@ Non-negotiable. Each exists because of a specific failure mode.
 - **Types are inferred from zod**, not declared alongside it. Where a schema has
   `.default()`, the form type is `z.input<…>` and the validated type is
   `z.output<…>` — `useForm<FormValues, unknown, Input>` needs both.
+- **An optional number input registers with `setValueAs: toOptionalNumber`**
+  (`shared/lib/form-values.ts`). react-hook-form passes the stored value
+  through `setValueAs` as well as the typed text, and `Number(null)` is 0 — a
+  project with no year could not be saved, because 0 fails `min(1900)`.
 - **Input schemas trim every string a person types**: `z.string().trim()`, and
   `emailInput()` / `urlInput()` (plus `optional…` variants) from
   `shared/types/api.ts` for emails and URLs. The trim runs before validation,
