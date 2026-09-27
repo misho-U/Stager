@@ -14,11 +14,28 @@ import {
   sanitizeFilename,
 } from '@pkg/blob/constraints';
 
+/**
+ * How long an upload may go without sending a byte before it is stopped.
+ *
+ * When the connection to Blob fails, the Blob client retries ten times with
+ * growing waits, about seventeen minutes in all, and the dashboard showed
+ * "Uploading…" for that whole time with no explanation. Measured from upload
+ * progress rather than from the start, so a large photo on a slow connection
+ * is never cut off while its bytes are still moving.
+ */
+const UPLOAD_STALL_MS = 30_000;
+
+const STALLED_MESSAGE =
+  'The upload stopped making progress, so it was cancelled. Check the connection and try again. If it keeps happening, uploads are being blocked: contact whoever maintains the site.';
+
+class UploadStalledError extends Error {}
+
 export function useMediaPicker() {
   const { data, isLoading, error } = useQuery(mediaListQuery());
   const registerMedia = useRegisterMedia();
 
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   /**
@@ -27,8 +44,8 @@ export function useMediaPicker() {
    * The file bypasses our server entirely — `upload()` asks
    * /api/admin/media/upload for a scoped token and then talks to Blob directly.
    * Only the resulting URL comes back through our API, which is why the Media
-   * row is created in a second step rather than in Blob's completion webhook
-   * (that webhook cannot reach a localhost dev server).
+   * row is created in a second step rather than in a Blob completion webhook
+   * (Vercel's callback carries no admin session, so it could never pass).
    */
   const uploadFile = async (file: File, alt: string) => {
     setUploadError(null);
@@ -45,15 +62,42 @@ export function useMediaPicker() {
     }
 
     setIsUploading(true);
+    setUploadProgress(0);
+
+    // Stops the upload, and reports it, once no progress has arrived for
+    // UPLOAD_STALL_MS. Re-armed by every progress event.
+    const controller = new AbortController();
+    let watchdog: ReturnType<typeof setTimeout> | undefined;
+    let reportStall: (error: UploadStalledError) => void = () => {};
+    const stalled = new Promise<never>((_, reject) => {
+      reportStall = reject;
+    });
+    const rearmWatchdog = () => {
+      clearTimeout(watchdog);
+      watchdog = setTimeout(() => {
+        controller.abort();
+        reportStall(new UploadStalledError());
+      }, UPLOAD_STALL_MS);
+    };
 
     try {
       const metadata = await readImageMetadata(file);
 
-      const blob = await upload(`${BLOB_PATH_PREFIX}/${sanitizeFilename(file.name)}`, file, {
-        access: 'public',
-        handleUploadUrl: '/api/admin/media/upload',
-        contentType: file.type,
-      });
+      rearmWatchdog();
+      const blob = await Promise.race([
+        upload(`${BLOB_PATH_PREFIX}/${sanitizeFilename(file.name)}`, file, {
+          access: 'public',
+          handleUploadUrl: '/api/admin/media/upload',
+          contentType: file.type,
+          abortSignal: controller.signal,
+          onUploadProgress: ({ percentage }) => {
+            setUploadProgress(Math.round(percentage));
+            rearmWatchdog();
+          },
+        }),
+        stalled,
+      ]);
+      clearTimeout(watchdog);
 
       return await registerMedia.mutateAsync({
         url: blob.url,
@@ -66,10 +110,14 @@ export function useMediaPicker() {
         alt,
       });
     } catch (caught) {
-      setUploadError(toFormErrorMessage(caught));
+      setUploadError(
+        caught instanceof UploadStalledError ? STALLED_MESSAGE : toFormErrorMessage(caught),
+      );
       return null;
     } finally {
+      clearTimeout(watchdog);
       setIsUploading(false);
+      setUploadProgress(null);
     }
   };
 
@@ -79,6 +127,8 @@ export function useMediaPicker() {
     loadError: error ? toFormErrorMessage(error) : null,
     uploadFile,
     isUploading,
+    /** 0–100 while an upload is running, otherwise null. */
+    uploadProgress,
     uploadError,
   };
 }
