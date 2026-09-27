@@ -46,7 +46,8 @@
       "HACCP_FOOD_SAFETY": "HACCP / კვების უსაფრთხოება",
       "CONSULTING": "კონსულტაცია",
       "OTHER": "სხვა"
-    }
+    },
+    "choose": "აირჩიეთ"
   },
   "validation": {
     "required": "სავალდებულო ველი",
@@ -62,5 +63,20 @@
     "password": "პაროლი",
     "invalidCredentials": "ელ. ფოსტა ან პაროლი არასწორია",
     "notAuthorized": "თქვენ არ გაქვთ ადმინ პანელზე წვდომა"
+  },
+  "home": {
+    "readFailed": "ზოგიერთი კონტენტი ვერ ჩაიტვირთა. გვერდი შეიძლება არასრული იყოს.",
+    "noProjects": "პროექტები მალე დაემატება.",
+    "contactDetails": "საკონტაქტო ინფორმაცია",
+    "sections": "გვერდის სექციები",
+    "why": "რატომ ჩვენ"
+  },
+  "preview": {
+    "pendingIntro": "აქ დაემატება მოკლე ტექსტი STAGER-ის შესახებ.",
+    "pendingWhy": "აქ დაემატება 3-4 მიზეზი, რატომ STAGER.",
+    "pendingHint": "ადმინ პანელი → Page copy → Home",
+    "photoHero": "მთავარი ფოტო",
+    "photoProject": "პროექტის ფოტო",
+    "photoHint": "დაემატება ადმინ პანელიდან"
   }
 }

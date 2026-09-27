@@ -23,6 +23,14 @@
     -webkit-text-size-adjust: 100%;
   }
 
+  /* In-page links ("start a project" → the inquiry form) glide rather than
+     jump, unless the visitor has asked for less motion. */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
   body {
     background-color: var(--color-surface);
     color: var(--color-ink);

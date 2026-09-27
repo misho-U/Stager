@@ -3,7 +3,7 @@ import type { ButtonHTMLAttributes } from 'react';
 import { cn } from '@/shared/lib/cn';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
-type Size = 'sm' | 'md';
+type Size = 'sm' | 'md' | 'lg';
 
 const VARIANTS: Record<Variant, string> = {
   primary: 'bg-primary text-on-primary hover:bg-primary-hover disabled:bg-primary-disabled',
@@ -15,6 +15,8 @@ const VARIANTS: Record<Variant, string> = {
 const SIZES: Record<Size, string> = {
   sm: 'h-8 px-3 text-body-sm',
   md: 'h-10 px-4 text-body-sm',
+  /** Public pages: a 44px touch target and body-size text. */
+  lg: 'min-h-11 px-6 text-body',
 };
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {

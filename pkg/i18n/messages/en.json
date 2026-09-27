@@ -46,7 +46,8 @@
       "HACCP_FOOD_SAFETY": "HACCP / Food Safety",
       "CONSULTING": "Consulting",
       "OTHER": "Other"
-    }
+    },
+    "choose": "Choose one"
   },
   "validation": {
     "required": "This field is required",
@@ -62,5 +63,20 @@
     "password": "Password",
     "invalidCredentials": "Email or password is incorrect",
     "notAuthorized": "You do not have access to the admin dashboard"
+  },
+  "home": {
+    "readFailed": "Some content failed to load. This page may be incomplete.",
+    "noProjects": "Projects will be added soon.",
+    "contactDetails": "Contact details",
+    "sections": "Page sections",
+    "why": "Why us"
+  },
+  "preview": {
+    "pendingIntro": "A short text about STAGER will go here.",
+    "pendingWhy": "Three or four reasons to choose STAGER will go here.",
+    "pendingHint": "Dashboard → Page copy → Home",
+    "photoHero": "Main photo",
+    "photoProject": "Project photo",
+    "photoHint": "Added from the dashboard"
   }
 }

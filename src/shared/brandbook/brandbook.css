@@ -16,6 +16,7 @@
      - Motion                  --ease-*, --duration-*
      - Admin dark theme        --admin-dark-*  (mostly mixes of the brand
                                palette, so it follows a brand edit by itself)
+     - Dark bands              the percentages in "Dark bands" below
 
    EDIT ONLY WHEN SWAPPING THE TYPEFACE — the @font-face block at the bottom.
 
@@ -67,8 +68,9 @@
   --color-ink-muted: var(--color-brand-teal-soft); /* secondary text */
   --color-ink-subtle: var(--color-brand-sage); /* captions, meta */
   --color-ink-inverse: var(--color-brand-cream); /* text on dark bands */
-  --color-line: #dcdcd2; /* hairlines, input borders */
+  --color-line: #dcdcd2; /* hairlines */
   --color-line-strong: var(--color-brand-sage); /* emphasised borders */
+  --color-line-input: var(--color-line); /* form control borders */
   --color-primary: var(--color-brand-teal); /* main buttons, selection */
   --color-primary-hover: var(--color-brand-teal-soft);
   --color-primary-disabled: var(--color-brand-sage);
@@ -90,6 +92,11 @@
   --font-display: 'Noto Sans Georgian', ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
 
+  /* How heavy the two headline levels are: the hero headline, and section
+     headings. The font is variable, so any value from 100 to 900 works. */
+  --font-weight-hero: 600;
+  --font-weight-heading: 600;
+
   /* --- Editorial type scale --- */
   --text-caption: 0.75rem;
   --text-caption--line-height: 1.4;
@@ -99,12 +106,15 @@
   --text-body--line-height: 1.7;
   --text-body-lg: 1.125rem;
   --text-body-lg--line-height: 1.7;
+  --text-lead: 1.25rem; /* large running text: intros, statements */
+  --text-lead--line-height: 1.6;
   --text-title-sm: 1.375rem;
   --text-title-sm--line-height: 1.3;
   --text-title: 1.75rem;
   --text-title--line-height: 1.25;
   --text-headline: 2.5rem;
   --text-headline--line-height: 1.15;
+  --text-headline--letter-spacing: 0em;
   --text-display: 4rem;
   --text-display--line-height: 1.05;
   --text-display--letter-spacing: -0.02em;
@@ -119,7 +129,10 @@
   --spacing-gutter: 1.25rem;
   --spacing-section: 5rem;
   --spacing-section-lg: 8rem;
+  --container-page: 80rem; /* the widest a page's content runs */
 
+  /* One corner scale per design: sm for small marks (badges), md for controls
+     (buttons, inputs), lg for containers (cards, panels, photos). */
   --radius-sm: 2px;
   --radius-md: 4px;
   --radius-lg: 8px;
@@ -220,6 +233,7 @@
   --color-ink-inverse: var(--admin-dark-surface);
   --color-line: var(--admin-dark-line);
   --color-line-strong: var(--admin-dark-line-strong);
+  --color-line-input: var(--admin-dark-line);
   --color-primary: var(--admin-dark-primary);
   --color-primary-hover: var(--admin-dark-primary-hover);
   --color-primary-disabled: var(--admin-dark-primary-disabled);
@@ -244,6 +258,7 @@
     --color-ink-inverse: var(--admin-dark-surface);
     --color-line: var(--admin-dark-line);
     --color-line-strong: var(--admin-dark-line-strong);
+    --color-line-input: var(--admin-dark-line);
     --color-primary: var(--admin-dark-primary);
     --color-primary-hover: var(--admin-dark-primary-hover);
     --color-primary-disabled: var(--admin-dark-primary-disabled);
@@ -252,6 +267,141 @@
     --color-success: var(--admin-dark-success);
     --color-warning: var(--admin-dark-warning);
     --color-danger: var(--admin-dark-danger);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Dark bands — wiring
+   ---------------------------------------------------------------------------
+   Anything inside [data-surface='inverse'] sits on the inverse surface (the
+   teal band). Every colour role re-points there, so text, lines, buttons,
+   form errors and focus rings stay readable without any component knowing
+   about bands. The percentages are design values; the home-page tests
+   measure the contrast they produce. The status colours are picked by hand,
+   like the admin dark ones: a mix of the light versions is too murky to read
+   as red, green or amber.
+--------------------------------------------------------------------------- */
+[data-surface='inverse'] {
+  --color-surface: var(--color-surface-inverse);
+  --color-surface-raised: color-mix(
+    in oklab,
+    var(--color-ink-inverse) 8%,
+    var(--color-surface-inverse)
+  );
+  --color-surface-muted: color-mix(
+    in oklab,
+    var(--color-ink-inverse) 12%,
+    var(--color-surface-inverse)
+  );
+  --color-surface-inset: color-mix(
+    in oklab,
+    var(--color-ink-inverse) 4%,
+    var(--color-surface-inverse)
+  );
+  --color-ink: var(--color-ink-inverse);
+  --color-ink-muted: color-mix(
+    in oklab,
+    var(--color-ink-inverse) 82%,
+    var(--color-surface-inverse)
+  );
+  --color-ink-subtle: color-mix(
+    in oklab,
+    var(--color-ink-inverse) 78%,
+    var(--color-surface-inverse)
+  );
+  --color-line: color-mix(in oklab, var(--color-ink-inverse) 30%, var(--color-surface-inverse));
+  --color-line-strong: color-mix(
+    in oklab,
+    var(--color-ink-inverse) 55%,
+    var(--color-surface-inverse)
+  );
+  --color-line-input: color-mix(
+    in oklab,
+    var(--color-ink-inverse) 55%,
+    var(--color-surface-inverse)
+  );
+  --color-primary: var(--color-ink-inverse);
+  --color-primary-hover: color-mix(
+    in oklab,
+    var(--color-ink-inverse) 85%,
+    var(--color-surface-inverse)
+  );
+  --color-primary-disabled: color-mix(
+    in oklab,
+    var(--color-ink-inverse) 45%,
+    var(--color-surface-inverse)
+  );
+  --color-on-primary: var(--color-surface-inverse);
+  --color-focus: var(--color-ink-inverse);
+  --color-success: #a9d8bb;
+  --color-warning: #e6cd8f;
+  --color-danger: #f3b4b0;
+}
+
+/* In the base layer, so a utility class on the band still wins. */
+@layer base {
+  [data-surface='inverse'] {
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+    /* Native parts of form controls (select menus, autofill) follow the band. */
+    color-scheme: dark;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Rich text — body copy written in the dashboard
+   ---------------------------------------------------------------------------
+   The CMS stores a small allowlist of tags (pkg/security/sanitize.ts). Sizes
+   and colours come from the tokens above, so each design's scale applies.
+   Emphasis is weight, not italic: the typeface is upright only, and a
+   browser-faked slant looks broken in Georgian.
+--------------------------------------------------------------------------- */
+@layer components {
+  .rich-text > * + * {
+    margin-top: 1em;
+  }
+  .rich-text > :first-child {
+    margin-top: 0;
+  }
+  .rich-text h2 {
+    margin-top: 1.5em;
+    font-size: var(--text-title);
+    line-height: var(--text-title--line-height);
+    font-weight: var(--font-weight-heading);
+  }
+  .rich-text h3,
+  .rich-text h4 {
+    margin-top: 1.25em;
+    font-size: var(--text-title-sm);
+    line-height: var(--text-title-sm--line-height);
+    font-weight: var(--font-weight-heading);
+  }
+  .rich-text ul {
+    list-style: disc;
+    padding-left: 1.25em;
+  }
+  .rich-text ol {
+    list-style: decimal;
+    padding-left: 1.25em;
+  }
+  .rich-text li + li {
+    margin-top: 0.4em;
+  }
+  .rich-text a {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .rich-text strong,
+  .rich-text b,
+  .rich-text em,
+  .rich-text i {
+    font-style: normal;
+    font-weight: 600;
+  }
+  .rich-text blockquote {
+    border-left: 2px solid var(--color-line-strong);
+    padding-left: 1em;
+    color: var(--color-ink-muted);
   }
 }
 
