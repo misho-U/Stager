@@ -208,6 +208,27 @@ for (const variant of VARIANTS) {
         expect(overflow, 'the page scrolls sideways').toBeLessThanOrEqual(0);
       });
 
+      test('keeps its header on one line at tablet widths', async ({ page }, testInfo) => {
+        // Where the section links first appear, Georgian labels are longest.
+        test.skip(testInfo.project.name !== 'chromium', 'desktop browser widths only');
+        for (const width of [768, 1024]) {
+          await page.setViewportSize({ width, height: 900 });
+          await openVariant(page, locale, variant);
+          const header = await page.evaluate(() => {
+            const element = document.querySelector('[data-home-variant] header');
+            const links = [...(element?.querySelectorAll('nav a') ?? [])].filter(
+              (link) => link.getBoundingClientRect().width > 0,
+            );
+            return {
+              height: element?.getBoundingClientRect().height ?? 0,
+              rows: new Set(links.map((link) => Math.round(link.getBoundingClientRect().top))).size,
+            };
+          });
+          expect(header.rows, `the navigation wraps at ${width}px`).toBeLessThanOrEqual(1);
+          expect(header.height, `the header is too tall at ${width}px`).toBeLessThanOrEqual(80);
+        }
+      });
+
       test('meets 4.5:1 for text and 3:1 for controls, focus and icons', async ({ page }) => {
         await openVariant(page, locale, variant);
         expect(await contrastFindings(page)).toEqual([]);

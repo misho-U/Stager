@@ -48,10 +48,14 @@ function bentoSpans(count: number): string[] {
   ];
 }
 
+/** An odd last item takes the whole row of a two-column grid. */
+const isOddLast = (index: number, count: number) => count % 2 === 1 && index === count - 1;
+
 /**
- * Variant B (ბ) — "Studio". Photo-led and soft: a split hero with a large
- * portrait photo, white cards on cream, services as a bento grid, one teal
- * band. Until photos are uploaded, labelled empty frames hold their places.
+ * Variant B (ბ) — "Studio". Photo-led and soft: a split hero with a portrait
+ * photo, the intro as a card over a wide photo, white and tinted cards on
+ * cream, services as a bento grid, one teal band. Until photos are uploaded,
+ * labelled empty frames hold their places.
  */
 export async function VariantB({ locale, content }: VariantBProps) {
   const t = await getTranslations();
@@ -78,7 +82,6 @@ export async function VariantB({ locale, content }: VariantBProps) {
   const projectsTitle = selected?.heading || t('nav.projects');
 
   const navItems = [
-    intro ? { id: 'about', title: intro.heading || t('nav.about') } : null,
     showServices ? { id: 'services', title: servicesTitle } : null,
     showProjects ? { id: 'projects', title: projectsTitle } : null,
     why ? { id: 'why', title: why.heading || t('home.why') } : null,
@@ -91,12 +94,12 @@ export async function VariantB({ locale, content }: VariantBProps) {
       <header className="max-w-page px-gutter mx-auto flex items-center justify-between gap-4 py-3">
         <Wordmark className="text-body-lg" />
         <nav aria-label={t('home.sections')} className="hidden lg:block">
-          <ul className="flex items-center gap-8">
+          <ul className="flex items-center gap-7">
             {navItems.map((item) => (
               <li key={item.id}>
                 <a
                   href={`#${item.id}`}
-                  className="text-body-sm text-ink-muted hover:text-ink inline-flex min-h-11 items-center transition-colors"
+                  className="text-body-sm text-ink-muted hover:text-ink inline-flex min-h-11 items-center whitespace-nowrap transition-colors"
                 >
                   {item.title}
                 </a>
@@ -114,7 +117,7 @@ export async function VariantB({ locale, content }: VariantBProps) {
 
       <main>
         <section className="max-w-page px-gutter pb-section mx-auto grid items-center gap-10 pt-6 md:pt-10 lg:grid-cols-12 lg:gap-12">
-          <div className="flex flex-col items-start gap-6 lg:col-span-6">
+          <div className="flex flex-col items-start gap-6 lg:col-span-7">
             <h1 data-testid="hero-heading" className="text-display font-hero text-balance">
               {hero?.heading || <span className="text-ink-subtle">[no hero heading set]</span>}
             </h1>
@@ -136,10 +139,10 @@ export async function VariantB({ locale, content }: VariantBProps) {
             media={hero?.media ?? null}
             ratio="4/5"
             priority
-            sizes="(min-width: 1024px) 34rem, 100vw"
+            sizes="(min-width: 1024px) 28rem, 100vw"
             missingLabel={t('preview.photoHero')}
             missingHint={t('preview.photoHint')}
-            className="rounded-lg lg:col-span-6"
+            className="rounded-lg lg:col-span-5"
           />
         </section>
 
@@ -149,17 +152,25 @@ export async function VariantB({ locale, content }: VariantBProps) {
             aria-labelledby="about-title"
             className="max-w-page px-gutter pb-section mx-auto"
           >
-            <div className="bg-surface-raised shadow-card grid gap-6 rounded-lg p-6 sm:p-10 lg:grid-cols-12 lg:gap-12 lg:p-14">
-              <h2 id="about-title" className="text-headline font-heading lg:col-span-5">
+            <MediaFrame
+              media={intro.media}
+              ratio="16/9"
+              sizes="(min-width: 1184px) 70rem, 100vw"
+              missingLabel={t('preview.photoSection')}
+              missingHint={t('preview.photoHint')}
+              className="rounded-lg"
+            />
+            {/* Overlaps the photo but stays in the flow, so a long text
+                grows the card downwards instead of spilling over the photo. */}
+            <div className="bg-surface-raised shadow-card relative mx-4 -mt-8 flex max-w-2xl flex-col gap-6 rounded-lg p-6 sm:mx-8 sm:-mt-16 sm:p-10 lg:-mt-40 lg:ml-12">
+              <h2 id="about-title" className="text-headline font-heading text-balance">
                 {intro.heading || t('nav.about')}
               </h2>
-              <div className="lg:col-span-7">
-                {isBlankHtml(intro.body) ? (
-                  <PendingSlot label={t('preview.pendingIntro')} hint={t('preview.pendingHint')} />
-                ) : (
-                  <RichText html={intro.body} className="text-lead text-ink-muted" />
-                )}
-              </div>
+              {isBlankHtml(intro.body) ? (
+                <PendingSlot label={t('preview.pendingIntro')} hint={t('preview.pendingHint')} />
+              ) : (
+                <RichText html={intro.body} className="text-lead text-ink-muted" />
+              )}
             </div>
           </section>
         ) : null}
@@ -170,41 +181,51 @@ export async function VariantB({ locale, content }: VariantBProps) {
             aria-labelledby="services-title"
             className="max-w-page px-gutter pb-section mx-auto"
           >
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <h2 id="services-title" className="text-headline font-heading">
+            <div className="flex max-w-2xl flex-col gap-4">
+              <h2 id="services-title" className="text-headline font-heading text-balance">
                 {servicesTitle}
               </h2>
               {whatWeDo?.subheading ? (
-                <p className="text-body-lg text-ink-muted max-w-md">{whatWeDo.subheading}</p>
+                <p className="text-body-lg text-ink-muted">{whatWeDo.subheading}</p>
               ) : null}
             </div>
             <ul className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-6">
-              {services.items.map((service, index) => (
-                <li
-                  key={service.id}
-                  // The first cell is a teal card: one strong anchor in the grid.
-                  data-surface={index === 0 ? 'inverse' : undefined}
-                  className={cn(
-                    'flex flex-col gap-4 rounded-lg p-6 sm:p-8',
-                    index > 0 && 'bg-surface-raised',
-                    // On two columns, an odd last cell takes the full row.
-                    services.items.length % 2 === 1 &&
-                      index === services.items.length - 1 &&
-                      'md:col-span-2',
-                    spans[index],
-                  )}
-                >
-                  {hasServiceIcon(service.icon) ? (
-                    <span className="bg-primary text-title text-on-primary inline-flex size-12 items-center justify-center rounded-md">
-                      <ServiceIcon name={service.icon} />
-                    </span>
-                  ) : null}
-                  <h3 className="text-title-sm font-heading">{service.title}</h3>
-                  {service.shortDescription ? (
-                    <p className="text-body text-ink-muted">{service.shortDescription}</p>
-                  ) : null}
-                </li>
-              ))}
+              {services.items.map((service, index) => {
+                const last = index === services.items.length - 1;
+                // Three kinds of cell: teal first, a cool tint last, white between.
+                const tone = index === 0 ? 'teal' : last && index > 1 ? 'tint' : 'white';
+                return (
+                  <li
+                    key={service.id}
+                    data-surface={tone === 'teal' ? 'inverse' : undefined}
+                    className={cn(
+                      'flex flex-col gap-4 rounded-lg p-6 sm:p-8',
+                      tone === 'white' && 'bg-surface-raised',
+                      tone === 'tint' && 'bg-surface-muted',
+                      isOddLast(index, services.items.length) && 'md:col-span-2',
+                      spans[index],
+                    )}
+                  >
+                    {service.cover ? (
+                      <MediaFrame
+                        media={service.cover}
+                        ratio="3/2"
+                        sizes="(min-width: 1024px) 34rem, (min-width: 768px) 50vw, 100vw"
+                        missingLabel={service.title}
+                        className="mb-2 rounded-md"
+                      />
+                    ) : hasServiceIcon(service.icon) ? (
+                      <span className="bg-primary text-title text-on-primary inline-flex size-12 items-center justify-center rounded-md">
+                        <ServiceIcon name={service.icon} />
+                      </span>
+                    ) : null}
+                    <h3 className="text-title-sm font-heading">{service.title}</h3>
+                    {service.shortDescription ? (
+                      <p className="text-body text-ink-muted">{service.shortDescription}</p>
+                    ) : null}
+                  </li>
+                );
+              })}
             </ul>
           </section>
         ) : null}
@@ -215,7 +236,7 @@ export async function VariantB({ locale, content }: VariantBProps) {
             aria-labelledby="projects-title"
             className="max-w-page px-gutter pb-section mx-auto"
           >
-            <h2 id="projects-title" className="text-headline font-heading">
+            <h2 id="projects-title" className="text-headline font-heading text-balance">
               {projectsTitle}
             </h2>
             {projects.items.length === 0 ? (
@@ -280,7 +301,7 @@ export async function VariantB({ locale, content }: VariantBProps) {
               data-surface="inverse"
               className="grid gap-8 rounded-lg p-6 sm:p-10 lg:grid-cols-12 lg:gap-12 lg:p-16"
             >
-              <h2 id="why-title" className="text-headline font-heading lg:col-span-5">
+              <h2 id="why-title" className="text-headline font-heading text-balance lg:col-span-5">
                 {why.heading || t('home.why')}
               </h2>
               <div className="flex flex-col gap-6 lg:col-span-7">
@@ -301,20 +322,23 @@ export async function VariantB({ locale, content }: VariantBProps) {
             aria-labelledby="insights-title"
             className="max-w-page px-gutter pb-section mx-auto"
           >
-            <h2 id="insights-title" className="text-headline font-heading">
+            <h2 id="insights-title" className="text-headline font-heading text-balance">
               {latest?.heading || t('nav.insights')}
             </h2>
-            <ul className="mt-10 grid gap-6 md:grid-cols-3">
-              {insights.items.map((insight) => (
+            <ul className="mt-10 grid gap-6 md:grid-cols-2">
+              {insights.items.map((insight, index) => (
                 <li
                   key={insight.id}
-                  className="bg-surface-raised shadow-card flex flex-col gap-4 rounded-lg p-3"
+                  className={cn(
+                    'bg-surface-raised shadow-card flex flex-col gap-4 rounded-lg p-3',
+                    isOddLast(index, insights.items.length) && 'md:col-span-2',
+                  )}
                 >
                   {insight.cover ? (
                     <MediaFrame
                       media={insight.cover}
                       ratio="3/2"
-                      sizes="(min-width: 768px) 33vw, 100vw"
+                      sizes="(min-width: 768px) 50vw, 100vw"
                       missingLabel={insight.title}
                       className="rounded-md"
                     />

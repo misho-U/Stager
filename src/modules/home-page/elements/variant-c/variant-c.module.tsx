@@ -75,13 +75,13 @@ export async function VariantC({ locale, content }: VariantCProps) {
       <header data-surface="inverse">
         <div className="max-w-page px-gutter mx-auto flex items-center justify-between gap-4 py-3">
           <Wordmark className="text-title-sm" />
-          <nav aria-label={t('home.sections')} className="hidden md:block">
+          <nav aria-label={t('home.sections')} className="hidden lg:block">
             <ul className="flex items-center gap-6">
               {navItems.map((item) => (
                 <li key={item.id}>
                   <a
                     href={`#${item.id}`}
-                    className="text-body-sm text-ink-muted hover:text-ink inline-flex min-h-11 items-center transition-colors"
+                    className="text-body-sm text-ink-muted hover:text-ink inline-flex min-h-11 items-center whitespace-nowrap transition-colors"
                   >
                     {item.title}
                   </a>
@@ -197,11 +197,13 @@ export async function VariantC({ locale, content }: VariantCProps) {
               <p className="text-body-lg text-ink-muted mt-6">{t('home.noProjects')}</p>
             ) : (
               // A keyboard user reaches the sideways scroll by tabbing to it.
+              // It runs into the side margins, so on a phone the next card
+              // peeks in from the screen edge rather than being cut short.
               <div
                 role="region"
                 aria-labelledby="projects-title"
                 tabIndex={0}
-                className="mt-10 overflow-x-auto pb-4"
+                className="-mx-gutter scroll-px-gutter px-gutter mt-10 overflow-x-auto pb-4"
               >
                 <ul data-testid="project-list" className="flex snap-x snap-mandatory gap-6">
                   {projects.items.map((project) => {
@@ -278,9 +280,9 @@ export async function VariantC({ locale, content }: VariantCProps) {
             >
               {latest?.heading || t('nav.insights')}
             </h2>
-            <ul className="mt-10 grid gap-10 md:grid-cols-3 md:gap-8">
+            <ul className="mt-10 grid gap-x-12 gap-y-10 md:grid-cols-2">
               {insights.items.map((insight) => (
-                <li key={insight.id} className="flex flex-col gap-3">
+                <li key={insight.id} className="border-line flex flex-col gap-3 border-t pt-6">
                   <p className="text-body-sm text-ink-subtle">
                     {joinMeta([
                       insight.category?.name,

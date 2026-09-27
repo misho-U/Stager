@@ -15,7 +15,12 @@
   /* --- Colour roles --- */
   --color-surface: var(--color-brand-cream);
   --color-surface-raised: var(--color-brand-white);
-  --color-surface-muted: var(--color-brand-cream-tint);
+  /* A cool sage tint, so the cards are not all the same white. */
+  --color-surface-muted: color-mix(
+    in oklab,
+    var(--color-brand-sage) 18%,
+    var(--color-brand-cream-light)
+  );
   --color-surface-inset: var(--color-brand-cream-light);
   --color-surface-inverse: var(--color-brand-teal);
   --color-ink: var(--color-brand-teal);
@@ -37,7 +42,7 @@
   /* --- Type: firm semibold headlines, moderate scale --- */
   --font-weight-hero: 600;
   --font-weight-heading: 600;
-  --text-display: clamp(2.5rem, 1.6rem + 3.4vw, 4.25rem);
+  --text-display: clamp(2.5rem, 1.6rem + 3vw, 3.75rem);
   --text-display--line-height: 1.08;
   --text-display--letter-spacing: -0.02em;
   --text-headline: clamp(1.875rem, 1.45rem + 1.6vw, 2.75rem);
