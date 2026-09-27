@@ -1,4 +1,9 @@
 import type { PublicInsightListItem } from '@/entity/insight/model/insight.model';
+import {
+  DEFAULT_HOME_VARIANT,
+  HOME_VARIANTS,
+  type HomeVariant,
+} from '@/modules/home-page/home-page.constants';
 import type { PublicPage } from '@/entity/page/model/page.model';
 import type { PublicProjectListItem } from '@/entity/project/model/project.model';
 import type { PublicService } from '@/entity/service/model/service.model';
@@ -103,3 +108,9 @@ export async function loadHomePageData(locale: DbLocale) {
 }
 
 export type HomePageData = Awaited<ReturnType<typeof loadHomePageData>>;
+
+/** TEMPORARY — which design `?v=` asks for; anything unknown gets the default. */
+export function parseHomeVariant(value: string | string[] | undefined): HomeVariant {
+  const requested = Array.isArray(value) ? value[0] : value;
+  return HOME_VARIANTS.find((variant) => variant.id === requested)?.id ?? DEFAULT_HOME_VARIANT;
+}

@@ -32,6 +32,11 @@
      - pkg/brand/hex.generated.ts — hex copies of --color-brand-* for the email
        and the browser-bar colour, which cannot read CSS.
 
+   TEMPORARY EXCEPTION — the home page design comparison:
+     - ./variants/variant-{a,b,c}.css override these tokens, each inside its
+       own design on the home page only. Once one design is chosen, its values
+       move into this file and the folder is deleted.
+
    HOW A CHANGE GOES LIVE — there is nothing to run:
      - Locally: save, and `pnpm dev` reloads the page.
      - Production: push, and the Vercel build regenerates everything.

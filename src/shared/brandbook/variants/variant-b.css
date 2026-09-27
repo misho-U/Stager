@@ -1,0 +1,66 @@
+/* ===========================================================================
+   HOME PAGE VARIANT B (ბ) — "Studio"               TEMPORARY: design comparison
+   ===========================================================================
+   Photo-led and soft: cream page, white cards, rounded corners, one teal band.
+   Until photos are uploaded, labelled empty frames hold their places.
+
+   Every value here overrides a brandbook.css token of the same name, inside
+   [data-home-variant='b'] only. Nothing else on the site sees it. Colours are
+   mixes of the brand palette, never new hexes.
+
+   Once a variant is chosen, its values move into brandbook.css and this
+   folder is deleted (see the checklist in the pull request).
+   =========================================================================== */
+[data-home-variant='b'] {
+  /* --- Colour roles --- */
+  --color-surface: var(--color-brand-cream);
+  --color-surface-raised: var(--color-brand-white);
+  --color-surface-muted: var(--color-brand-cream-tint);
+  --color-surface-inset: var(--color-brand-cream-light);
+  --color-surface-inverse: var(--color-brand-teal);
+  --color-ink: var(--color-brand-teal);
+  --color-ink-muted: var(--color-brand-teal-soft);
+  --color-ink-subtle: color-mix(
+    in oklab,
+    var(--color-brand-teal-muted) 55%,
+    var(--color-brand-teal-soft)
+  );
+  --color-ink-inverse: var(--color-brand-cream);
+  --color-line: color-mix(in oklab, var(--color-brand-sage) 45%, var(--color-brand-cream));
+  --color-line-strong: var(--color-brand-sage);
+  --color-line-input: var(--color-brand-teal-muted);
+  --color-primary: var(--color-brand-teal);
+  --color-primary-hover: var(--color-brand-teal-soft);
+  --color-on-primary: var(--color-brand-cream);
+  --color-focus: var(--color-brand-teal);
+
+  /* --- Type: firm semibold headlines, moderate scale --- */
+  --font-weight-hero: 600;
+  --font-weight-heading: 600;
+  --text-display: clamp(2.5rem, 1.6rem + 3.4vw, 4.25rem);
+  --text-display--line-height: 1.08;
+  --text-display--letter-spacing: -0.02em;
+  --text-headline: clamp(1.875rem, 1.45rem + 1.6vw, 2.75rem);
+  --text-headline--line-height: 1.15;
+  --text-title-sm: 1.25rem;
+  --text-lead: clamp(1.125rem, 1rem + 0.4vw, 1.3125rem);
+  --text-lead--line-height: 1.6;
+
+  /* --- Space: comfortable --- */
+  --spacing-gutter: clamp(1.25rem, 0.75rem + 2vw, 2.5rem);
+  --spacing-section: clamp(4rem, 2.75rem + 4vw, 6.5rem);
+  --container-page: 74rem;
+
+  /* --- Shape: soft. Controls md, cards and photos lg --- */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 24px;
+  --shadow-card:
+    0 1px 2px color-mix(in oklab, var(--color-brand-teal) 6%, transparent),
+    0 16px 40px -20px color-mix(in oklab, var(--color-brand-teal) 22%, transparent);
+}
+
+/* What a phone shows when it over-scrolls past either end of the page: the page colour. */
+:root:has([data-home-variant='b']) {
+  background-color: var(--color-brand-cream);
+}

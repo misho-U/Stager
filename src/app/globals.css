@@ -18,6 +18,13 @@
 --------------------------------------------------------------------------- */
 @import '../shared/brandbook/brandbook.css';
 
+/* TEMPORARY — the home page design comparison. Each file only overrides
+   brandbook tokens inside its own [data-home-variant] scope. Removed with the
+   variants once one is chosen. */
+@import '../shared/brandbook/variants/variant-a.css';
+@import '../shared/brandbook/variants/variant-b.css';
+@import '../shared/brandbook/variants/variant-c.css';
+
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
