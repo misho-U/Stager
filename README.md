@@ -142,6 +142,10 @@ The authenticated end-to-end tests are skipped unless you supply a real account:
 E2E_ADMIN_EMAIL=you@stager.ge E2E_ADMIN_PASSWORD=… pnpm test:e2e
 ```
 
+They sign in once per run and share that session. They also create, publish
+and delete a project in whatever database `.env.local` points at, so run them
+against a local database or a disposable Supabase branch, never production.
+
 ---
 
 ## What the dashboard manages

@@ -2,7 +2,9 @@ import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { crc32, deflateSync } from 'node:zlib';
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+
+import { ADMIN_SESSION, CREDENTIALS_PRESENT } from './admin-session';
 
 /**
  * Admin image uploads.
@@ -65,8 +67,8 @@ test.describe('upload permissions', () => {
 });
 
 /**
- * The real thing: sign in, upload a generated image to Vercel Blob, see it in
- * the library, edit its alt text, delete it.
+ * The real thing, signed in as the admin: upload a generated image to Vercel
+ * Blob, see it in the library, edit its alt text, delete it.
  *
  * It writes to the Blob store and the database configured in .env.local — on a
  * machine pointed at production, that is production — so it needs an explicit
@@ -75,8 +77,6 @@ test.describe('upload permissions', () => {
  *
  *   E2E_ADMIN_EMAIL=… E2E_ADMIN_PASSWORD=… E2E_ALLOW_UPLOADS=1 pnpm test:e2e admin-media-upload
  */
-const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL;
-const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD;
 const ALLOW_UPLOADS = process.env.E2E_ALLOW_UPLOADS === '1';
 
 /** A solid-colour PNG, built by hand so the test needs no image library. */
@@ -104,27 +104,19 @@ function solidPng(width: number, height: number, [r, g, b]: [number, number, num
   ]);
 }
 
-async function signIn(page: Page) {
-  await page.goto('/admin/login');
-  await page.getByLabel('Email').fill(ADMIN_EMAIL!);
-  await page.getByLabel('Password').fill(ADMIN_PASSWORD!);
-  await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page).toHaveURL(/\/admin$/);
-}
-
 type MediaItem = { id: string; url: string; translations: { KA: { alt: string } } };
 
 test.describe('media upload against the real services', () => {
   test.skip(
-    !ADMIN_EMAIL || !ADMIN_PASSWORD || !ALLOW_UPLOADS,
+    !CREDENTIALS_PRESENT || !ALLOW_UPLOADS,
     'Uploads a real file to Vercel Blob. Set E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD and E2E_ALLOW_UPLOADS=1; it deletes what it uploads.',
   );
+  test.use({ storageState: ADMIN_SESSION });
 
   test('uploads, lists, edits and deletes an image', async ({ page }) => {
     const alt = `E2E upload ${Date.now()}`;
     const png = solidPng(320, 200, [29, 70, 74]);
 
-    await signIn(page);
     await page.goto('/admin/media');
     await page.getByLabel('Describe the image (alt text)').fill(alt);
     await page

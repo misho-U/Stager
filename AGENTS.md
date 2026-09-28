@@ -229,6 +229,10 @@ Non-negotiable. Each exists because of a specific failure mode.
 - **Types are inferred from zod**, not declared alongside it. Where a schema has
   `.default()`, the form type is `z.input<…>` and the validated type is
   `z.output<…>` — `useForm<FormValues, unknown, Input>` needs both.
+- **An optional number input registers with `setValueAs: toOptionalNumber`**
+  (`shared/lib/form-values.ts`). react-hook-form passes the stored value
+  through `setValueAs` as well as the typed text, and `Number(null)` is 0 — a
+  project with no year could not be saved, because 0 fails `min(1900)`.
 - **Input schemas trim every string a person types**: `z.string().trim()`, and
   `emailInput()` / `urlInput()` (plus `optional…` variants) from
   `shared/types/api.ts` for emails and URLs. The trim runs before validation,
@@ -329,6 +333,23 @@ picked, the dashboard follows the OS (the `system` cookie state).
 - `tests/e2e/admin-theme.spec.ts` covers the modes, checks the two wiring
   blocks have not drifted, and asserts the main text pairs stay readable in
   both themes.
+
+### Credential-gated tests
+
+Tests that need a signed-in admin are skipped unless `E2E_ADMIN_EMAIL` and
+`E2E_ADMIN_PASSWORD` are set.
+
+- **They sign in once per run, never per test.** The `setup` project
+  (`tests/e2e/admin-session.setup.ts`) signs in before `chromium` and `mobile`
+  start and saves the session to `tests/e2e/.auth/admin.json` (gitignored: it
+  holds live tokens). A test opts in with
+  `test.use({ storageState: ADMIN_SESSION })` from `tests/e2e/admin-session.ts`.
+  The login route allows ten sign-ins per 15 minutes per IP, and signing in per
+  test used up a whole window in a single run.
+- **Never sign out in one.** `signOut()` defaults to scope `global`, so it
+  would end the session every other test is using.
+- **They write to whatever database `.env.local` points at.** Run them against
+  a local database or a disposable Supabase branch, never production.
 
 ---
 
