@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import { cn } from '@/shared/lib/cn';
 import { THEME_OPTIONS } from '@/widgets/admin-theme-switch/admin-theme-switch.constants';
 import { useAdminThemeSwitch } from '@/widgets/admin-theme-switch/admin-theme-switch.service';
@@ -13,21 +15,22 @@ import { useAdminThemeSwitch } from '@/widgets/admin-theme-switch/admin-theme-sw
  * tab stop that announces its state, with no arrow-key handling to get wrong.
  */
 export function AdminThemeSwitch() {
+  const t = useTranslations('admin.theme');
   const { shown, choose } = useAdminThemeSwitch();
 
   return (
     <div
       role="group"
-      aria-label="Colour theme"
+      aria-label={t('label')}
       className="flex rounded-md border border-line p-0.5 text-body"
     >
-      {THEME_OPTIONS.map(({ value, label, Icon }) => (
+      {THEME_OPTIONS.map(({ value, Icon }) => (
         <button
           key={value}
           type="button"
           aria-pressed={shown === value}
-          aria-label={label}
-          title={label}
+          aria-label={t(value)}
+          title={t(value)}
           onClick={() => choose(value)}
           className={cn(
             'flex size-7 items-center justify-center rounded-sm transition-colors',

@@ -66,6 +66,10 @@ Do not add a library outside this list without raising it first.
   without; report optional misconfiguration in `pnpm setup:check` instead.
 - Where a zod schema uses `.default()`, react-hook-form needs both types:
   `useForm<z.input<S>, unknown, z.output<S>>`.
+- **An optional number input uses `setValueAs: toOptionalNumber`**
+  (`shared/lib/form-values.ts`). react-hook-form also runs `setValueAs` on the
+  stored value, and `Number(null)` is 0 — which blocked saving a project with
+  no year.
 - **Trim typed input in the schema — and never as `z.email().trim()`.** zod 4
   validates the format before a chained trim runs, so that still rejects
   " me@x.com ". Use `emailInput()` / `urlInput()` from `shared/types/api.ts`.
@@ -79,6 +83,11 @@ Do not add a library outside this list without raising it first.
 - **`pkg/brand/hex.generated.ts` is generated** from `brandbook.css` on install,
   dev and build, for the email and the theme-color meta tag. Never edit it.
   Brand colours must be hex, or the build fails.
+- **Dashboard wording lives in `pkg/i18n/messages/admin.ka.json` and
+  `admin.en.json`, never in code** — the dashboard is Georgian until the admin
+  picks English. Shared schemas carry no messages: validation is worded from
+  the zod issue (`shared/lib/validation-message.ts`), server errors from
+  `code`/`reason`. `admin-i18n.spec.ts` fails on a hard-coded string.
 - **The design skill (`design-taste-frontend`) is direction only.** AGENTS.md
   § Design skill lists what it may not change — dependencies, tokens, images
   and the CSP, folder structure, CMS copy — and the Georgian checks.

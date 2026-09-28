@@ -53,7 +53,7 @@ export type PublicTeamMember = z.infer<typeof publicTeamMemberSchema>;
 export const publicTeamMemberListResponseSchema = listResponseSchema(publicTeamMemberSchema);
 
 export const teamMemberTranslationInputSchema = z.object({
-  name: z.string().trim().min(1, 'Name is required').max(160),
+  name: z.string().trim().min(1).max(160),
   position: z.string().trim().max(160).default(''),
   bio: z.string().trim().max(4000).default(''),
   expertise: z.string().trim().max(600).default(''),

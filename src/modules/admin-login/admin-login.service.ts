@@ -7,16 +7,19 @@ import { useForm } from 'react-hook-form';
 import { useLogin } from '@/entity/session/api/session.query';
 import { loginInputSchema, type LoginInput } from '@/entity/session/model/session.model';
 import { safeRedirectTarget } from '@/modules/admin-login/admin-login.constants';
-import { toFormErrorMessage } from '@/shared/lib/form-errors';
+import { useFormErrors } from '@/shared/lib/form-errors';
+import { useValidationErrorMap } from '@/shared/lib/use-validation-error-map';
 
 /** Everything the login form needs; the module file only renders. */
 export function useAdminLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const loginMutation = useLogin();
+  const formErrors = useFormErrors('signin');
+  const validationErrorMap = useValidationErrorMap();
 
   const form = useForm<LoginInput>({
-    resolver: zodResolver(loginInputSchema),
+    resolver: zodResolver(loginInputSchema, { error: validationErrorMap }),
     defaultValues: { email: '', password: '' },
   });
 
@@ -38,8 +41,6 @@ export function useAdminLoginForm() {
     form,
     onSubmit,
     isSubmitting: loginMutation.isPending || form.formState.isSubmitting,
-    errorMessage: loginMutation.error
-      ? toFormErrorMessage(loginMutation.error, 'signin')
-      : null,
+    errorMessage: loginMutation.error ? formErrors.message(loginMutation.error) : null,
   };
 }

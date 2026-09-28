@@ -96,17 +96,21 @@ export const publicListQuerySchema = z.object({
 export type PublicListQuery = z.infer<typeof publicListQuerySchema>;
 
 /** Slug rules: lowercase, digits and single hyphens. Used in URLs, so no unicode. */
+export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/**
+ * No messages of its own, like every schema the dashboard validates with: the
+ * dashboard words each problem in its own language from what failed
+ * (src/shared/lib/validation-message.ts recognises SLUG_PATTERN).
+ */
 export const slugSchema = z
   .string()
-  // Before the regex: " kitchen-ops" would otherwise fail with "use lowercase
-  // letters…", which says nothing about the space that actually caused it.
+  // Before the regex: " kitchen-ops" would otherwise fail the pattern check,
+  // which says nothing about the space that actually caused it.
   .trim()
-  .min(1, 'Slug is required')
+  .min(1)
   .max(120)
-  .regex(
-    /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-    'Use lowercase letters, numbers and hyphens only (e.g. "kitchen-operations")',
-  );
+  .regex(SLUG_PATTERN);
 
 /** Optional YouTube URL — the only video source the site supports. */
 export const youtubeUrlSchema = z
@@ -120,7 +124,8 @@ export const youtubeUrlSchema = z
     } catch {
       return false;
     }
-  }, 'Must be a youtube.com or youtu.be link');
+    // The key names the dashboard's message for this check (validation-message.ts).
+  }, { params: { key: 'youtube' } });
 
 /** Reference to an uploaded image, or nothing. */
 export const mediaIdSchema = z.string().min(1).nullish();

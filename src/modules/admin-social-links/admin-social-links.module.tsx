@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import type { AdminSocialLink } from '@/entity/social-link/model/social-link.model';
 import { useAdminSocialLinks } from '@/modules/admin-social-links/admin-social-links.service';
 import { Button } from '@/shared/components/button';
@@ -8,9 +10,11 @@ import { DataTable, type Column } from '@/shared/components/data-table';
 import { CheckboxField, SelectField, TextField } from '@/shared/components/field';
 import { PageHeader } from '@/shared/components/page-header';
 import { ErrorNotice, Panel } from '@/shared/components/panel';
-import { SOCIAL_PLATFORM_OPTIONS } from '@/shared/constants/content';
+import { useSocialPlatformOptions } from '@/shared/lib/use-enum-options';
 
 export function AdminSocialLinksModule() {
+  const t = useTranslations('admin');
+  const platformOptions = useSocialPlatformOptions();
   const {
     links,
     isLoading,
@@ -33,12 +37,14 @@ export function AdminSocialLinksModule() {
   const columns: Array<Column<AdminSocialLink>> = [
     {
       key: 'platform',
-      header: 'Platform',
-      render: (link) => <span className="font-medium text-ink">{link.platform}</span>,
+      header: t('socialLinks.columns.platform'),
+      render: (link) => (
+        <span className="font-medium text-ink">{t(`platforms.${link.platform}`)}</span>
+      ),
     },
     {
       key: 'url',
-      header: 'URL',
+      header: t('socialLinks.columns.url'),
       secondary: true,
       render: (link) => (
         <a
@@ -53,10 +59,10 @@ export function AdminSocialLinksModule() {
     },
     {
       key: 'active',
-      header: 'Shown',
+      header: t('socialLinks.columns.shown'),
       render: (link) => (
         <Button variant="ghost" size="sm" onClick={() => void toggleActive(link)}>
-          {link.isActive ? 'Yes' : 'No'}
+          {link.isActive ? t('common.yes') : t('common.no')}
         </Button>
       ),
     },
@@ -67,11 +73,11 @@ export function AdminSocialLinksModule() {
       render: (link) => (
         <span className="inline-flex items-center gap-1.5">
           <Button variant="ghost" size="sm" onClick={() => startEdit(link)}>
-            Edit
+            {t('common.edit')}
           </Button>
           <ConfirmButton
-            label="Delete"
-            confirmLabel="Confirm"
+            label={t('common.delete')}
+            confirmLabel={t('common.confirm')}
             loading={isDeleting && deletingId === link.id}
             onConfirm={() => remove(link.id)}
           />
@@ -82,19 +88,16 @@ export function AdminSocialLinksModule() {
 
   return (
     <>
-      <PageHeader
-        title="Social links"
-        description="Shown in the footer. Turn one off instead of deleting it if the account is only paused."
-      />
+      <PageHeader title={t('socialLinks.title')} description={t('socialLinks.description')} />
 
       {loadError ? <ErrorNotice message={loadError} /> : null}
 
       <Panel
-        title={editingId ? 'Edit link' : 'Add a link'}
+        title={editingId ? t('socialLinks.editTitle') : t('socialLinks.addTitle')}
         actions={
           editingId ? (
             <Button variant="ghost" size="sm" onClick={startCreate}>
-              Cancel edit
+              {t('common.cancelEdit')}
             </Button>
           ) : null
         }
@@ -104,50 +107,53 @@ export function AdminSocialLinksModule() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <SelectField
-              label="Platform"
-              options={SOCIAL_PLATFORM_OPTIONS}
+              label={t('socialLinks.platform')}
+              options={platformOptions}
               {...form.register('platform')}
             />
             <TextField
-              label="URL"
+              label={t('socialLinks.url')}
               required
-              placeholder="https://instagram.com/stager"
+              placeholder={t('socialLinks.urlPlaceholder')}
               error={errors.url?.message}
               {...form.register('url')}
             />
             <TextField
-              label="Label"
-              hint="Optional. Falls back to the platform name."
+              label={t('socialLinks.label.label')}
+              hint={t('socialLinks.label.hint')}
+              error={errors.label?.message}
               {...form.register('label')}
             />
             <TextField
-              label="Sort order"
+              label={t('fields.sortOrder.label')}
               type="number"
+              hint={t('fields.sortOrder.hint')}
+              error={errors.order?.message}
               {...form.register('order', {
                 setValueAs: (value: string) => (value === '' ? 0 : Number(value)),
               })}
             />
           </div>
 
-          <CheckboxField label="Show on the site" {...form.register('isActive')} />
+          <CheckboxField label={t('socialLinks.isActive')} {...form.register('isActive')} />
 
           <div className="flex justify-end">
             <Button type="submit" loading={isSubmitting}>
-              {editingId ? 'Save changes' : 'Add link'}
+              {editingId ? t('common.saveChanges') : t('socialLinks.add')}
             </Button>
           </div>
         </form>
       </Panel>
 
-      <Panel title="All links">
+      <Panel title={t('socialLinks.allTitle')}>
         {isLoading ? (
-          <p className="text-body-sm text-ink-subtle">Loading…</p>
+          <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
         ) : (
           <DataTable
             rows={links}
             columns={columns}
             rowKey={(link) => link.id}
-            emptyTitle="No social links yet"
+            emptyTitle={t('socialLinks.emptyTitle')}
           />
         )}
       </Panel>

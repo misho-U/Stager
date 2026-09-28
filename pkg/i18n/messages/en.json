@@ -56,14 +56,6 @@
     "tooLong": "Too long",
     "rateLimited": "Too many requests. Please try again later."
   },
-  "admin": {
-    "signIn": "Sign in",
-    "signOut": "Sign out",
-    "email": "Email",
-    "password": "Password",
-    "invalidCredentials": "Email or password is incorrect",
-    "notAuthorized": "You do not have access to the admin dashboard"
-  },
   "home": {
     "readFailed": "Some content failed to load. This page may be incomplete.",
     "noProjects": "Projects will be added soon.",

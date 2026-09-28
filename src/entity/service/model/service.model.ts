@@ -52,7 +52,7 @@ export type PublicService = z.infer<typeof publicServiceSchema>;
 export const publicServiceListResponseSchema = listResponseSchema(publicServiceSchema);
 
 export const serviceTranslationInputSchema = seoInputSchema.extend({
-  title: z.string().trim().min(1, 'Title is required').max(200),
+  title: z.string().trim().min(1).max(200),
   shortDescription: z.string().trim().max(600).default(''),
   body: z.string().trim().max(80_000).default(''),
 });

@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { adminCategoriesQuery } from '@/entity/category/api/category.query';
@@ -19,7 +19,9 @@ import {
   type InsightInput,
 } from '@/entity/insight/model/insight.model';
 import { adminTeamMembersQuery } from '@/entity/team-member/api/team-member.query';
-import { toFieldErrors, toFormErrorMessage } from '@/shared/lib/form-errors';
+import { useFormErrors } from '@/shared/lib/form-errors';
+import { useSlugAutofill } from '@/shared/lib/use-slug-autofill';
+import { useValidationErrorMap } from '@/shared/lib/use-validation-error-map';
 
 const EMPTY_TRANSLATION = {
   title: '',
@@ -74,6 +76,8 @@ function toFormValues(insight: AdminInsight): InsightFormValues {
 }
 
 export function useAdminInsightForm({ insightId }: { insightId?: string }) {
+  const formErrors = useFormErrors();
+  const validationErrorMap = useValidationErrorMap();
   const router = useRouter();
   const isEdit = Boolean(insightId);
 
@@ -86,9 +90,19 @@ export function useAdminInsightForm({ insightId }: { insightId?: string }) {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const form = useForm<InsightFormValues, unknown, InsightInput>({
-    resolver: zodResolver(insightInputSchema),
+    resolver: zodResolver(insightInputSchema, { error: validationErrorMap }),
     defaultValues: EMPTY_INSIGHT,
   });
+
+  // While creating, the slug follows the English title until it is edited
+  // by hand (use-slug-autofill.ts). Validated as it changes only after a save
+  // was tried, so an empty title does not flag the slug mid-typing.
+  const setSlug = useCallback(
+    (slug: string) =>
+      form.setValue('slug', slug, { shouldDirty: true, shouldValidate: form.formState.isSubmitted }),
+    [form],
+  );
+  const slugAutofill = useSlugAutofill({ enabled: !isEdit, setSlug });
 
   const { reset } = form;
 
@@ -107,8 +121,8 @@ export function useAdminInsightForm({ insightId }: { insightId?: string }) {
       router.push('/admin/insights');
       router.refresh();
     } catch (caught) {
-      setSubmitError(toFormErrorMessage(caught));
-      for (const [field, message] of Object.entries(toFieldErrors(caught))) {
+      setSubmitError(formErrors.message(caught));
+      for (const [field, message] of Object.entries(formErrors.fields(caught))) {
         form.setError(field as keyof InsightFormValues, { type: 'server', message });
       }
     }
@@ -118,6 +132,7 @@ export function useAdminInsightForm({ insightId }: { insightId?: string }) {
     form,
     onSubmit,
     isEdit,
+    slugAutofill,
     isLoading: isEdit && insightQuery.isLoading,
     isSubmitting: createInsight.isPending || updateInsight.isPending,
     submitError,

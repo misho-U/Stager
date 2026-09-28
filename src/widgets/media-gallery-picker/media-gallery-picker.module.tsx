@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useState } from 'react';
 
@@ -22,6 +23,7 @@ type MediaGalleryPickerProps = {
  * keyboard. Arrows work everywhere and are obvious.
  */
 export function MediaGalleryPicker({ label, value, onChange }: MediaGalleryPickerProps) {
+  const t = useTranslations('admin');
   const { items, isLoading } = useMediaPicker();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -49,12 +51,12 @@ export function MediaGalleryPicker({ label, value, onChange }: MediaGalleryPicke
       <div className="flex items-center justify-between">
         <span className="text-caption font-medium text-ink-muted">{label}</span>
         <Button variant="secondary" size="sm" onClick={() => setIsOpen((open) => !open)}>
-          {isOpen ? 'Done' : 'Add images'}
+          {isOpen ? t('gallery.done') : t('gallery.add')}
         </Button>
       </div>
 
       {selected.length === 0 ? (
-        <p className="text-caption text-ink-subtle">No gallery images selected.</p>
+        <p className="text-caption text-ink-subtle">{t('gallery.empty')}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {selected.map((item, index) => (
@@ -78,7 +80,7 @@ export function MediaGalleryPicker({ label, value, onChange }: MediaGalleryPicke
                 <Button
                   variant="ghost"
                   size="sm"
-                  aria-label="Move up"
+                  aria-label={t('gallery.moveUp')}
                   disabled={index === 0}
                   onClick={() => move(index, -1)}
                 >
@@ -87,14 +89,14 @@ export function MediaGalleryPicker({ label, value, onChange }: MediaGalleryPicke
                 <Button
                   variant="ghost"
                   size="sm"
-                  aria-label="Move down"
+                  aria-label={t('gallery.moveDown')}
                   disabled={index === selected.length - 1}
                   onClick={() => move(index, 1)}
                 >
                   ↓
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => toggle(item.id)}>
-                  Remove
+                  {t('common.remove')}
                 </Button>
               </div>
             </li>
@@ -105,11 +107,9 @@ export function MediaGalleryPicker({ label, value, onChange }: MediaGalleryPicke
       {isOpen ? (
         <div className="rounded-md border border-line bg-surface-inset p-3">
           {isLoading ? (
-            <p className="text-body-sm text-ink-subtle">Loading library…</p>
+            <p className="text-body-sm text-ink-subtle">{t('mediaPicker.loadingLibrary')}</p>
           ) : items.length === 0 ? (
-            <p className="text-body-sm text-ink-subtle">
-              No images yet. Upload one from the cover image field or the Media screen.
-            </p>
+            <p className="text-body-sm text-ink-subtle">{t('gallery.libraryEmpty')}</p>
           ) : (
             <ul className="grid grid-cols-3 gap-2 sm:grid-cols-5">
               {items.map((item) => (
