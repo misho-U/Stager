@@ -271,7 +271,8 @@ Non-negotiable. Each exists because of a specific failure mode.
   Georgian and Latin both load the bundled family, and that the files stay
   split by script. The CSP does not allowlist Google's font hosts.
 - **Bilingual content is authored in both languages at once.** Translation
-  tables, `@@unique([<parent>Id, locale])`, KA/EN tabs in the admin form.
+  tables, `@@unique([<parent>Id, locale])`, one ქართული | English toggle per
+  admin form (§ Dashboard language).
 - **Comments explain why, not what.** Do not narrate the code.
 - **Never edit the database by hand.** Change `schema.prisma`, run
   `pnpm db:migrate`, commit the generated SQL.
@@ -334,6 +335,51 @@ picked, the dashboard follows the OS (the `system` cookie state).
   blocks have not drifted, and asserts the main text pairs stay readable in
   both themes.
 
+### Dashboard language
+
+The dashboard's own words are Georgian or English, the admin's choice, and
+**Georgian until one is picked**. That is a different thing from the language
+of the content being edited, and the two stay apart in code and in wording.
+
+- **Interface language:** the ქა | EN switch on the sidebar's account row and
+  on the sign-in form. A cookie, `stager-admin-locale` (`Path=/admin`), parsed
+  by `pkg/i18n/admin-locale.ts` (anything unknown reads as Georgian) and read by
+  `pkg/i18n/request.ts` for every request without a locale segment, so
+  `<html lang>` follows it. Switching refreshes the page in place: a
+  half-filled form survives it.
+- **Content language:** "რედაქტირება: ქართული | English" at the top of each
+  bilingual form (`shared/components/content-locale.tsx`). One toggle per page
+  switches every translated field, and it opens on Georgian every time. Both
+  languages' fields stay mounted, the other one hidden: unmounted fields drop
+  out of react-hook-form, and saving would wipe the language not on screen. A
+  red dot marks a language with errors, and a failed save whose problems are
+  all in the hidden language switches to it. `TranslatedFields` gives each
+  input the `lang` of its copy, for spellcheck and screen readers.
+- **Wording lives in `pkg/i18n/messages/admin.ka.json` and `admin.en.json`,
+  never in code.** Same keys and placeholders in both. Client components use
+  `useTranslations('admin…')`, server components `getTranslations`. The
+  site's own messages load too, so the dashboard reuses labels the site has
+  (the inquiry interests).
+- **Validation is worded from what failed, not from schema text.** The shared
+  schemas carry no messages. `shared/lib/validation-message.ts` maps a zod
+  issue (its code, limit and pattern) to a message key: live through
+  `useValidationErrorMap()` → `zodResolver(schema, { error })`, and after a 422
+  through the `issues` the API returns beside `fields`. A new refinement names
+  its message with `params: { key }`.
+- **Server errors are worded from `code` and `reason`**, never from the
+  server's English `message`, which stays for logs. A service gets both helpers
+  from `useFormErrors()`. Add a `reason` only where one code covers cases the
+  admin must tell apart (why a sign-in failed, an image still in use).
+- **The notification email is always Georgian:** it has one reader. Its wording
+  is under `email` in `admin.ka.json`.
+- `tests/e2e/admin-i18n.spec.ts` fails on a missing or mismatched key, a
+  message that does not format, a key the code asks for that a language lacks,
+  and wording written into dashboard code: JSX text, and strings given to
+  label, placeholder, hint, title, aria-label and similar props or to a column
+  `header`. Tests that find things by English wording pick English first
+  (`setDashboardLanguage()`); tests that expect Georgian read it from
+  `admin.ka.json`, so correcting a translation never breaks a test.
+
 ### Credential-gated tests
 
 Tests that need a signed-in admin are skipped unless `E2E_ADMIN_EMAIL` and
@@ -346,6 +392,8 @@ Tests that need a signed-in admin are skipped unless `E2E_ADMIN_EMAIL` and
   `test.use({ storageState: ADMIN_SESSION })` from `tests/e2e/admin-session.ts`.
   The login route allows ten sign-ins per 15 minutes per IP, and signing in per
   test used up a whole window in a single run.
+- **They run in English.** The setup project picks English before signing
+  in, and the saved session keeps the choice.
 - **Never sign out in one.** `signOut()` defaults to scope `global`, so it
   would end the session every other test is using.
 - **They write to whatever database `.env.local` points at.** Run them against

@@ -83,6 +83,11 @@ Do not add a library outside this list without raising it first.
 - **`pkg/brand/hex.generated.ts` is generated** from `brandbook.css` on install,
   dev and build, for the email and the theme-color meta tag. Never edit it.
   Brand colours must be hex, or the build fails.
+- **Dashboard wording lives in `pkg/i18n/messages/admin.ka.json` and
+  `admin.en.json`, never in code** — the dashboard is Georgian until the admin
+  picks English. Shared schemas carry no messages: validation is worded from
+  the zod issue (`shared/lib/validation-message.ts`), server errors from
+  `code`/`reason`. `admin-i18n.spec.ts` fails on a hard-coded string.
 - **The design skill (`design-taste-frontend`) is direction only.** AGENTS.md
   § Design skill lists what it may not change — dependencies, tokens, images
   and the CSP, folder structure, CMS copy — and the Georgian checks.
