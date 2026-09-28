@@ -61,7 +61,12 @@
     "noProjects": "Projects will be added soon.",
     "contactDetails": "Contact details",
     "sections": "Page sections",
-    "why": "Why us"
+    "why": "Why us",
+    "skipIntro": "Skip intro",
+    "previous": "Previous",
+    "next": "Next",
+    "menu": "Menu",
+    "close": "Close"
   },
   "preview": {
     "pendingIntro": "A short text about STAGER will go here.",

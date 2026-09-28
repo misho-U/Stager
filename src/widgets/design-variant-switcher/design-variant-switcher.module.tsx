@@ -25,15 +25,17 @@ export function DesignVariantSwitcher({ current, variants, param }: DesignVarian
       aria-label="დიზაინის ვარიანტები"
       data-surface="inverse"
       data-testid="design-variant-switcher"
-      className="border-line-strong sticky bottom-0 z-10 border-t"
+      className="border-line-strong sticky bottom-0 z-(--z-switcher) border-t"
     >
       <div className="max-w-page px-gutter mx-auto flex items-center justify-between gap-4 py-2.5">
         <div className="flex min-w-0 flex-col">
           <p className="text-body-sm font-semibold">დიზაინის შედარება</p>
-          <p className="text-caption text-ink-muted">დროებითი ზოლი, საიტზე არ გამოჩნდება</p>
+          <p className="text-caption text-ink-muted max-sm:hidden">
+            დროებითი ზოლი, საიტზე არ გამოჩნდება
+          </p>
         </div>
 
-        <ul className="flex shrink-0 items-center gap-2">
+        <ul className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {variants.map((variant) => {
             const active = variant.id === current;
             return (

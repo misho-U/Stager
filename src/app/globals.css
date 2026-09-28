@@ -19,11 +19,13 @@
 @import '../shared/brandbook/brandbook.css';
 
 /* TEMPORARY — the home page design comparison. Each file only overrides
-   brandbook tokens inside its own [data-home-variant] scope. Removed with the
-   variants once one is chosen. */
+   brandbook tokens, and adds the CSS only that design draws, inside its own
+   [data-home-variant] scope. Removed with the variants once one is chosen. */
 @import '../shared/brandbook/variants/variant-a.css';
 @import '../shared/brandbook/variants/variant-b.css';
 @import '../shared/brandbook/variants/variant-c.css';
+@import '../shared/brandbook/variants/variant-d.css';
+@import '../shared/brandbook/variants/variant-e.css';
 
 @layer base {
   html {
@@ -31,11 +33,36 @@
   }
 
   /* In-page links ("start a project" → the inquiry form) glide rather than
-     jump, unless the visitor has asked for less motion. */
+     jump, unless the visitor has asked for less motion. Where a design runs
+     Lenis, Lenis does the gliding and the browser's must stand down, or the
+     two fight over every frame. */
   @media (prefers-reduced-motion: no-preference) {
     html {
       scroll-behavior: smooth;
     }
+  }
+
+  html.lenis {
+    scroll-behavior: auto;
+  }
+
+  /* Lenis's own rules (lenis/dist/lenis.css), which it needs to measure and
+     to stop the page. */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+
+  .lenis:not(.lenis-autoToggle).lenis-stopped {
+    overflow: clip;
+  }
+
+  .lenis [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+
+  .lenis.lenis-smooth iframe {
+    pointer-events: none;
   }
 
   body {
@@ -77,38 +104,6 @@
   font-stretch: var(--font-stretch-heading);
 }
 
-/* Delays one part of a staggered entrance: set --i (0, 1, 2…) on each part. */
-@utility stagger {
-  animation-delay: calc(var(--i, 0) * var(--stagger-step));
-}
-
-/* Rises into place as it scrolls into view. Only where the browser can tie an
-   animation to scrolling, and never under reduced motion: everywhere else it
-   simply stands still, fully visible. */
-@utility reveal {
-  @media (prefers-reduced-motion: no-preference) {
-    @supports (animation-timeline: view()) {
-      animation: rise linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 60%;
-    }
-  }
-}
-
-/* A bar that fills as the page scrolls, from nothing at the top to full width
-   at the bottom. Where the browser cannot tie it to scrolling, or motion is
-   reduced, it stays empty and so invisible. */
-@utility scroll-progress {
-  transform: scaleX(0);
-  transform-origin: left;
-  @media (prefers-reduced-motion: no-preference) {
-    @supports (animation-timeline: scroll()) {
-      animation: grow-x linear both;
-      animation-timeline: scroll(root);
-    }
-  }
-}
-
 /* Fine diagonal lines: the mark of a slot reserved for a photo that has not
    been uploaded yet, drawn in the design's own line colour. */
 @utility hatch {
@@ -117,6 +112,49 @@
     var(--color-line) 0 1px,
     transparent 1px calc(var(--spacing) * 3)
   );
+}
+
+/* ---------------------------------------------------------------------------
+   Motion hand-over — the public designs (src/shared/lib/motion/use-motion.ts)
+   ---------------------------------------------------------------------------
+   `data-enter` marks an element a design animates in on load. It starts
+   hidden only where that can end well: the browser runs scripts and motion
+   is allowed. When the design's script takes over it sets
+   `data-motion="on"` on the design's wrapper and holds the starting state
+   itself. If the script never arrives, the fallback shows everything after a
+   moment, so no failure can leave the page blank.
+--------------------------------------------------------------------------- */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  [data-home-variant]:not([data-motion='on']) [data-enter] {
+    opacity: 0;
+    animation: motion-fallback-in var(--duration-base) ease-out 2.4s forwards;
+  }
+}
+
+/* An intro (`data-intro`, see widgets/intro-gate) never plays under reduced
+   motion or without scripts, and cannot cover the page for long if its
+   design's script fails. */
+@media (prefers-reduced-motion: reduce), (scripting: none) {
+  [data-intro] {
+    display: none !important;
+  }
+}
+
+[data-home-variant]:not([data-motion='on']) [data-intro] {
+  animation: motion-fallback-out var(--duration-base) ease-out 3s forwards;
+}
+
+@keyframes motion-fallback-in {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes motion-fallback-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
 }
 
 @layer utilities {

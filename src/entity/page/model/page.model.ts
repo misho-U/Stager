@@ -99,3 +99,40 @@ export const pageUpdateInputSchema = z.object({
 });
 
 export type PageUpdateInput = z.infer<typeof pageUpdateInputSchema>;
+
+// --- Home page structure ---
+
+/**
+ * The home page's sections by role, keyed as the seed creates them
+ * (prisma/seed.ts). A design looks sections up through these names, never
+ * through the raw keys, so a renamed key is one edit here.
+ */
+export const HOME_SECTION_KEYS = {
+  hero: 'hero',
+  intro: 'intro',
+  services: 'what-we-do',
+  projects: 'selected-projects',
+  why: 'why-stager',
+  insights: 'insights',
+  cta: 'cta',
+} as const;
+
+export type HomeSections = Record<keyof typeof HOME_SECTION_KEYS, PublicPageSection | undefined>;
+
+/**
+ * Every home section by role. A section hidden in the dashboard is left out
+ * of the public read, so it comes back undefined here, as does everything
+ * when the page read failed (`page` is null).
+ */
+export function homeSections(page: PublicPage | null): HomeSections {
+  const find = (key: string) => page?.sections.find((section) => section.key === key);
+  return {
+    hero: find(HOME_SECTION_KEYS.hero),
+    intro: find(HOME_SECTION_KEYS.intro),
+    services: find(HOME_SECTION_KEYS.services),
+    projects: find(HOME_SECTION_KEYS.projects),
+    why: find(HOME_SECTION_KEYS.why),
+    insights: find(HOME_SECTION_KEYS.insights),
+    cta: find(HOME_SECTION_KEYS.cta),
+  };
+}
