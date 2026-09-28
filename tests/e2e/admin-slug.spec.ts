@@ -109,8 +109,10 @@ test.describe('slug auto-fill', () => {
     const english = page
       .locator('[data-content-locale="EN"]')
       .getByLabel(labelled(adminEn.fields.title));
-    // The form fills itself once the record loads.
-    await expect(slug).not.toHaveValue('');
+    // The form fills itself once the record loads. Under `pnpm dev` the first
+    // visit compiles the page and its API route, which can take longer than
+    // the default five seconds.
+    await expect(slug).not.toHaveValue('', { timeout: 20_000 });
     const saved = await slug.inputValue();
 
     await editEnglish(page);
