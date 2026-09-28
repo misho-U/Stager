@@ -175,6 +175,10 @@ async function contrastFindings(page: Page): Promise<Finding[]> {
 }
 
 async function openVariant(page: Page, locale: string, variant: string) {
+  // The settled page: sections that rise into view as they are scrolled to
+  // would otherwise still be invisible below the fold, and the contrast scan
+  // skips anything invisible.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto(`/${locale}?v=${variant}`);
   await expect(page.locator(`[data-home-variant="${variant}"]`)).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
@@ -196,7 +200,7 @@ for (const variant of VARIANTS) {
         // Every "start a project" link scrolls to the form on this page.
         await expect(page.locator(`#inquiry [data-testid="inquiry-form"]`)).toHaveCount(1);
         await expect(page.locator('a[href="/contact"], a[href$="/contact"]')).toHaveCount(0);
-        await page.locator('main a[href="#inquiry"]:visible').first().click();
+        await page.locator('[data-home-variant] a[href="#inquiry"]:visible').first().click();
         await expect(page.getByTestId('inquiry-form')).toBeInViewport();
       });
 

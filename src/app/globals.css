@@ -67,6 +67,58 @@
   }
 }
 
+/* How wide the two headline levels are set (brandbook: --font-stretch-*).
+   Tailwind has no theme namespace for font-stretch, so these name the tokens. */
+@utility stretch-hero {
+  font-stretch: var(--font-stretch-hero);
+}
+
+@utility stretch-heading {
+  font-stretch: var(--font-stretch-heading);
+}
+
+/* Delays one part of a staggered entrance: set --i (0, 1, 2…) on each part. */
+@utility stagger {
+  animation-delay: calc(var(--i, 0) * var(--stagger-step));
+}
+
+/* Rises into place as it scrolls into view. Only where the browser can tie an
+   animation to scrolling, and never under reduced motion: everywhere else it
+   simply stands still, fully visible. */
+@utility reveal {
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 60%;
+    }
+  }
+}
+
+/* A bar that fills as the page scrolls, from nothing at the top to full width
+   at the bottom. Where the browser cannot tie it to scrolling, or motion is
+   reduced, it stays empty and so invisible. */
+@utility scroll-progress {
+  transform: scaleX(0);
+  transform-origin: left;
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: scroll()) {
+      animation: grow-x linear both;
+      animation-timeline: scroll(root);
+    }
+  }
+}
+
+/* Fine diagonal lines: the mark of a slot reserved for a photo that has not
+   been uploaded yet, drawn in the design's own line colour. */
+@utility hatch {
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--color-line) 0 1px,
+    transparent 1px calc(var(--spacing) * 3)
+  );
+}
+
 @layer utilities {
   /* A thin scrollbar in the theme's own colours, for panels that only scroll
      when the window is unusually short (the dashboard sidebar). */

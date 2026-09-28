@@ -102,6 +102,11 @@
   --font-weight-hero: 600;
   --font-weight-heading: 600;
 
+  /* How wide the same two levels are: 100% is the regular design, down to
+     62.5% extra-condensed. Used as `stretch-hero` / `stretch-heading`. */
+  --font-stretch-hero: 100%;
+  --font-stretch-heading: 100%;
+
   /* --- Editorial type scale --- */
   --text-caption: 0.75rem;
   --text-caption--line-height: 1.4;
@@ -148,6 +153,36 @@
   --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
   --duration-fast: 150ms;
   --duration-base: 250ms;
+
+  /* The one entrance a page plays (`animate-rise`, see @keyframes rise below):
+     how long it takes, how far it travels, and how far apart its parts start
+     (`stagger`, with --i on each part). Off under reduced motion. */
+  --duration-entrance: 700ms;
+  --rise-distance: 0.75rem;
+  --stagger-step: 70ms;
+  --animate-rise: rise var(--duration-entrance) var(--ease-brand) both;
+}
+
+/* Outside @theme so they are always emitted: utilities in globals.css use
+   them too (`reveal`, `scroll-progress`). */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rise-distance));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -414,7 +449,8 @@
    Typeface files — edit only when swapping the typeface
    ---------------------------------------------------------------------------
    Noto Sans Georgian, self-hosted (SIL Open Font License 1.1, see
-   fonts/OFL.txt). Variable, so one file per script covers every weight.
+   fonts/OFL.txt). Variable in weight (100-900) and width (62.5%-100%), so
+   one file per script covers every weight and every width.
 
    The files are split by script exactly as Google serves them, each with its
    own unicode-range, so the browser downloads a file only when the page
@@ -440,6 +476,7 @@
   font-family: 'Noto Sans Georgian';
   font-style: normal;
   font-weight: 100 900;
+  font-stretch: 62.5% 100%;
   font-display: swap;
   src: url('./fonts/noto-sans-georgian-georgian.woff2') format('woff2');
   unicode-range: U+0589, U+10A0-10FF, U+1C90-1CBA, U+1CBD-1CBF, U+205A, U+2D00-2D2F, U+2E31;
@@ -450,6 +487,7 @@
   font-family: 'Noto Sans Georgian';
   font-style: normal;
   font-weight: 100 900;
+  font-stretch: 62.5% 100%;
   font-display: swap;
   src: url('./fonts/noto-sans-georgian-latin.woff2') format('woff2');
   unicode-range:
@@ -463,6 +501,7 @@
   font-family: 'Noto Sans Georgian';
   font-style: normal;
   font-weight: 100 900;
+  font-stretch: 62.5% 100%;
   font-display: swap;
   src: url('./fonts/noto-sans-georgian-latin-ext.woff2') format('woff2');
   unicode-range:
