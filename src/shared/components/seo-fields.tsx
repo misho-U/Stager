@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { UseFormRegisterReturn } from 'react-hook-form';
 
 import { TextAreaField, TextField } from '@/shared/components/field';
@@ -18,23 +19,25 @@ type SeoFieldsProps = {
  * through every caller.
  */
 export function SeoFields({ metaTitle, metaDescription, errors }: SeoFieldsProps) {
+  const t = useTranslations('admin.seo');
+
   return (
     <div className="flex flex-col gap-4 rounded-md border border-line bg-surface-inset p-4">
       <p className="text-caption font-medium tracking-wide text-ink-subtle uppercase">
-        Search &amp; social
+        {t('caption')}
       </p>
 
       <TextField
-        label="Meta title"
-        hint="Shown as the headline in search results. Leave blank to use the title above."
+        label={t('metaTitle.label')}
+        hint={t('metaTitle.hint')}
         error={errors?.metaTitle}
         {...metaTitle}
       />
 
       <TextAreaField
-        label="Meta description"
+        label={t('metaDescription.label')}
         rows={2}
-        hint="The grey summary under the search result. Around 150 characters reads best."
+        hint={t('metaDescription.hint')}
         error={errors?.metaDescription}
         {...metaDescription}
       />

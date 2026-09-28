@@ -17,7 +17,8 @@ import {
   type CategoryFormValues,
   type CategoryInput,
 } from '@/entity/category/model/category.model';
-import { toFieldErrors, toFormErrorMessage } from '@/shared/lib/form-errors';
+import { useFormErrors } from '@/shared/lib/form-errors';
+import { useValidationErrorMap } from '@/shared/lib/use-validation-error-map';
 
 const EMPTY: CategoryFormValues = {
   slug: '',
@@ -31,6 +32,8 @@ const EMPTY: CategoryFormValues = {
  * navigation than the task deserves.
  */
 export function useAdminCategories() {
+  const formErrors = useFormErrors();
+  const validationErrorMap = useValidationErrorMap();
   const { data, isLoading, error } = useQuery(adminCategoriesQuery());
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
@@ -40,7 +43,7 @@ export function useAdminCategories() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const form = useForm<CategoryFormValues, unknown, CategoryInput>({
-    resolver: zodResolver(categoryInputSchema),
+    resolver: zodResolver(categoryInputSchema, { error: validationErrorMap }),
     defaultValues: EMPTY,
   });
 
@@ -73,8 +76,8 @@ export function useAdminCategories() {
       }
       startCreate();
     } catch (caught) {
-      setFormError(toFormErrorMessage(caught));
-      for (const [field, message] of Object.entries(toFieldErrors(caught))) {
+      setFormError(formErrors.message(caught));
+      for (const [field, message] of Object.entries(formErrors.fields(caught))) {
         form.setError(field as keyof CategoryFormValues, { type: 'server', message });
       }
     }
@@ -86,14 +89,14 @@ export function useAdminCategories() {
       await deleteCategory.mutateAsync(id);
       if (editingId === id) startCreate();
     } catch (caught) {
-      setFormError(toFormErrorMessage(caught));
+      setFormError(formErrors.message(caught));
     }
   };
 
   return {
     categories: data?.items ?? [],
     isLoading,
-    loadError: error ? toFormErrorMessage(error) : null,
+    loadError: error ? formErrors.message(error) : null,
     form,
     onSubmit,
     editingId,

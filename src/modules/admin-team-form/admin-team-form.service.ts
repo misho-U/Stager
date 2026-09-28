@@ -17,7 +17,8 @@ import {
   type TeamMemberFormValues,
   type TeamMemberInput,
 } from '@/entity/team-member/model/team-member.model';
-import { toFieldErrors, toFormErrorMessage } from '@/shared/lib/form-errors';
+import { useFormErrors } from '@/shared/lib/form-errors';
+import { useValidationErrorMap } from '@/shared/lib/use-validation-error-map';
 
 const EMPTY_TRANSLATION = { name: '', position: '', bio: '', expertise: '' };
 
@@ -44,6 +45,8 @@ function toFormValues(member: AdminTeamMember): TeamMemberFormValues {
 }
 
 export function useAdminTeamForm({ memberId }: { memberId?: string }) {
+  const formErrors = useFormErrors();
+  const validationErrorMap = useValidationErrorMap();
   const router = useRouter();
   const isEdit = Boolean(memberId);
 
@@ -53,7 +56,7 @@ export function useAdminTeamForm({ memberId }: { memberId?: string }) {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const form = useForm<TeamMemberFormValues, unknown, TeamMemberInput>({
-    resolver: zodResolver(teamMemberInputSchema),
+    resolver: zodResolver(teamMemberInputSchema, { error: validationErrorMap }),
     defaultValues: EMPTY_MEMBER,
   });
 
@@ -74,8 +77,8 @@ export function useAdminTeamForm({ memberId }: { memberId?: string }) {
       router.push('/admin/team');
       router.refresh();
     } catch (caught) {
-      setSubmitError(toFormErrorMessage(caught));
-      for (const [field, message] of Object.entries(toFieldErrors(caught))) {
+      setSubmitError(formErrors.message(caught));
+      for (const [field, message] of Object.entries(formErrors.fields(caught))) {
         form.setError(field as keyof TeamMemberFormValues, { type: 'server', message });
       }
     }

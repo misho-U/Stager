@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 import { Panel } from '@/shared/components/panel';
@@ -22,22 +23,23 @@ type AdminDashboardModuleProps = {
  * design around.
  */
 export function AdminDashboardModule({ name, counts }: AdminDashboardModuleProps) {
+  const t = useTranslations('admin');
+
+  // The same words as the sidebar, so a count and its screen match.
   const stats = [
-    { label: 'Projects', value: counts.projects, href: '/admin/projects' },
-    { label: 'Insights', value: counts.insights, href: '/admin/insights' },
-    { label: 'Services', value: counts.services, href: '/admin/services' },
-    { label: 'Team', value: counts.teamMembers, href: '/admin/team' },
+    { label: t('sidebar.nav.projects'), value: counts.projects, href: '/admin/projects' },
+    { label: t('sidebar.nav.insights'), value: counts.insights, href: '/admin/insights' },
+    { label: t('sidebar.nav.services'), value: counts.services, href: '/admin/services' },
+    { label: t('sidebar.nav.team'), value: counts.teamMembers, href: '/admin/team' },
   ];
 
   return (
     <>
       <header className="flex flex-col gap-1">
         <h1 className="text-headline font-semibold">
-          {name ? `Hello, ${name}` : 'Dashboard'}
+          {name ? t('dashboard.greeting', { name }) : t('dashboard.title')}
         </h1>
-        <p className="text-body-sm text-ink-muted">
-          Edits here appear on the public site as soon as you save.
-        </p>
+        <p className="text-body-sm text-ink-muted">{t('dashboard.intro')}</p>
       </header>
 
       {counts.newInquiries > 0 ? (
@@ -46,10 +48,9 @@ export function AdminDashboardModule({ name, counts }: AdminDashboardModuleProps
           className="rounded-lg border border-primary/30 bg-primary/8 px-5 py-4 transition-colors hover:bg-primary/12"
         >
           <p className="text-body-sm font-medium text-primary">
-            {counts.newInquiries} new{' '}
-            {counts.newInquiries === 1 ? 'inquiry' : 'inquiries'} waiting
+            {t('dashboard.newInquiries', { count: counts.newInquiries })}
           </p>
-          <p className="text-caption text-ink-muted">Open the inbox →</p>
+          <p className="text-caption text-ink-muted">{t('dashboard.openInbox')}</p>
         </Link>
       ) : null}
 
@@ -66,7 +67,7 @@ export function AdminDashboardModule({ name, counts }: AdminDashboardModuleProps
         ))}
       </div>
 
-      <Panel title="Common tasks">
+      <Panel title={t('dashboard.shortcutsTitle')}>
         <ul className="flex flex-col gap-2">
           {DASHBOARD_SHORTCUTS.map((shortcut) => (
             <li key={shortcut.href}>
@@ -74,8 +75,12 @@ export function AdminDashboardModule({ name, counts }: AdminDashboardModuleProps
                 href={shortcut.href}
                 className="flex flex-col rounded-md px-2 py-2 transition-colors hover:bg-surface-muted"
               >
-                <span className="text-body-sm text-ink">{shortcut.label}</span>
-                <span className="text-caption text-ink-subtle">{shortcut.description}</span>
+                <span className="text-body-sm text-ink">
+                  {t(`dashboard.shortcuts.${shortcut.key}.label`)}
+                </span>
+                <span className="text-caption text-ink-subtle">
+                  {t(`dashboard.shortcuts.${shortcut.key}.description`)}
+                </span>
               </Link>
             </li>
           ))}

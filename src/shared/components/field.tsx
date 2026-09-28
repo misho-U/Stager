@@ -8,6 +8,7 @@ import type {
 } from 'react';
 import { useId } from 'react';
 
+import { useFieldLanguage } from '@/shared/components/content-locale';
 import { cn } from '@/shared/lib/cn';
 
 const CONTROL_CLASS =
@@ -57,11 +58,15 @@ type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> & {
 
 export function TextField({ label, error, hint, required, ...props }: TextFieldProps) {
   const id = useId();
+  const language = useFieldLanguage();
 
   return (
     <FieldShell label={label} htmlFor={id} error={error} hint={hint} required={required}>
       <input
         id={id}
+        // The copy's language, not the dashboard's: spellcheck and screen
+        // readers then treat Georgian text as Georgian.
+        lang={language?.toLowerCase()}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
         className={cn(CONTROL_CLASS, error && 'border-danger')}
@@ -86,11 +91,13 @@ export function TextAreaField({
   ...props
 }: TextAreaFieldProps) {
   const id = useId();
+  const language = useFieldLanguage();
 
   return (
     <FieldShell label={label} htmlFor={id} error={error} hint={hint} required={required}>
       <textarea
         id={id}
+        lang={language?.toLowerCase()}
         rows={rows}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : undefined}

@@ -5,12 +5,14 @@ import { SunIcon } from '@phosphor-icons/react/dist/csr/Sun';
 
 import type { AdminTheme } from '@/shared/lib/admin-theme';
 
-/** The two modes on offer. `system` is not one: it is the state before a pick. */
+/**
+ * The two modes on offer. `system` is not one: it is the state before a pick.
+ * Each value is also its label's key under `admin.theme`.
+ */
 export const THEME_OPTIONS: ReadonlyArray<{
   value: Exclude<AdminTheme, 'system'>;
-  label: string;
   Icon: Icon;
 }> = [
-  { value: 'light', label: 'Light', Icon: SunIcon },
-  { value: 'dark', label: 'Dark', Icon: MoonIcon },
+  { value: 'light', Icon: SunIcon },
+  { value: 'dark', Icon: MoonIcon },
 ];

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useRef, useState } from 'react';
 
@@ -25,6 +26,7 @@ type MediaPickerProps = {
  * attributes is impossible to fix later.
  */
 export function MediaPicker({ label, value, onChange, hint }: MediaPickerProps) {
+  const t = useTranslations('admin');
   const { items, isLoading, loadError, uploadFile, isUploading, uploadProgress, uploadError } =
     useMediaPicker();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -61,19 +63,23 @@ export function MediaPicker({ label, value, onChange, hint }: MediaPickerProps) 
                 : {})}
             />
           ) : (
-            <span className="flex h-full items-center justify-center text-caption text-ink-subtle">
-              None
+            <span className="flex h-full items-center justify-center px-1 text-center text-caption text-ink-subtle">
+              {t('mediaPicker.none')}
             </span>
           )}
         </div>
 
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" size="sm" onClick={() => setIsOpen((open) => !open)}>
-            {isOpen ? 'Close' : selected ? 'Change' : 'Choose image'}
+            {isOpen
+              ? t('common.close')
+              : selected
+                ? t('mediaPicker.change')
+                : t('mediaPicker.choose')}
           </Button>
           {selected ? (
             <Button variant="ghost" size="sm" onClick={() => onChange(null)}>
-              Remove
+              {t('common.remove')}
             </Button>
           ) : null}
         </div>
@@ -88,14 +94,15 @@ export function MediaPicker({ label, value, onChange, hint }: MediaPickerProps) 
 
           <div className="flex flex-col gap-2 border-b border-line pb-3">
             <label className="text-caption font-medium text-ink-muted">
-              Describe the image (alt text)
+              {t('alt.label')}
               <input
                 value={altText}
                 onChange={(event) => setAltText(event.target.value)}
-                placeholder="e.g. Open kitchen during service"
+                placeholder={t('mediaPicker.altPlaceholder')}
                 className="mt-1 w-full rounded-md border border-line bg-surface-raised px-3 py-2 text-body-sm"
               />
             </label>
+            <p className="text-caption text-ink-subtle">{t('alt.hint')}</p>
             <div className="flex items-center gap-2">
               <Button
                 size="sm"
@@ -103,12 +110,12 @@ export function MediaPicker({ label, value, onChange, hint }: MediaPickerProps) 
                 disabled={altText.trim().length === 0}
                 onClick={() => fileInputRef.current?.click()}
               >
-                {isUploading ? `Uploading… ${uploadProgress ?? 0}%` : 'Upload new image'}
+                {isUploading
+                  ? t('media.uploading', { progress: uploadProgress ?? 0 })
+                  : t('mediaPicker.upload')}
               </Button>
               {altText.trim().length === 0 ? (
-                <span className="text-caption text-ink-subtle">
-                  Alt text is required before uploading.
-                </span>
+                <span className="text-caption text-ink-subtle">{t('mediaPicker.altRequired')}</span>
               ) : null}
             </div>
             <input
@@ -125,11 +132,9 @@ export function MediaPicker({ label, value, onChange, hint }: MediaPickerProps) 
           </div>
 
           {isLoading ? (
-            <p className="text-body-sm text-ink-subtle">Loading library…</p>
+            <p className="text-body-sm text-ink-subtle">{t('mediaPicker.loadingLibrary')}</p>
           ) : items.length === 0 ? (
-            <p className="text-body-sm text-ink-subtle">
-              No images yet. Upload the first one above.
-            </p>
+            <p className="text-body-sm text-ink-subtle">{t('mediaPicker.empty')}</p>
           ) : (
             <ul className="grid grid-cols-3 gap-2 sm:grid-cols-5">
               {items.map((item) => (

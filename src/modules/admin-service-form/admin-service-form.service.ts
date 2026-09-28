@@ -17,7 +17,8 @@ import {
   type ServiceFormValues,
   type ServiceInput,
 } from '@/entity/service/model/service.model';
-import { toFieldErrors, toFormErrorMessage } from '@/shared/lib/form-errors';
+import { useFormErrors } from '@/shared/lib/form-errors';
+import { useValidationErrorMap } from '@/shared/lib/use-validation-error-map';
 
 const EMPTY_TRANSLATION = {
   title: '',
@@ -66,6 +67,8 @@ function toFormValues(service: AdminService): ServiceFormValues {
 }
 
 export function useAdminServiceForm({ serviceId }: { serviceId?: string }) {
+  const formErrors = useFormErrors();
+  const validationErrorMap = useValidationErrorMap();
   const router = useRouter();
   const isEdit = Boolean(serviceId);
 
@@ -75,7 +78,7 @@ export function useAdminServiceForm({ serviceId }: { serviceId?: string }) {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const form = useForm<ServiceFormValues, unknown, ServiceInput>({
-    resolver: zodResolver(serviceInputSchema),
+    resolver: zodResolver(serviceInputSchema, { error: validationErrorMap }),
     defaultValues: EMPTY_SERVICE,
   });
 
@@ -96,8 +99,8 @@ export function useAdminServiceForm({ serviceId }: { serviceId?: string }) {
       router.push('/admin/services');
       router.refresh();
     } catch (caught) {
-      setSubmitError(toFormErrorMessage(caught));
-      for (const [field, message] of Object.entries(toFieldErrors(caught))) {
+      setSubmitError(formErrors.message(caught));
+      for (const [field, message] of Object.entries(formErrors.fields(caught))) {
         form.setError(field as keyof ServiceFormValues, { type: 'server', message });
       }
     }

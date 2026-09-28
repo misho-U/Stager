@@ -1,38 +1,28 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 import { adminPagesQuery } from '@/entity/page/api/page.query';
 import { PageHeader } from '@/shared/components/page-header';
 import { ErrorNotice, Panel } from '@/shared/components/panel';
-import { toFormErrorMessage } from '@/shared/lib/form-errors';
-
-const PAGE_LABELS: Record<string, string> = {
-  HOME: 'Home',
-  ABOUT: 'About',
-  SERVICES: 'Services',
-  PROJECTS: 'Projects',
-  TEAM: 'Team',
-  INSIGHTS: 'Insights',
-  CONTACT: 'Contact',
-};
+import { useFormErrors } from '@/shared/lib/form-errors';
 
 export function AdminPagesModule() {
+  const t = useTranslations('admin');
+  const formErrors = useFormErrors();
   const { data, isLoading, error } = useQuery(adminPagesQuery());
 
   return (
     <>
-      <PageHeader
-        title="Page copy"
-        description="Change the words and SEO on each page. The sections themselves are fixed in code."
-      />
+      <PageHeader title={t('pages.title')} description={t('pages.description')} />
 
-      {error ? <ErrorNotice message={toFormErrorMessage(error)} /> : null}
+      {error ? <ErrorNotice message={formErrors.message(error)} /> : null}
 
       <Panel>
         {isLoading ? (
-          <p className="text-body-sm text-ink-subtle">Loading…</p>
+          <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
         ) : (
           <ul className="flex flex-col divide-y divide-line">
             {(data?.items ?? []).map((page) => (
@@ -43,11 +33,10 @@ export function AdminPagesModule() {
                 >
                   <div className="flex flex-col">
                     <span className="text-body-sm font-medium text-ink">
-                      {PAGE_LABELS[page.key] ?? page.key}
+                      {t(`pages.keys.${page.key}`)}
                     </span>
                     <span className="text-caption text-ink-subtle">
-                      {page.sections.length}{' '}
-                      {page.sections.length === 1 ? 'section' : 'sections'}
+                      {t('pages.sectionCount', { count: page.sections.length })}
                     </span>
                   </div>
                   <span aria-hidden className="text-ink-subtle">

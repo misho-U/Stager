@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 import { useAdminProjects } from '@/modules/admin-projects/admin-projects.service';
@@ -11,13 +12,14 @@ import { ErrorNotice, Panel, StatusBadge } from '@/shared/components/panel';
 import type { AdminProject } from '@/entity/project/model/project.model';
 
 export function AdminProjectsModule() {
+  const t = useTranslations('admin');
   const { projects, isLoading, loadError, remove, isDeleting, deletingId, deleteError } =
     useAdminProjects();
 
   const columns: Array<Column<AdminProject>> = [
     {
       key: 'title',
-      header: 'Title',
+      header: t('columns.title'),
       render: (project) => (
         <Link
           href={`/admin/projects/${project.id}`}
@@ -29,21 +31,21 @@ export function AdminProjectsModule() {
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t('columns.status'),
       render: (project) => <StatusBadge status={project.status} />,
     },
     {
       key: 'year',
-      header: 'Year',
+      header: t('columns.year'),
       secondary: true,
       render: (project) => <span className="text-ink-muted">{project.year ?? '—'}</span>,
     },
     {
       key: 'featured',
-      header: 'Featured',
+      header: t('columns.featured'),
       secondary: true,
       render: (project) => (
-        <span className="text-ink-muted">{project.featured ? 'Yes' : '—'}</span>
+        <span className="text-ink-muted">{project.featured ? t('common.yes') : '—'}</span>
       ),
     },
     {
@@ -52,8 +54,8 @@ export function AdminProjectsModule() {
       align: 'right',
       render: (project) => (
         <ConfirmButton
-          label="Delete"
-          confirmLabel="Confirm"
+          label={t('common.delete')}
+          confirmLabel={t('common.confirm')}
           loading={isDeleting && deletingId === project.id}
           onConfirm={() => remove(project.id)}
         />
@@ -64,11 +66,11 @@ export function AdminProjectsModule() {
   return (
     <>
       <PageHeader
-        title="Projects"
-        description="Case studies shown on the public site."
+        title={t('projects.title')}
+        description={t('projects.description')}
         actions={
           <Link href="/admin/projects/new">
-            <Button>New project</Button>
+            <Button>{t('projects.new')}</Button>
           </Link>
         }
       />
@@ -78,14 +80,14 @@ export function AdminProjectsModule() {
 
       <Panel>
         {isLoading ? (
-          <p className="text-body-sm text-ink-subtle">Loading…</p>
+          <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
         ) : (
           <DataTable
             rows={projects}
             columns={columns}
             rowKey={(project) => project.id}
-            emptyTitle="No projects yet"
-            emptyDescription="Add your first case study to show it on the site."
+            emptyTitle={t('projects.emptyTitle')}
+            emptyDescription={t('projects.emptyDescription')}
           />
         )}
       </Panel>

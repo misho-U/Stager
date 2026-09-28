@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import { useAdminCategories } from '@/modules/admin-categories/admin-categories.service';
 import { Button } from '@/shared/components/button';
 import { ConfirmButton } from '@/shared/components/confirm-button';
@@ -10,6 +12,7 @@ import { ErrorNotice, Panel } from '@/shared/components/panel';
 import type { AdminCategory } from '@/entity/category/model/category.model';
 
 export function AdminCategoriesModule() {
+  const t = useTranslations('admin');
   const {
     categories,
     isLoading,
@@ -31,14 +34,14 @@ export function AdminCategoriesModule() {
   const columns: Array<Column<AdminCategory>> = [
     {
       key: 'name',
-      header: 'Name (KA)',
+      header: t('categories.columns.nameKa'),
       render: (category) => (
         <span className="font-medium text-ink">{category.translations.KA.name || '—'}</span>
       ),
     },
     {
       key: 'nameEn',
-      header: 'Name (EN)',
+      header: t('categories.columns.nameEn'),
       secondary: true,
       render: (category) => (
         <span className="text-ink-muted">{category.translations.EN.name || '—'}</span>
@@ -46,7 +49,7 @@ export function AdminCategoriesModule() {
     },
     {
       key: 'slug',
-      header: 'Slug',
+      header: t('fields.slug.label'),
       secondary: true,
       render: (category) => <code className="text-caption text-ink-subtle">{category.slug}</code>,
     },
@@ -57,11 +60,11 @@ export function AdminCategoriesModule() {
       render: (category) => (
         <span className="inline-flex items-center gap-1.5">
           <Button variant="ghost" size="sm" onClick={() => startEdit(category)}>
-            Edit
+            {t('common.edit')}
           </Button>
           <ConfirmButton
-            label="Delete"
-            confirmLabel="Confirm"
+            label={t('common.delete')}
+            confirmLabel={t('common.confirm')}
             loading={isDeleting && deletingId === category.id}
             onConfirm={() => remove(category.id)}
           />
@@ -73,18 +76,18 @@ export function AdminCategoriesModule() {
   return (
     <>
       <PageHeader
-        title="Categories"
-        description="Used to file articles under Insights."
+        title={t('categories.title')}
+        description={t('categories.description')}
       />
 
       {loadError ? <ErrorNotice message={loadError} /> : null}
 
       <Panel
-        title={editingId ? 'Edit category' : 'Add a category'}
+        title={editingId ? t('categories.editTitle') : t('categories.addTitle')}
         actions={
           editingId ? (
             <Button variant="ghost" size="sm" onClick={startCreate}>
-              Cancel edit
+              {t('common.cancelEdit')}
             </Button>
           ) : null
         }
@@ -94,25 +97,27 @@ export function AdminCategoriesModule() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <TextField
-              label="Name (Georgian)"
+              label={t('categories.nameKa')}
               required
               error={errors.translations?.KA?.name?.message}
               {...form.register('translations.KA.name')}
             />
             <TextField
-              label="Name (English)"
+              label={t('categories.nameEn')}
               required
               error={errors.translations?.EN?.name?.message}
               {...form.register('translations.EN.name')}
             />
             <TextField
-              label="Slug"
+              label={t('fields.slug.label')}
               required
+              hint={t('fields.slug.hint')}
               error={errors.slug?.message}
               {...form.register('slug')}
             />
             <TextField
-              label="Sort order"
+              label={t('fields.sortOrder.label')}
+              hint={t('fields.sortOrder.hint')}
               type="number"
               {...form.register('order', {
                 setValueAs: (value: string) => (value === '' ? 0 : Number(value)),
@@ -122,22 +127,22 @@ export function AdminCategoriesModule() {
 
           <div className="flex justify-end">
             <Button type="submit" loading={isSubmitting}>
-              {editingId ? 'Save changes' : 'Add category'}
+              {editingId ? t('common.saveChanges') : t('categories.add')}
             </Button>
           </div>
         </form>
       </Panel>
 
-      <Panel title="All categories">
+      <Panel title={t('categories.allTitle')}>
         {isLoading ? (
-          <p className="text-body-sm text-ink-subtle">Loading…</p>
+          <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
         ) : (
           <DataTable
             rows={categories}
             columns={columns}
             rowKey={(category) => category.id}
-            emptyTitle="No categories yet"
-            emptyDescription="Articles can be published without one."
+            emptyTitle={t('categories.emptyTitle')}
+            emptyDescription={t('categories.emptyDescription')}
           />
         )}
       </Panel>

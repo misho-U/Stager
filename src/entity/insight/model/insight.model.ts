@@ -66,7 +66,7 @@ export type PublicInsightDetail = z.infer<typeof publicInsightDetailSchema>;
 export const publicInsightListResponseSchema = listResponseSchema(publicInsightListItemSchema);
 
 export const insightTranslationInputSchema = seoInputSchema.extend({
-  title: z.string().trim().min(1, 'Title is required').max(200),
+  title: z.string().trim().min(1).max(200),
   excerpt: z.string().trim().max(600).default(''),
   body: z.string().trim().max(200_000).default(''),
 });

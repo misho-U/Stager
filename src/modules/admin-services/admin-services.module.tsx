@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -11,9 +12,11 @@ import { ConfirmButton } from '@/shared/components/confirm-button';
 import { DataTable, type Column } from '@/shared/components/data-table';
 import { PageHeader } from '@/shared/components/page-header';
 import { ErrorNotice, Panel, StatusBadge } from '@/shared/components/panel';
-import { toFormErrorMessage } from '@/shared/lib/form-errors';
+import { useFormErrors } from '@/shared/lib/form-errors';
 
 export function AdminServicesModule() {
+  const t = useTranslations('admin');
+  const formErrors = useFormErrors();
   const { data, isLoading, error } = useQuery(adminServicesQuery());
   const deleteService = useDeleteService();
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -23,14 +26,14 @@ export function AdminServicesModule() {
     try {
       await deleteService.mutateAsync(id);
     } catch (caught) {
-      setDeleteError(toFormErrorMessage(caught));
+      setDeleteError(formErrors.message(caught));
     }
   };
 
   const columns: Array<Column<AdminService>> = [
     {
       key: 'title',
-      header: 'Service',
+      header: t('services.columns.service'),
       render: (service) => (
         <Link
           href={`/admin/services/${service.id}`}
@@ -40,10 +43,14 @@ export function AdminServicesModule() {
         </Link>
       ),
     },
-    { key: 'status', header: 'Status', render: (service) => <StatusBadge status={service.status} /> },
+    {
+      key: 'status',
+      header: t('columns.status'),
+      render: (service) => <StatusBadge status={service.status} />,
+    },
     {
       key: 'order',
-      header: 'Order',
+      header: t('columns.order'),
       secondary: true,
       render: (service) => <span className="text-ink-muted">{service.order}</span>,
     },
@@ -53,8 +60,8 @@ export function AdminServicesModule() {
       align: 'right',
       render: (service) => (
         <ConfirmButton
-          label="Delete"
-          confirmLabel="Confirm"
+          label={t('common.delete')}
+          confirmLabel={t('common.confirm')}
           loading={deleteService.isPending && deleteService.variables === service.id}
           onConfirm={() => remove(service.id)}
         />
@@ -65,27 +72,27 @@ export function AdminServicesModule() {
   return (
     <>
       <PageHeader
-        title="Services"
-        description="The service lines listed on the site. Add or edit them without a deploy."
+        title={t('services.title')}
+        description={t('services.description')}
         actions={
           <Link href="/admin/services/new">
-            <Button>New service</Button>
+            <Button>{t('services.new')}</Button>
           </Link>
         }
       />
 
-      {error ? <ErrorNotice message={toFormErrorMessage(error)} /> : null}
+      {error ? <ErrorNotice message={formErrors.message(error)} /> : null}
       {deleteError ? <ErrorNotice message={deleteError} /> : null}
 
       <Panel>
         {isLoading ? (
-          <p className="text-body-sm text-ink-subtle">Loading…</p>
+          <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
         ) : (
           <DataTable
             rows={data?.items ?? []}
             columns={columns}
             rowKey={(service) => service.id}
-            emptyTitle="No services yet"
+            emptyTitle={t('services.emptyTitle')}
           />
         )}
       </Panel>
