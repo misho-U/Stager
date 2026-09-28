@@ -22,9 +22,15 @@ import { MediaPicker } from '@/widgets/media-picker/media-picker.module';
 export function AdminServiceFormModule({ serviceId }: { serviceId?: string }) {
   const t = useTranslations('admin');
   const statusOptions = useStatusOptions();
-  const { form, onSubmit, isEdit, isLoading, isSubmitting, submitError } = useAdminServiceForm({
-    serviceId,
-  });
+  const {
+    form,
+    onSubmit,
+    isEdit,
+    isLoading,
+    isSubmitting,
+    submitError,
+    slugAutofill,
+  } = useAdminServiceForm({ serviceId });
 
   const { errors, submitCount } = form.formState;
 
@@ -59,7 +65,9 @@ export function AdminServiceFormModule({ serviceId }: { serviceId?: string }) {
                   label={t('fields.title')}
                   required
                   error={errors.translations?.[locale]?.title?.message}
-                  {...form.register(`translations.${locale}.title`)}
+                  {...form.register(`translations.${locale}.title`, {
+                    onChange: locale === 'EN' ? slugAutofill.followTitle : undefined,
+                  })}
                 />
                 <TextAreaField
                   label={t('services.form.shortDescription.label')}
@@ -93,9 +101,13 @@ export function AdminServiceFormModule({ serviceId }: { serviceId?: string }) {
             <TextField
               label={t('fields.slug.label')}
               required
-              hint={t('fields.slug.hint')}
+              hint={
+                isEdit
+                  ? t('fields.slug.hint')
+                  : `${t('fields.slug.hint')} ${t('fields.slug.autoFromTitle')}`
+              }
               error={errors.slug?.message}
-              {...form.register('slug')}
+              {...form.register('slug', { onChange: slugAutofill.slugEdited })}
             />
             <SelectField
               label={t('fields.status')}

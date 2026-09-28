@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import {
@@ -18,6 +18,7 @@ import {
   type CategoryInput,
 } from '@/entity/category/model/category.model';
 import { useFormErrors } from '@/shared/lib/form-errors';
+import { useSlugAutofill } from '@/shared/lib/use-slug-autofill';
 import { useValidationErrorMap } from '@/shared/lib/use-validation-error-map';
 
 const EMPTY: CategoryFormValues = {
@@ -47,10 +48,20 @@ export function useAdminCategories() {
     defaultValues: EMPTY,
   });
 
+  // While adding, the slug follows the English name until it is edited by
+  // hand; never while editing a saved category (use-slug-autofill.ts).
+  const setSlug = useCallback(
+    (slug: string) =>
+      form.setValue('slug', slug, { shouldDirty: true, shouldValidate: form.formState.isSubmitted }),
+    [form],
+  );
+  const slugAutofill = useSlugAutofill({ enabled: editingId === null, setSlug });
+
   const startCreate = () => {
     setEditingId(null);
     setFormError(null);
     form.reset(EMPTY);
+    slugAutofill.restart();
   };
 
   const startEdit = (category: AdminCategory) => {
@@ -100,6 +111,7 @@ export function useAdminCategories() {
     form,
     onSubmit,
     editingId,
+    slugAutofill,
     startCreate,
     startEdit,
     remove,

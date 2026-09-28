@@ -27,6 +27,7 @@ export function AdminCategoriesModule() {
     isDeleting,
     deletingId,
     formError,
+    slugAutofill,
   } = useAdminCategories();
 
   const { errors } = form.formState;
@@ -106,14 +107,18 @@ export function AdminCategoriesModule() {
               label={t('categories.nameEn')}
               required
               error={errors.translations?.EN?.name?.message}
-              {...form.register('translations.EN.name')}
+              {...form.register('translations.EN.name', { onChange: slugAutofill.followTitle })}
             />
             <TextField
               label={t('fields.slug.label')}
               required
-              hint={t('fields.slug.hint')}
+              hint={
+                editingId
+                  ? t('fields.slug.hint')
+                  : `${t('fields.slug.hint')} ${t('fields.slug.autoFromName')}`
+              }
               error={errors.slug?.message}
-              {...form.register('slug')}
+              {...form.register('slug', { onChange: slugAutofill.slugEdited })}
             />
             <TextField
               label={t('fields.sortOrder.label')}

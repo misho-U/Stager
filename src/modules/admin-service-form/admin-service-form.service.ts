@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import {
@@ -18,6 +18,7 @@ import {
   type ServiceInput,
 } from '@/entity/service/model/service.model';
 import { useFormErrors } from '@/shared/lib/form-errors';
+import { useSlugAutofill } from '@/shared/lib/use-slug-autofill';
 import { useValidationErrorMap } from '@/shared/lib/use-validation-error-map';
 
 const EMPTY_TRANSLATION = {
@@ -82,6 +83,16 @@ export function useAdminServiceForm({ serviceId }: { serviceId?: string }) {
     defaultValues: EMPTY_SERVICE,
   });
 
+  // While creating, the slug follows the English title until it is edited
+  // by hand (use-slug-autofill.ts). Validated as it changes only after a save
+  // was tried, so an empty title does not flag the slug mid-typing.
+  const setSlug = useCallback(
+    (slug: string) =>
+      form.setValue('slug', slug, { shouldDirty: true, shouldValidate: form.formState.isSubmitted }),
+    [form],
+  );
+  const slugAutofill = useSlugAutofill({ enabled: !isEdit, setSlug });
+
   const { reset } = form;
 
   useEffect(() => {
@@ -110,6 +121,7 @@ export function useAdminServiceForm({ serviceId }: { serviceId?: string }) {
     form,
     onSubmit,
     isEdit,
+    slugAutofill,
     isLoading: isEdit && serviceQuery.isLoading,
     isSubmitting: createService.isPending || updateService.isPending,
     submitError,

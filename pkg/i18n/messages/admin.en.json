@@ -176,7 +176,9 @@
     "bodyHint": "Basic HTML is allowed; scripts are stripped on save.",
     "slug": {
       "label": "Slug",
-      "hint": "The end of the page's web address, e.g. the kitchen-renovation in stager.ge/ka/projects/kitchen-renovation. Lowercase Latin letters, numbers and hyphens. Changing it later breaks links people already have."
+      "hint": "The end of the page's web address, e.g. the kitchen-renovation in stager.ge/ka/projects/kitchen-renovation. Lowercase Latin letters, numbers and hyphens. Changing it later breaks links people already have.",
+      "autoFromTitle": "While you create it, this fills in from the English title. You can still change it.",
+      "autoFromName": "While you create it, this fills in from the English name. You can still change it."
     },
     "status": "Status",
     "sortOrder": {

@@ -21,9 +21,15 @@ import { MediaPicker } from '@/widgets/media-picker/media-picker.module';
 export function AdminTeamFormModule({ memberId }: { memberId?: string }) {
   const t = useTranslations('admin');
   const statusOptions = useStatusOptions();
-  const { form, onSubmit, isEdit, isLoading, isSubmitting, submitError } = useAdminTeamForm({
-    memberId,
-  });
+  const {
+    form,
+    onSubmit,
+    isEdit,
+    isLoading,
+    isSubmitting,
+    submitError,
+    slugAutofill,
+  } = useAdminTeamForm({ memberId });
 
   const { errors, submitCount } = form.formState;
 
@@ -58,7 +64,9 @@ export function AdminTeamFormModule({ memberId }: { memberId?: string }) {
                   label={t('team.form.name')}
                   required
                   error={errors.translations?.[locale]?.name?.message}
-                  {...form.register(`translations.${locale}.name`)}
+                  {...form.register(`translations.${locale}.name`, {
+                    onChange: locale === 'EN' ? slugAutofill.followTitle : undefined,
+                  })}
                 />
                 <TextField
                   label={t('team.form.position')}
@@ -86,9 +94,13 @@ export function AdminTeamFormModule({ memberId }: { memberId?: string }) {
             <TextField
               label={t('fields.slug.label')}
               required
-              hint={t('fields.slug.hint')}
+              hint={
+                isEdit
+                  ? t('fields.slug.hint')
+                  : `${t('fields.slug.hint')} ${t('fields.slug.autoFromName')}`
+              }
               error={errors.slug?.message}
-              {...form.register('slug')}
+              {...form.register('slug', { onChange: slugAutofill.slugEdited })}
             />
             <SelectField
               label={t('fields.status')}

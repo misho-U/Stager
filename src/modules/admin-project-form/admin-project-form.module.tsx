@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Controller } from 'react-hook-form';
 
 import { useAdminProjectForm } from '@/modules/admin-project-form/admin-project-form.service';
-import { slugify } from '@/shared/constants/content';
 import { Button } from '@/shared/components/button';
 import {
   ContentLocaleProvider,
@@ -34,6 +33,7 @@ export function AdminProjectFormModule({ projectId }: { projectId?: string }) {
     isSubmitting,
     submitError,
     services,
+    slugAutofill,
   } = useAdminProjectForm({ projectId });
 
   const { errors, submitCount } = form.formState;
@@ -74,13 +74,7 @@ export function AdminProjectFormModule({ projectId }: { projectId?: string }) {
                   required
                   error={errors.translations?.[locale]?.title?.message}
                   {...form.register(`translations.${locale}.title`, {
-                    // Auto-fill the slug from the Georgian title, but only while
-                    // creating: changing it later would break existing links.
-                    onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
-                      if (!isEdit && locale === 'KA' && !form.getValues('slug')) {
-                        form.setValue('slug', slugify(event.target.value));
-                      }
-                    },
+                    onChange: locale === 'EN' ? slugAutofill.followTitle : undefined,
                   })}
                 />
 
@@ -155,9 +149,13 @@ export function AdminProjectFormModule({ projectId }: { projectId?: string }) {
             <TextField
               label={t('fields.slug.label')}
               required
-              hint={t('fields.slug.hint')}
+              hint={
+                isEdit
+                  ? t('fields.slug.hint')
+                  : `${t('fields.slug.hint')} ${t('fields.slug.autoFromTitle')}`
+              }
               error={errors.slug?.message}
-              {...form.register('slug')}
+              {...form.register('slug', { onChange: slugAutofill.slugEdited })}
             />
 
             <SelectField

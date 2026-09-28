@@ -273,6 +273,12 @@ Non-negotiable. Each exists because of a specific failure mode.
 - **Bilingual content is authored in both languages at once.** Translation
   tables, `@@unique([<parent>Id, locale])`, one ქართული | English toggle per
   admin form (§ Dashboard language).
+- **A slug follows the English title (or name) while the item is being
+  created** (`shared/lib/use-slug-autofill.ts`), until someone edits the slug
+  by hand; emptying it hands it back to the title. A saved item's slug is never
+  changed automatically, draft or not: links to a published page may already
+  be out there, and a draft may have been published before. It follows the
+  English because `slugify()` keeps Latin letters and digits only.
 - **Comments explain why, not what.** Do not narrate the code.
 - **Never edit the database by hand.** Change `schema.prisma`, run
   `pnpm db:migrate`, commit the generated SQL.

@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { adminCategoriesQuery } from '@/entity/category/api/category.query';
@@ -20,6 +20,7 @@ import {
 } from '@/entity/insight/model/insight.model';
 import { adminTeamMembersQuery } from '@/entity/team-member/api/team-member.query';
 import { useFormErrors } from '@/shared/lib/form-errors';
+import { useSlugAutofill } from '@/shared/lib/use-slug-autofill';
 import { useValidationErrorMap } from '@/shared/lib/use-validation-error-map';
 
 const EMPTY_TRANSLATION = {
@@ -93,6 +94,16 @@ export function useAdminInsightForm({ insightId }: { insightId?: string }) {
     defaultValues: EMPTY_INSIGHT,
   });
 
+  // While creating, the slug follows the English title until it is edited
+  // by hand (use-slug-autofill.ts). Validated as it changes only after a save
+  // was tried, so an empty title does not flag the slug mid-typing.
+  const setSlug = useCallback(
+    (slug: string) =>
+      form.setValue('slug', slug, { shouldDirty: true, shouldValidate: form.formState.isSubmitted }),
+    [form],
+  );
+  const slugAutofill = useSlugAutofill({ enabled: !isEdit, setSlug });
+
   const { reset } = form;
 
   useEffect(() => {
@@ -121,6 +132,7 @@ export function useAdminInsightForm({ insightId }: { insightId?: string }) {
     form,
     onSubmit,
     isEdit,
+    slugAutofill,
     isLoading: isEdit && insightQuery.isLoading,
     isSubmitting: createInsight.isPending || updateInsight.isPending,
     submitError,

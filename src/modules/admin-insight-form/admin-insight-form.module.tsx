@@ -15,7 +15,6 @@ import { CheckboxField, SelectField, TextAreaField, TextField } from '@/shared/c
 import { PageHeader } from '@/shared/components/page-header';
 import { ErrorNotice, Panel } from '@/shared/components/panel';
 import { SeoFields } from '@/shared/components/seo-fields';
-import { slugify } from '@/shared/constants/content';
 import { toOptionalNumber } from '@/shared/lib/form-values';
 import { useStatusOptions } from '@/shared/lib/use-enum-options';
 import type { DbLocale } from '@/shared/types/enums';
@@ -33,6 +32,7 @@ export function AdminInsightFormModule({ insightId }: { insightId?: string }) {
     submitError,
     categoryOptions,
     authorOptions,
+    slugAutofill,
   } = useAdminInsightForm({ insightId });
 
   const { errors, submitCount } = form.formState;
@@ -69,11 +69,7 @@ export function AdminInsightFormModule({ insightId }: { insightId?: string }) {
                   required
                   error={errors.translations?.[locale]?.title?.message}
                   {...form.register(`translations.${locale}.title`, {
-                    onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
-                      if (!isEdit && locale === 'KA' && !form.getValues('slug')) {
-                        form.setValue('slug', slugify(event.target.value));
-                      }
-                    },
+                    onChange: locale === 'EN' ? slugAutofill.followTitle : undefined,
                   })}
                 />
                 <TextAreaField
@@ -108,9 +104,13 @@ export function AdminInsightFormModule({ insightId }: { insightId?: string }) {
             <TextField
               label={t('fields.slug.label')}
               required
-              hint={t('fields.slug.hint')}
+              hint={
+                isEdit
+                  ? t('fields.slug.hint')
+                  : `${t('fields.slug.hint')} ${t('fields.slug.autoFromTitle')}`
+              }
               error={errors.slug?.message}
-              {...form.register('slug')}
+              {...form.register('slug', { onChange: slugAutofill.slugEdited })}
             />
             <SelectField
               label={t('fields.status')}

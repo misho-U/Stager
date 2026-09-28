@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import {
@@ -22,6 +22,7 @@ import {
   toFormValues,
 } from '@/modules/admin-project-form/admin-project-form.constants';
 import { useFormErrors } from '@/shared/lib/form-errors';
+import { useSlugAutofill } from '@/shared/lib/use-slug-autofill';
 import { useValidationErrorMap } from '@/shared/lib/use-validation-error-map';
 
 type UseProjectFormOptions = { projectId?: string };
@@ -53,6 +54,16 @@ export function useAdminProjectForm({ projectId }: UseProjectFormOptions) {
     resolver: zodResolver(projectInputSchema, { error: validationErrorMap }),
     defaultValues: EMPTY_PROJECT,
   });
+
+  // While creating, the slug follows the English title until it is edited
+  // by hand (use-slug-autofill.ts). Validated as it changes only after a save
+  // was tried, so an empty title does not flag the slug mid-typing.
+  const setSlug = useCallback(
+    (slug: string) =>
+      form.setValue('slug', slug, { shouldDirty: true, shouldValidate: form.formState.isSubmitted }),
+    [form],
+  );
+  const slugAutofill = useSlugAutofill({ enabled: !isEdit, setSlug });
 
   const { reset } = form;
 
@@ -89,6 +100,7 @@ export function useAdminProjectForm({ projectId }: UseProjectFormOptions) {
     form,
     onSubmit,
     isEdit,
+    slugAutofill,
     isLoading: isEdit && projectQuery.isLoading,
     loadError: projectQuery.error ? formErrors.message(projectQuery.error) : null,
     isSubmitting: createProject.isPending || updateProject.isPending,
