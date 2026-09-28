@@ -59,7 +59,7 @@ async function openLogin(
   // Written where the switch writes it: /admin only.
   if (cookie !== undefined) await setCookie(page, baseURL, cookie, '/admin');
   await page.goto('/admin/login');
-  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+  await expect(page.locator('input[type="password"]')).toBeVisible();
 }
 
 /** Resolves CSS colours to 8-bit sRGB through a 1px canvas, whatever syntax they compute to. */

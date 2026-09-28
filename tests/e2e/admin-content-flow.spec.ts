@@ -33,17 +33,23 @@ test.describe('admin content flow', () => {
   test('creates and publishes a project', async ({ page }) => {
     await page.goto('/admin/projects/new');
 
-    // Both language panels stay mounted, the inactive one hidden, so fields are
-    // found in the visible panel — and by /^Title/, because "Meta title"
-    // contains the word too.
-    const panel = page.getByRole('tabpanel');
+    // Both languages' fields stay mounted, the other one hidden, so each is
+    // found in its own language's container — and by /^Title/, because "Meta
+    // title" contains the word too.
+    const georgian = page.locator('[data-content-locale="KA"]');
+    const english = page.locator('[data-content-locale="EN"]');
+    const editing = page.getByRole('group', { name: 'Editing:' });
 
-    // Georgian tab is open by default.
-    await panel.getByLabel(/^Title/).fill(titleKa);
-    await panel.getByLabel('Summary').fill('Created by the end-to-end test.');
+    // A form opens on Georgian.
+    await expect(editing.getByRole('button', { name: 'ქართული' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await georgian.getByLabel(/^Title/).fill(titleKa);
+    await georgian.getByLabel('Summary').fill('Created by the end-to-end test.');
 
-    await page.getByRole('tab', { name: 'English' }).click();
-    await panel.getByLabel(/^Title/).fill(titleEn);
+    await editing.getByRole('button', { name: 'English' }).click();
+    await english.getByLabel(/^Title/).fill(titleEn);
 
     await page.getByLabel('Slug').fill(slug);
     await page.getByLabel('Status').selectOption('PUBLISHED');
@@ -71,7 +77,9 @@ test.describe('admin content flow', () => {
 
     // The form mounts empty and fills itself once the record loads; a change
     // made before that would be overwritten.
-    await expect(page.getByRole('tabpanel').getByLabel(/^Title/)).toHaveValue(titleKa);
+    await expect(page.locator('[data-content-locale="KA"]').getByLabel(/^Title/)).toHaveValue(
+      titleKa,
+    );
     await page.getByLabel('Status').selectOption('DRAFT');
     await page.getByRole('button', { name: 'Save project' }).click();
     await expect(page).toHaveURL(/\/admin\/projects$/);
