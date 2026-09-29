@@ -1,1 +1,261 @@
-/* TEMPORARY: design c, being built. */
+/* ===========================================================================
+   HOME PAGE VARIANT C (გ) — "Plate"                TEMPORARY: design comparison
+   ===========================================================================
+   Everything in hospitality comes to the plate, and a table is set in
+   circles. This design drops the rectangle: plates in sage, teal and cream,
+   a lazy Susan that turns the services round to face you, round buttons
+   that lean toward the pointer, and an iris that opens onto the inquiry
+   form. Warm, generous, a little playful.
+
+   Shape rule, used everywhere in this design: circles for anything that is
+   a thing (plates, photos, badges, the cursor); controls are pills (radius
+   md, 1.5rem, which on a 44px control is a full pill); panels round off at
+   radius lg or xl. Nothing on show has a square corner.
+
+   Sage is never behind text: it is a plate colour only (teal on sage is
+   3.9:1). Text sits on cream, white or teal.
+
+   Every value here overrides a brandbook.css token of the same name, or
+   defines one this design alone uses (--plate-*), inside
+   [data-home-variant='c'] only. Colours are the brand palette or mixes of
+   it, never new hexes.
+   =========================================================================== */
+[data-home-variant='c'] {
+  /* --- Colour roles --- */
+  --color-surface: var(--color-brand-cream);
+  --color-surface-raised: var(--color-brand-white); /* fields, the header pill */
+  --color-surface-muted: var(--color-brand-cream-light); /* panels */
+  --color-surface-inset: var(--color-brand-cream-tint);
+  --color-surface-inverse: var(--color-brand-teal);
+  --color-ink: var(--color-brand-teal);
+  --color-ink-muted: var(--color-brand-teal-soft);
+  --color-ink-subtle: color-mix(
+    in oklab,
+    var(--color-brand-teal-muted) 45%,
+    var(--color-brand-teal-soft)
+  );
+  --color-ink-inverse: var(--color-brand-cream-light);
+  --color-line: color-mix(in oklab, var(--color-brand-sage) 50%, var(--color-brand-cream));
+  --color-line-strong: var(--color-brand-sage);
+  --color-line-input: var(--color-brand-teal-muted);
+  --color-primary: var(--color-brand-teal);
+  --color-primary-hover: var(--color-brand-teal-soft);
+  --color-on-primary: var(--color-brand-cream-light);
+  --color-focus: var(--color-brand-teal);
+
+  /* --- Type: wide and heavy, round-shouldered at display size --- */
+  --font-weight-hero: 800;
+  --font-weight-heading: 700;
+  --font-stretch-hero: 100%;
+  --font-stretch-heading: 100%;
+  --text-display: clamp(3rem, 1.4rem + 4.9vw, 5.75rem);
+  --text-display--line-height: 1.05;
+  --text-display--letter-spacing: -0.02em;
+  --text-headline: clamp(2.125rem, 1.4rem + 2.3vw, 3.75rem);
+  --text-headline--line-height: 1.08;
+  --text-headline--letter-spacing: -0.01em;
+  --text-title: clamp(1.5rem, 1.25rem + 0.8vw, 2rem);
+  --text-title--line-height: 1.2;
+  --text-title-sm: 1.3125rem;
+  --text-title-sm--line-height: 1.3;
+  --text-lead: clamp(1.1875rem, 1.05rem + 0.45vw, 1.4375rem);
+  --text-lead--line-height: 1.6;
+
+  /* --- Space --- */
+  --spacing-gutter: clamp(1.25rem, 0.5rem + 2.8vw, 3.25rem);
+  --spacing-section: clamp(5rem, 3rem + 6vw, 9rem);
+  --container-page: 84rem;
+
+  /* --- Shape (see the rule above) --- */
+  --radius-sm: 9999px;
+  --radius-md: 1.5rem;
+  --radius-lg: 2rem;
+  --radius-xl: 3rem;
+  --shadow-card:
+    0 1px 2px color-mix(in oklab, var(--color-brand-teal) 8%, transparent),
+    0 18px 40px -18px color-mix(in oklab, var(--color-brand-teal) 35%, transparent);
+
+  /* --- The plates --- */
+  --plate-sage: var(--color-brand-sage);
+  --plate-teal: var(--color-brand-teal);
+  --plate-cream: var(--color-brand-cream-light);
+  --plate-rim: color-mix(in oklab, var(--color-brand-sage) 35%, var(--color-brand-cream-light));
+  --plate-hero: clamp(20rem, 8rem + 38vw, 50rem); /* the big plate by the headline */
+  --plate-cta: clamp(9rem, 6.5rem + 4.2vw, 12rem); /* the round call to action, ring included */
+  --plate-lg: 22rem; /* project plates: three sizes, set like a table */
+  --plate-md: 17rem;
+  --plate-sm: 13.5rem;
+  --plate-offset: 6rem; /* how far every other project plate sits lower */
+  --plate-wheel: min(40rem, 78dvh); /* the lazy Susan */
+  --plate-seat: clamp(5.5rem, 3rem + 4vw, 8rem); /* a dish on the wheel */
+  --plate-badge: 3.5rem; /* the round icon badge beside a service */
+  --plate-date: 4.5rem; /* the round date badge of an insight */
+  --plate-fan: clamp(5rem, 3rem + 6vw, 9rem); /* the stack of plates over the intro */
+  --plate-dot: 0.75rem; /* the cursor at rest */
+  --plate-ring: 3.5rem; /* the cursor over something to press */
+  --plate-header-space: 6rem; /* room under the floating header */
+  --plate-ring-text: 14px; /* the turning text, in the ring's own 200-unit drawing */
+}
+
+/* On the teal band the plates keep their own colours but the cursor turns cream. */
+[data-home-variant='c'] [data-surface='inverse'] {
+  --plate-rim: color-mix(in oklab, var(--color-brand-cream) 18%, var(--color-brand-teal));
+}
+
+/* What a phone shows when it over-scrolls past either end: the page's cream. */
+:root:has([data-home-variant='c']) {
+  background-color: var(--color-brand-cream);
+}
+
+@layer components {
+  /* The big plate: a sage disc, a cream rim inside it, and the well. */
+  [data-home-variant='c'] .plate-hero {
+    width: var(--plate-hero);
+    aspect-ratio: 1;
+    border-radius: 9999px;
+    background-color: var(--plate-sage);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* The rims inside the big plate: the cream rim, the edge of the well, the well. */
+  [data-home-variant='c'] .plate-rim {
+    position: absolute;
+    inset: 6%;
+    border-radius: 9999px;
+    background-color: var(--plate-cream);
+  }
+  [data-home-variant='c'] .plate-well-edge {
+    position: absolute;
+    inset: 17%;
+    border-radius: 9999px;
+    border: 1px solid var(--plate-rim);
+  }
+  [data-home-variant='c'] .plate-well {
+    position: absolute;
+    inset: 22%;
+    overflow: hidden;
+    border-radius: 9999px;
+    background-color: color-mix(
+      in oklab,
+      var(--color-brand-sage) 12%,
+      var(--color-brand-cream-light)
+    );
+  }
+
+  /* The fan of plates over the intro: where each one comes to rest. */
+  [data-home-variant='c'] [data-fan-plate='0'] {
+    translate: -62% 0;
+    rotate: -12deg;
+  }
+  [data-home-variant='c'] [data-fan-plate='2'] {
+    translate: 62% 0;
+    rotate: 12deg;
+  }
+
+  /* A seat on the lazy Susan: placed round the wheel by --angle, and turned
+     back by the wheel's own --wheel so every dish stays upright. */
+  [data-home-variant='c'] .plate-seat {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--plate-seat);
+    height: var(--plate-seat);
+    margin: calc(var(--plate-seat) / -2) 0 0 calc(var(--plate-seat) / -2);
+    transform: rotate(var(--angle)) translateX(calc(var(--plate-wheel) * 0.38))
+      rotate(calc(-1 * var(--angle) - var(--wheel, 0deg)));
+  }
+  [data-home-variant='c'] .plate-wheel {
+    width: var(--plate-wheel);
+    aspect-ratio: 1;
+    border-radius: 9999px;
+    transform: rotate(var(--wheel, 0deg));
+  }
+
+  /* Rich text's list items get a round teal bullet, like a dot on a menu. */
+  [data-home-variant='c'] .plate-dots ul {
+    list-style: none;
+    padding-left: 0;
+  }
+  [data-home-variant='c'] .plate-dots ul > li {
+    position: relative;
+    padding-left: 1.75em;
+  }
+  [data-home-variant='c'] .plate-dots ul > li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.55em;
+    width: 0.6em;
+    height: 0.6em;
+    border-radius: 9999px;
+    background-color: var(--color-primary);
+  }
+
+  /* The text that turns round the call to action. */
+  [data-home-variant='c'] .plate-ring-text {
+    font-size: var(--plate-ring-text);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+
+  /* A project plate turns a little under the pointer, like a plate being set. */
+  [data-home-variant='c'] .plate-turn {
+    transition: rotate 700ms var(--ease-brand);
+  }
+  [data-home-variant='c'] .plate-turn:hover {
+    rotate: -8deg;
+  }
+
+  /* The round cursor: a dot at rest, a ring over anything to press, cream on teal. */
+  [data-home-variant='c'] [data-plate-cursor] {
+    width: var(--plate-dot);
+    height: var(--plate-dot);
+    border: 1.5px solid transparent;
+    background-color: var(--color-ink);
+    transition:
+      width var(--duration-base) var(--ease-brand),
+      height var(--duration-base) var(--ease-brand),
+      background-color var(--duration-base) var(--ease-brand),
+      border-color var(--duration-base) var(--ease-brand);
+  }
+  [data-home-variant='c'] [data-plate-cursor][data-state='ring'] {
+    width: var(--plate-ring);
+    height: var(--plate-ring);
+    background-color: transparent;
+    border-color: var(--color-ink);
+  }
+  [data-home-variant='c'] [data-plate-cursor][data-tone='cream'] {
+    background-color: var(--color-ink-inverse);
+  }
+  [data-home-variant='c'] [data-plate-cursor][data-tone='cream'][data-state='ring'] {
+    background-color: transparent;
+    border-color: var(--color-ink-inverse);
+  }
+}
+
+/* States the motion switches on. Outside any layer on purpose: they must win
+   over the utility classes on the same elements (`flex`, the dish's sage),
+   and unlayered styles outrank every layer. */
+
+/* With motion on a desktop the services stack in one place and the wheel
+   shows them one at a time; everywhere else they are a plain list. */
+[data-home-variant='c'] [data-susan-on] [data-susan-list] {
+  display: grid;
+}
+[data-home-variant='c'] [data-susan-on] [data-susan-item] {
+  grid-area: 1 / 1;
+}
+[data-home-variant='c'] [data-susan-on] [data-susan-badge] {
+  display: none;
+}
+
+/* The dish facing the text on the lazy Susan turns teal. */
+[data-home-variant='c'] [data-dish] {
+  transition:
+    background-color var(--duration-base) var(--ease-brand),
+    color var(--duration-base) var(--ease-brand);
+}
+[data-home-variant='c'] [data-dish][data-active] {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
