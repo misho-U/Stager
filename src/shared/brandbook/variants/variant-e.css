@@ -91,8 +91,11 @@
 }
 
 @layer components {
-  /* The header takes the ink of whatever scene it sits over. */
+  /* The header takes the ink of whatever scene it sits over, and over a
+     dark one a teal ground of its own, so its text, button and focus ring
+     never depend on what happens to be scrolling underneath. */
   [data-home-variant='e'] [data-stages-header][data-tone='dark'] {
+    background-color: var(--color-brand-teal);
     --color-ink: var(--color-brand-cream-light);
     --color-ink-muted: var(--color-brand-cream-light);
     --color-ink-subtle: var(--color-brand-cream);
@@ -134,6 +137,16 @@
 
 /* States the motion switches on. Outside any layer on purpose: they must win
    over the utility classes on the same elements. */
+
+/* The header changes tone in a single frame, its ground and everything on it
+   together, so nothing in it may transition. A fading link or button would
+   still wear the old ink over the new ground: teal on teal for a moment.
+   (Under reduced motion globals.css gives every element a 0.01ms transition
+   of `all`, so that has to be switched off here too.) */
+[data-home-variant='e'] [data-stages-header],
+[data-home-variant='e'] [data-stages-header] * {
+  transition-property: none;
+}
 
 /* With motion on a desktop the stages stack into one pinned screen and
    wipe over each other; everywhere else they are scenes one after another. */

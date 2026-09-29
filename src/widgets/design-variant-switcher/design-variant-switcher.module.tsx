@@ -14,7 +14,7 @@ type DesignVariantSwitcherProps = {
  * In Georgian, for the client. Every button is a plain link (`?v=b`), so it
  * works without JavaScript and any of them can be copied and sent on. It sits
  * outside the designs' token scope and wears the brand's default dark band,
- * so it looks the same over all three and never reads as part of one.
+ * so it looks the same over every design and never reads as part of one.
  *
  * `sticky`, not `fixed`: pinned to the bottom of the screen while scrolling,
  * it settles below the footer at the end of the page instead of covering it.

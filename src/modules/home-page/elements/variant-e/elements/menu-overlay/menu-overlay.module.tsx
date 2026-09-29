@@ -18,7 +18,7 @@ export function MenuButton({ label }: { label: string }) {
       aria-expanded={open}
       aria-controls={MENU_PANEL_ID}
       onClick={show}
-      className="text-body-sm text-ink border-ink hover:bg-primary hover:text-on-primary inline-flex min-h-11 items-center gap-2 border px-4 font-medium transition-colors"
+      className="text-body-sm text-ink border-ink hover:bg-primary hover:text-on-primary inline-flex min-h-11 items-center gap-2 border px-4 font-medium"
     >
       <ListIcon aria-hidden weight="bold" />
       {label}

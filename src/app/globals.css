@@ -75,6 +75,13 @@
     text-rendering: optimizeLegibility;
   }
 
+  /* Decoration (a drawn frame, a grid, a ring of words) never takes a click
+     meant for what lies under it. An intro is the exception: it covers the
+     page on purpose, and a click on it only skips it. */
+  [data-decorative]:not([data-intro]) {
+    pointer-events: none;
+  }
+
   /* Visible focus for keyboard users, suppressed for mouse clicks. */
   :focus-visible {
     outline: 2px solid var(--color-focus);

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * TEMPORARY — the three home page designs under comparison (`?v=a|b|c`).
+ * TEMPORARY — the five home page designs under comparison (`?v=a…e`).
  * Delete with the variants once one is chosen; its contrast and layout checks
  * then move to the chosen design's own spec.
  *
@@ -12,7 +12,7 @@ import { expect, test, type Page } from '@playwright/test';
  * fails here rather than shipping.
  */
 
-const VARIANTS = ['a', 'b', 'c'] as const;
+const VARIANTS = ['a', 'b', 'c', 'd', 'e'] as const;
 const LOCALES = ['ka', 'en'] as const;
 
 type Finding = {
@@ -120,9 +120,13 @@ async function contrastFindings(page: Page): Promise<Finding[]> {
       const elements = [scope, ...scope.querySelectorAll('*')];
 
       for (const element of elements) {
-        // Skipped: the form's honeypot (screen-reader-only and never shown)
-        // and disabled controls, which WCAG exempts.
-        if (element.closest('.sr-only, [disabled]') || !visible(element)) continue;
+        // Skipped: the form's honeypot (screen-reader-only and never shown),
+        // disabled controls, and pure decoration (`data-decorative`: a
+        // drawing's grid and zone letters, a ring of words repeating a
+        // button's label, a cursor), all of which WCAG exempts.
+        if (element.closest('.sr-only, [disabled], [data-decorative]') || !visible(element)) {
+          continue;
+        }
         const style = getComputedStyle(element);
 
         // Text: every element that directly holds visible characters, and
@@ -200,7 +204,10 @@ for (const variant of VARIANTS) {
         // Every "start a project" link scrolls to the form on this page.
         await expect(page.locator(`#inquiry [data-testid="inquiry-form"]`)).toHaveCount(1);
         await expect(page.locator('a[href="/contact"], a[href$="/contact"]')).toHaveCount(0);
-        await page.locator('[data-home-variant] a[href="#inquiry"]:visible').first().click();
+        // The page's own call to action (in <main>, not the header's copy of
+        // it), clicked like a visitor would: nothing drawn over it may take
+        // the click.
+        await page.locator('[data-home-variant] main a[href="#inquiry"]:visible').first().click();
         await expect(page.getByTestId('inquiry-form')).toBeInViewport();
       });
 
@@ -273,12 +280,90 @@ for (const variant of VARIANTS) {
   });
 }
 
+/**
+ * With motion allowed, as most visitors see it: after the entrance and a
+ * scroll to the bottom and back, nothing a visitor needs may be left hidden.
+ * The motion starts things invisible and relies on its script to show them.
+ */
+for (const variant of VARIANTS) {
+  test(`design ${variant.toUpperCase()}: with motion on, the page settles fully visible`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium', 'one browser is enough for motion');
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto(`/en?v=${variant}`);
+    await expect(page.locator(`[data-home-variant="${variant}"]`)).toBeVisible();
+    await page.waitForTimeout(4500);
+
+    // Scroll through like a visitor, so every scroll-driven entrance fires,
+    // then back to the top, where the first scene is shown in full again.
+    const height = await page.evaluate(() => document.documentElement.scrollHeight);
+    for (const step of [500, -500]) {
+      for (let y = 0; y <= height; y += 500) {
+        await page.mouse.wheel(0, step);
+        await page.waitForTimeout(100);
+      }
+      await page.waitForTimeout(1500);
+    }
+
+    const hidden = await page.evaluate(() => {
+      const shown = (element: Element) => {
+        for (let node: Element | null = element; node; node = node.parentElement) {
+          const style = getComputedStyle(node);
+          if (style.display === 'none' || style.visibility === 'hidden') return false;
+          if (Number(style.opacity) < 0.99) return false;
+        }
+        return true;
+      };
+      return [
+        ...document.querySelectorAll(
+          '[data-home-variant] h1, [data-home-variant] h2, [data-testid="inquiry-form"]',
+        ),
+      ]
+        .filter((element) => !element.closest('[role="dialog"], [data-susan-item]'))
+        .filter((element) => !shown(element))
+        .map((element) => (element.textContent ?? '').trim().slice(0, 40));
+    });
+    expect(hidden).toEqual([]);
+
+    // An intro, if the design has one, is gone.
+    await expect(page.locator('[data-intro]')).toBeHidden();
+  });
+}
+
+test.describe('the intro', () => {
+  test('plays once per visit, and any key skips it', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium', 'one browser is enough for motion');
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto('/en?v=e');
+    const curtain = page.locator('[data-intro]');
+    await expect(curtain).toBeVisible();
+
+    await page.waitForTimeout(800);
+    await page.keyboard.press('Space');
+    await expect(curtain).toBeHidden({ timeout: 3000 });
+
+    // Played in this tab: a reload never shows it again.
+    await page.reload();
+    await expect(page.getByTestId('hero-heading')).toBeVisible();
+    await expect(curtain).toBeHidden();
+  });
+
+  test('never plays under reduced motion', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/en?v=e');
+    await expect(page.getByTestId('hero-heading')).toBeVisible();
+    await expect(page.locator('[data-intro]')).toBeHidden();
+  });
+});
+
 test.describe('the design comparison bar', () => {
   test('opens a design from a link and switches with plain links', async ({ page }) => {
     await openVariant(page, 'ka', 'b');
 
     const bar = page.getByTestId('design-variant-switcher');
     await expect(bar).toBeVisible();
+    await expect(bar.getByRole('link')).toHaveText(['ა', 'ბ', 'გ', 'დ', 'ე']);
     await expect(bar.getByRole('link', { name: 'ვარიანტი ბ' })).toHaveAttribute(
       'aria-current',
       'page',
@@ -291,7 +376,13 @@ test.describe('the design comparison bar', () => {
 
   test('switching language keeps the design', async ({ page }) => {
     await openVariant(page, 'ka', 'c');
-    await page.getByRole('link', { name: 'ENG' }).click();
+    // The switcher reads the query inside a Suspense boundary, so its first
+    // paint is a fallback without it. React reveals the streamed links a
+    // moment later (it batches reveals, ~300ms, often after `load`), and a
+    // click in between would drop the design. Wait for what a visitor sees.
+    const english = page.getByRole('link', { name: 'ENG' });
+    await expect(english).toHaveAttribute('href', /[?&]v=c(&|$)/);
+    await english.click();
     await expect(page).toHaveURL(/\/en\?v=c$/);
     await expect(page.locator('[data-home-variant="c"]')).toBeVisible();
   });

@@ -28,6 +28,7 @@ rather than adding a dependency.
 | Email | **Resend** |
 | Rich-text sanitising | **sanitize-html** — DOM-free. Never a jsdom-based sanitizer (see below) |
 | Icons | **@phosphor-icons/react** — per-icon imports: `…/dist/csr/<Name>` in client components, `…/dist/ssr/<Name>` in server components (the root re-exports ~1,500 icons) |
+| Motion (public site) | **GSAP 3.15** (every plugin is free) + **Lenis 1.3** smooth scroll, both pinned exactly — client leaf components only, through `shared/lib/motion` and `widgets/smooth-scroll` (§ Motion) |
 | i18n | **next-intl 4** |
 | Tests | **Playwright** |
 | Hosting | **Vercel** |
@@ -262,7 +263,10 @@ Non-negotiable. Each exists because of a specific failure mode.
 - **The typeface is self-hosted**, declared with `@font-face` at the bottom of
   `brandbook.css`: Noto Sans Georgian, variable, one family split into
   georgian / latin / latin-ext files by `unicode-range` (files in
-  `src/shared/brandbook/fonts/`, SIL OFL 1.1 — see `fonts/OFL.txt`).
+  `src/shared/brandbook/fonts/`, SIL OFL 1.1 — see `fonts/OFL.txt`). Its serif
+  sibling, Noto Serif Georgian (`--font-serif`), is declared the same way and
+  under the same licence; a page downloads it only if something on it is set
+  in the serif.
   `next/font/google` downloads at build time and degrades to a system font on
   any machine that cannot reach Google — Georgian falls back worst.
   `next/font/local` is gone too: it generated a `local(Arial)` "Fallback"
@@ -295,8 +299,8 @@ defined as `--color-brand-*` in `brandbook.css`.
 site only**: layout, type scale, spacing rhythm, hierarchy, motion. This file
 and CLAUDE.md win wherever they disagree. The resolved conflicts:
 
-- **No extra packages.** No Motion, GSAP, design system or shadcn. Motion is
-  CSS only (see the dials below).
+- **No extra packages.** Motion is GSAP + Lenis (§ Motion); no Motion
+  (framer), design system or shadcn.
 - **Its values go into `brandbook.css` first.** Its examples use raw palette
   utilities and arbitrary values (`text-gray-600`, `max-w-[1400px]`,
   `tracking-[0.18em]`, `z-[60]`); translate each into a token, never inline.
@@ -315,11 +319,48 @@ and CLAUDE.md win wherever they disagree. The resolved conflicts:
   unchanged, so a label is capitals on /en and not on /ka. No italic: the faces
   are upright only, so the browser would fake the slant. No tracking or leading
   below the brandbook's values without checking /ka. A future display face
-  needs a matching Georgian design. Verify every typography change on /ka as
-  well as /en.
-- **Dials:** DESIGN_VARIANCE 5 / MOTION_INTENSITY 3 / VISUAL_DENSITY 3. At
-  MOTION 3 the skill itself prescribes CSS hover and press states only.
+  needs a matching Georgian design (Noto Serif Georgian is one). Verify every
+  typography change on /ka as well as /en.
+- **Dials:** per design while the home page designs are compared (round 3,
+  `?v=a…e`), from ა "Carte" at MOTION 2 to ე "Stages" at MOTION 9. The rules
+  in § Motion hold at every setting.
 - **Out of scope:** the admin dashboard — the skill excludes admin panels.
+
+### Motion
+
+Approved for the public site with the round-3 designs: GSAP and Lenis. The
+dashboard has none.
+
+- **Markup stays server-rendered; motion is one client leaf per design.** A
+  design marks what moves with data attributes and its leaf animates them.
+  Import GSAP from `@/shared/lib/motion/gsap` (core plugins registered once,
+  client-side); a design that needs a heavier plugin (Draggable, Inertia,
+  DrawSVG, ScrambleText) registers it in its own service, so no other design
+  downloads it. `useMotion` scopes every tween to the design and reverts it on
+  unmount; Lenis comes from `widgets/smooth-scroll`.
+- **Reduced motion means none.** Every effect runs under
+  `(prefers-reduced-motion: no-preference)`: with reduced motion the page is
+  static and fully visible and Lenis is off. Pinned and sideways scenes run
+  from `lg` up, cursor effects with a mouse only; below that, scenes stack.
+- **Nothing may be left hidden.** `data-enter` elements start invisible only
+  when scripts run and motion is allowed, and globals.css shows them anyway if
+  the script never takes over. An intro (`data-intro`, `widgets/intro-gate`)
+  plays once per visit, is skipped by any key or click, and has the same
+  fallback. The variant spec scrolls every design with motion on and fails on
+  a heading left invisible.
+- **Decoration takes no pointer events** (`data-decorative`): a drawn frame
+  over the hero once swallowed every click on its call to action.
+- **SplitText masks are loosened** (`loosenMasks`, built into `splitReveal`):
+  cut to the line box, a mask clips Georgian letters that reach below the
+  baseline, during the entrance and for good after it.
+- **Traps met on the way:** Draggable in scroll mode wraps a scroller's
+  children in a block of its own, so give the scroller its own flex track. A
+  transformed ancestor becomes the box its `fixed` children are placed in, so
+  a full-screen overlay cannot live inside an animated header. CSS a motion
+  state switches on must beat utility classes: put it outside any
+  `@layer`. A turning element widens the page on a phone: the design wrapper
+  clips horizontal overflow (`overflow-x: clip`, which keeps sticky and pinned
+  scenes working, unlike `hidden`).
 
 ### Theme
 
@@ -442,8 +483,10 @@ work only. Delete the scaffold when the real homepage lands; keep the
 data-loading pattern in `home-page.service.ts`.
 
 Decided for the design phase: Noto Sans Georgian for both scripts, so headlines
-match across locales, and CSS-only motion (dials 5/3/3 — see § Design skill).
-Still open: the YouTube facade component.
+match across locales (Noto Serif Georgian allowed as a second face), and GSAP +
+Lenis motion under the rules in § Motion. Five home page designs are under
+comparison on a preview build (`?v=a…e`, round 3). Still open: which design,
+and the YouTube facade component.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

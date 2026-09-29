@@ -15,7 +15,7 @@ drift.
 
 Next.js 16 · React 19 · TypeScript strict · Tailwind 4 · TanStack Query ·
 Zustand · react-hook-form · zod 4 · Prisma 7 · Supabase · Vercel Blob · Resend ·
-next-intl · sanitize-html · Phosphor icons · Playwright · pnpm.
+next-intl · sanitize-html · Phosphor icons · GSAP · Lenis · Playwright · pnpm.
 
 Do not add a library outside this list without raising it first.
 
@@ -91,6 +91,10 @@ Do not add a library outside this list without raising it first.
 - **The design skill (`design-taste-frontend`) is direction only.** AGENTS.md
   § Design skill lists what it may not change — dependencies, tokens, images
   and the CSP, folder structure, CMS copy — and the Georgian checks.
+- **Motion (GSAP + Lenis) lives in one client leaf per design, never leaves
+  content hidden, and does nothing under reduced motion.** Decoration takes no
+  clicks, and SplitText masks are loosened or they clip Georgian letters.
+  AGENTS.md § Motion has the rules and the traps behind them.
 
 ## Sign-in needs two systems to agree
 

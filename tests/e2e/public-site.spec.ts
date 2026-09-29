@@ -120,6 +120,9 @@ test.describe('security headers', () => {
 const GEORGIAN_FILE = /noto[_-]sans[_-]georgian[_-]georgian/i;
 const LATIN_FILE = /noto[_-]sans[_-]georgian[_-]latin(?![_-]ext)/i;
 const LATIN_EXT_FILE = /noto[_-]sans[_-]georgian[_-]latin[_-]ext/i;
+const SERIF_GEORGIAN_FILE = /noto[_-]serif[_-]georgian[_-]georgian/i;
+const SERIF_LATIN_FILE = /noto[_-]serif[_-]georgian[_-]latin(?![_-]ext)/i;
+const SERIF_LATIN_EXT_FILE = /noto[_-]serif[_-]georgian[_-]latin[_-]ext/i;
 
 test.describe('typography', () => {
   test('the Georgian typeface is self-hosted, not fetched from Google', async ({ page }) => {
@@ -140,12 +143,42 @@ test.describe('typography', () => {
     // that, so this asserts the site never reaches for Google at all.
     expect(externalFontRequests).toEqual([]);
 
-    // And that text resolves to the bundled family first, not a system stack.
+    // And that text resolves to a bundled family first, not a system stack:
+    // the sans, or the serif sibling a design may set its headlines in.
     const fontFamily = await page
       .getByTestId('hero-heading')
       .evaluate((node) => getComputedStyle(node).fontFamily);
 
-    expect(fontFamily).toMatch(/^"?Noto Sans Georgian"?,/);
+    expect(fontFamily).toMatch(/^"?Noto (Sans|Serif) Georgian"?,/);
+  });
+
+  test('the serif face, where a design uses it, is bundled and split by script too', async ({
+    page,
+  }) => {
+    // TEMPORARY design comparison: ა "Carte" sets its headlines in the serif.
+    const fontFiles: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().endsWith('.woff2')) fontFiles.push(request.url());
+    });
+
+    await page.goto('/ka?v=a');
+    await expect(page.getByTestId('hero-heading')).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+
+    const fontFamily = await page
+      .getByTestId('hero-heading')
+      .evaluate((node) => getComputedStyle(node).fontFamily);
+    expect(fontFamily).toMatch(/^"?Noto Serif Georgian"?,/);
+
+    const loaded = await page.evaluate(() => ({
+      latin: document.fonts.check('16px "Noto Serif Georgian"', 'Building'),
+      georgian: document.fonts.check('16px "Noto Serif Georgian"', 'ქართული'),
+    }));
+    expect(loaded).toEqual({ latin: true, georgian: true });
+
+    expect(fontFiles.some((url) => SERIF_GEORGIAN_FILE.test(url))).toBe(true);
+    expect(fontFiles.some((url) => SERIF_LATIN_FILE.test(url))).toBe(true);
+    expect(fontFiles.filter((url) => SERIF_LATIN_EXT_FILE.test(url))).toEqual([]);
   });
 
   test('Georgian and Latin text both render in the bundled typeface', async ({ page }) => {

@@ -120,11 +120,8 @@ export async function VariantE({ locale, content }: VariantEProps) {
         </p>
       </div>
 
-      <header
-        data-stages-header
-        data-tone="light"
-        className="fixed inset-x-0 top-0 z-(--z-header) transition-colors"
-      >
+      {/* Takes the tone of the scene beneath it, with no transition (variant-e.css). */}
+      <header data-stages-header data-tone="light" className="fixed inset-x-0 top-0 z-(--z-header)">
         <div className="max-w-page px-gutter mx-auto flex items-center justify-between gap-6 py-4">
           <Wordmark className="text-ink text-body-lg" />
           <div className="flex items-center gap-2 sm:gap-5">
