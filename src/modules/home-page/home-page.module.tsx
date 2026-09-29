@@ -33,8 +33,14 @@ export async function HomePageModule({ locale, variant: requested }: HomePageMod
   return (
     <>
       {/* The design's tokens apply inside this element only. `key` gives each
-          design a fresh element, so no motion state carries across a switch. */}
-      <div key={variant} data-home-variant={variant} className="bg-surface text-ink">
+          design a fresh element, so no motion state carries across a switch.
+          `overflow-x-clip`: a plate or ticket turning as it arrives must never
+          widen the page; unlike `hidden` it keeps sticky and pinned scenes working. */}
+      <div
+        key={variant}
+        data-home-variant={variant}
+        className="bg-surface text-ink overflow-x-clip"
+      >
         {content.readFailed ? <ReadFailureNotice message={t('readFailed')} /> : null}
         <Composition locale={locale} content={content} />
       </div>

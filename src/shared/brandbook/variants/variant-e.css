@@ -1,1 +1,157 @@
-/* TEMPORARY: design e, being built. */
+/* ===========================================================================
+   HOME PAGE VARIANT E (ე) — "Stages"               TEMPORARY: design comparison
+   ===========================================================================
+   A food business is built in stages, and so is this page: a film in acts,
+   scored to the scrollbar. A curtain rises on the first visit; scenes pin,
+   type assembles and dissolves, and the page's colour matures as the story
+   moves from an idea to a running kitchen: cream-light, cream, sage-light,
+   teal-soft, deep teal.
+
+   Colour rule: text on a stage is always the stage's own ink, teal on the
+   three light stages and cream on the two dark ones, never a muted mix
+   (the mixes fall under 4.5:1 on the middle stages). Scenes change colour
+   with a wipe, never a cross-fade, so no frame ever shows text on a colour
+   halfway between two.
+
+   Shape rule: scenes are full-bleed with no containers; project frames are
+   the only rounded things (radius lg, 1.5rem); controls are square.
+
+   Every value here overrides a brandbook.css token of the same name, or
+   defines one this design alone uses (--stage-*), inside
+   [data-home-variant='e'] only. Colours are the brand palette or mixes of
+   it, never new hexes.
+   =========================================================================== */
+[data-home-variant='e'] {
+  /* --- Colour roles (the light stages) --- */
+  --color-surface: var(--color-brand-cream-light);
+  --color-surface-raised: var(--color-brand-white);
+  --color-surface-muted: var(--color-brand-cream-tint);
+  --color-surface-inset: var(--color-brand-cream);
+  --color-surface-inverse: var(--color-brand-teal);
+  --color-ink: var(--color-brand-teal);
+  --color-ink-muted: var(--color-brand-teal-soft);
+  --color-ink-subtle: color-mix(
+    in oklab,
+    var(--color-brand-teal-muted) 45%,
+    var(--color-brand-teal-soft)
+  );
+  --color-ink-inverse: var(--color-brand-cream-light);
+  --color-line: color-mix(in oklab, var(--color-brand-sage) 55%, var(--color-brand-cream-light));
+  --color-line-strong: var(--color-brand-sage);
+  --color-line-input: var(--color-brand-teal-muted);
+  --color-primary: var(--color-brand-teal);
+  --color-primary-hover: var(--color-brand-teal-soft);
+  --color-on-primary: var(--color-brand-cream-light);
+  --color-focus: var(--color-brand-teal);
+
+  /* --- Type: cinema scale --- */
+  --font-weight-hero: 750;
+  --font-weight-heading: 700;
+  --font-stretch-hero: 100%;
+  --font-stretch-heading: 100%;
+  --text-display: clamp(3.25rem, 0.9rem + 7.4vw, 9.25rem);
+  --text-display--line-height: 1.05;
+  --text-display--letter-spacing: -0.03em;
+  --text-headline: clamp(2.5rem, 1.2rem + 4.2vw, 5.75rem);
+  --text-headline--line-height: 1.05;
+  --text-headline--letter-spacing: -0.02em;
+  --text-title: clamp(1.625rem, 1.3rem + 1vw, 2.25rem);
+  --text-title--line-height: 1.15;
+  --text-title-sm: 1.375rem;
+  --text-title-sm--line-height: 1.25;
+  --text-lead: clamp(1.5rem, 0.9rem + 1.9vw, 2.75rem);
+  --text-lead--line-height: 1.3;
+
+  /* --- Space --- */
+  --spacing-gutter: clamp(1.25rem, 0.4rem + 3.4vw, 4rem);
+  --spacing-section: clamp(6rem, 3rem + 8vw, 11rem);
+  --container-page: 90rem;
+
+  /* --- Shape (see the rule above) --- */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 1.5rem;
+
+  /* --- The stages, from an idea to a running kitchen --- */
+  --stage-1: var(--color-brand-cream-light);
+  --stage-2: var(--color-brand-cream);
+  --stage-3: color-mix(in oklab, var(--color-brand-sage) 38%, var(--color-brand-cream));
+  --stage-4: var(--color-brand-teal-soft);
+  --stage-5: var(--color-brand-teal);
+  --stage-min: 85dvh; /* a scene's height where scenes are not pinned */
+  --stage-rail: 3.5rem; /* the length of one segment of the progress rail */
+  --stage-frame-w: min(62vw, 58rem); /* a frame of the filmstrip */
+  --stage-frame-h: min(50dvh, 32rem);
+  --stage-cursor: 4.5rem; /* the cursor disc */
+  --stage-cue: 4rem; /* the scroll cue under the first scene */
+}
+
+:root:has([data-home-variant='e']) {
+  background-color: var(--color-brand-cream-light);
+}
+
+@layer components {
+  /* The header takes the ink of whatever scene it sits over. */
+  [data-home-variant='e'] [data-stages-header][data-tone='dark'] {
+    --color-ink: var(--color-brand-cream-light);
+    --color-ink-muted: var(--color-brand-cream-light);
+    --color-ink-subtle: var(--color-brand-cream);
+    --color-primary: var(--color-brand-cream-light);
+    --color-on-primary: var(--color-brand-teal);
+    --color-primary-hover: var(--color-brand-cream);
+    --color-focus: var(--color-brand-cream-light);
+  }
+
+  /* A dark stage re-points its ink to cream (and keeps its own background). */
+  [data-home-variant='e'] [data-tone='dark'] {
+    --color-ink: var(--color-brand-cream-light);
+    --color-focus: var(--color-brand-cream-light);
+  }
+
+  /* The credits roll without bullets, like credits. */
+  [data-home-variant='e'] [data-credits] ul {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  /* The scroll cue: a line with a dot travelling down it. */
+  [data-home-variant='e'] .stage-cue {
+    height: var(--stage-cue);
+  }
+
+  /* The contextual cursor: a disc that turns cream over dark scenes. */
+  [data-home-variant='e'] [data-stage-cursor] {
+    width: var(--stage-cursor);
+    height: var(--stage-cursor);
+    background-color: var(--color-brand-teal);
+    color: var(--color-brand-cream-light);
+  }
+  [data-home-variant='e'] [data-stage-cursor][data-tone='dark'] {
+    background-color: var(--color-brand-cream-light);
+    color: var(--color-brand-teal);
+  }
+}
+
+/* States the motion switches on. Outside any layer on purpose: they must win
+   over the utility classes on the same elements. */
+
+/* With motion on a desktop the stages stack into one pinned screen and
+   wipe over each other; everywhere else they are scenes one after another. */
+[data-home-variant='e'] [data-stages-on] [data-stage-layer] {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+}
+[data-home-variant='e'] [data-stages-on] [data-stages-frame] {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* With motion on a desktop and enough projects, the filmstrip runs sideways. */
+[data-home-variant='e'] [data-film-on] [data-film-track] {
+  flex-direction: row;
+  width: max-content;
+}
+[data-home-variant='e'] [data-film-on] [data-film-frame] {
+  width: var(--stage-frame-w);
+}
