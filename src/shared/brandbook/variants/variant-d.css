@@ -1,1 +1,175 @@
-/* TEMPORARY: design d, being built. */
+/* ===========================================================================
+   HOME PAGE VARIANT D (დ) — "Pass"                 TEMPORARY: design comparison
+   ===========================================================================
+   The pass: the steel shelf where a kitchen's work reaches the guest, with
+   the order tickets hanging on a rail above it. The page is that rail.
+   Tickets hang, swing, get printed and torn off; the services can be
+   dragged along the rail. Tactile and busy in a good way, but crisp, like a
+   good receipt: white paper, teal print, one teal rail.
+
+   Shape rule, used everywhere in this design: paper is square-cornered
+   (radius sm, 2px) with a torn zigzag bottom edge; keys are small rounded
+   rectangles (radius md, 6px) that press down. Perforations are dashed
+   lines in the line colour.
+
+   Every value here overrides a brandbook.css token of the same name, or
+   defines one this design alone uses (--pass-*), inside
+   [data-home-variant='d'] only. Colours are the brand palette or mixes of
+   it, never new hexes.
+   =========================================================================== */
+[data-home-variant='d'] {
+  /* --- Colour roles --- */
+  --color-surface: var(--color-brand-cream-tint); /* the counter */
+  --color-surface-raised: var(--color-brand-white); /* ticket paper, fields */
+  --color-surface-muted: var(--color-brand-cream-light);
+  --color-surface-inset: var(--color-brand-cream);
+  --color-surface-inverse: var(--color-brand-teal); /* the steel of the pass */
+  --color-ink: var(--color-brand-teal);
+  --color-ink-muted: var(--color-brand-teal-soft);
+  --color-ink-subtle: color-mix(
+    in oklab,
+    var(--color-brand-teal-muted) 50%,
+    var(--color-brand-teal-soft)
+  );
+  --color-ink-inverse: var(--color-brand-cream-light);
+  --color-line: color-mix(in oklab, var(--color-brand-sage) 60%, var(--color-brand-white));
+  --color-line-strong: var(--color-brand-sage);
+  --color-line-input: var(--color-brand-teal-muted);
+  --color-primary: var(--color-brand-teal);
+  --color-primary-hover: var(--color-brand-teal-soft);
+  --color-on-primary: var(--color-brand-cream-light);
+  --color-focus: var(--color-brand-teal);
+
+  /* --- Type: printed. Headers condensed and heavy, like a kitchen ticket. --- */
+  --font-weight-hero: 800;
+  --font-weight-heading: 750;
+  --font-stretch-hero: 75%;
+  --font-stretch-heading: 75%;
+  --text-display: clamp(2.75rem, 1.3rem + 4.6vw, 5.75rem);
+  --text-display--line-height: 1.05;
+  --text-display--letter-spacing: 0em;
+  --text-headline: clamp(2.125rem, 1.4rem + 2.2vw, 3.625rem);
+  --text-headline--line-height: 1.06;
+  --text-title: clamp(1.5rem, 1.3rem + 0.6vw, 1.875rem);
+  --text-title--line-height: 1.15;
+  --text-title-sm: 1.375rem;
+  --text-title-sm--line-height: 1.2;
+  --text-lead: clamp(1.125rem, 1rem + 0.4vw, 1.3125rem);
+  --text-lead--line-height: 1.6;
+
+  /* --- Space --- */
+  --spacing-gutter: clamp(1.25rem, 0.5rem + 2.6vw, 3rem);
+  --spacing-section: clamp(4.5rem, 2.5rem + 5.5vw, 8rem);
+  --container-page: 82rem;
+
+  /* --- Shape (see the rule above) --- */
+  --radius-sm: 2px;
+  --radius-md: 6px;
+  --radius-lg: 2px;
+  --shadow-card:
+    0 1px 1px color-mix(in oklab, var(--color-brand-teal) 10%, transparent),
+    0 12px 26px -12px color-mix(in oklab, var(--color-brand-teal) 38%, transparent);
+
+  /* --- The pass --- */
+  --pass-rail: var(--color-brand-teal);
+  --pass-rail-shine: color-mix(in oklab, var(--color-brand-cream) 35%, var(--color-brand-teal));
+  --pass-rail-h: 0.625rem; /* the rail's thickness */
+  --pass-clip-w: 2.25rem; /* the clip holding a ticket to the rail */
+  --pass-clip-h: 1.25rem;
+  --pass-tooth: 0.875rem; /* one tooth of a torn edge */
+  --pass-key-edge: color-mix(in oklab, var(--color-brand-teal) 72%, black); /* a key's lower edge */
+  --pass-key-depth: 4px; /* how far a key sits proud before it is pressed */
+  --pass-hero-ticket: 46rem; /* the order ticket in the first screen */
+  --pass-ticket: 19.5rem; /* a service ticket on the rail */
+  --pass-receipt: 32rem; /* the long receipt */
+  --pass-slot: 36rem; /* the printer's mouth it comes out of */
+  --pass-pin: 0.875rem; /* the magnet holding a project ticket to the board */
+  --pass-grab: 4.5rem; /* the grab badge following the pointer over the rail */
+}
+
+:root:has([data-home-variant='d']) {
+  background-color: var(--color-brand-cream-tint);
+}
+
+@layer components {
+  /* Ticket paper: a torn zigzag along the bottom edge. */
+  [data-home-variant='d'] .pass-ticket {
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    padding-bottom: calc(var(--pass-tooth) * 3);
+    /* Opaque everywhere except a row of triangles cut from the bottom edge. */
+    mask: conic-gradient(from -45deg at bottom, transparent, black 1deg 89deg, transparent 90deg)
+      50% / var(--pass-tooth) 100%;
+  }
+
+  /* A dashed tear line across a ticket. */
+  [data-home-variant='d'] .pass-perforation {
+    border-top: 2px dashed var(--color-line);
+  }
+
+  /* The rail: a teal bar with a thin highlight along its top. */
+  [data-home-variant='d'] .pass-rail {
+    height: var(--pass-rail-h);
+    background-color: var(--pass-rail);
+    box-shadow: inset 0 2px 0 var(--pass-rail-shine);
+  }
+
+  /* A clip gripping a ticket's top edge. */
+  [data-home-variant='d'] .pass-clip {
+    width: var(--pass-clip-w);
+    height: var(--pass-clip-h);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    background-color: var(--pass-rail);
+    box-shadow: inset 0 -3px 0 var(--pass-key-edge);
+  }
+
+  /* A key: sits proud on its darker lower edge and presses down. */
+  [data-home-variant='d'] .pass-key {
+    box-shadow: 0 var(--pass-key-depth) 0 var(--pass-key-edge);
+    transition:
+      transform var(--duration-fast) var(--ease-brand),
+      box-shadow var(--duration-fast) var(--ease-brand),
+      background-color var(--duration-fast) var(--ease-brand);
+  }
+  [data-home-variant='d'] .pass-key:active {
+    transform: translateY(calc(var(--pass-key-depth) - 1px));
+    box-shadow: 0 1px 0 var(--pass-key-edge);
+  }
+  /* The form's own submit button is a key too. */
+  [data-home-variant='d'] [data-order] button[type='submit'] {
+    box-shadow: 0 var(--pass-key-depth) 0 var(--pass-key-edge);
+  }
+  [data-home-variant='d'] [data-order] button[type='submit']:active {
+    transform: translateY(calc(var(--pass-key-depth) - 1px));
+    box-shadow: 0 1px 0 var(--pass-key-edge);
+  }
+
+  /* The rail's tickets scroll sideways; the keys and a drag move them, so
+     the bar itself is hidden. */
+  [data-home-variant='d'] .pass-scroller {
+    scrollbar-width: none;
+  }
+  [data-home-variant='d'] .pass-scroller::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* The printer's mouth the receipt feeds out of. */
+  [data-home-variant='d'] .pass-slot {
+    height: 0.75rem;
+    border-radius: 9999px;
+    background-color: var(--pass-rail);
+    box-shadow: inset 0 -3px 0 var(--pass-key-edge);
+  }
+
+  /* A project ticket on the board settles straight under the pointer
+     (the tilt and the straightening are utilities on the element). */
+  [data-home-variant='d'] .pass-pinned {
+    transition:
+      rotate 500ms var(--ease-brand),
+      translate 500ms var(--ease-brand);
+  }
+
+  /* The marquee track: two copies side by side for a seamless loop. */
+  [data-home-variant='d'] .pass-ticker {
+    width: max-content;
+  }
+}
