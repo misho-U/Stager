@@ -6,7 +6,10 @@
  *   1  "Open Kitchen" — light: bright, precise, every station within reach.
  *   2  "Chef's Table" — dark: cinematic, the Academy and the videos as the show.
  */
-export const HOME_VARIANTS = [{ id: '1', label: '1' }] as const;
+export const HOME_VARIANTS = [
+  { id: '1', label: '1' },
+  { id: '2', label: '2' },
+] as const;
 
 export type HomeVariant = (typeof HOME_VARIANTS)[number]['id'];
 

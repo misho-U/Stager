@@ -357,7 +357,10 @@ Lenis. The dashboard has none.
   over the hero once swallowed every click on its call to action.
 - **SplitText masks are loosened** (`loosenMasks`, built into `splitReveal`):
   cut to the line box, a mask clips Georgian letters that reach below the
-  baseline, during the entrance and for good after it.
+  baseline, during the entrance and for good after it. Loosen with a clip
+  drawn past the box (`clip-path: inset(-0.2em …)`), never padding pulled
+  back by negative margins: line masks are blocks, their margins collapse,
+  and every line lands 0.2em lower than the text it replaced.
 - **Traps met on the way:** Draggable in scroll mode wraps a scroller's
   children in a block of its own, so give the scroller its own flex track. A
   transformed ancestor becomes the box its `fixed` children are placed in, so
@@ -378,6 +381,12 @@ Lenis. The dashboard has none.
 The **public site is light-only**, by decision. Only the **dashboard** has a
 theme switch — Light / Dark, beside the wordmark in the sidebar. Until one is
 picked, the dashboard follows the OS (the `system` cookie state).
+
+The one exception is temporary: home page design 2 under comparison
+("Chef's Table", `?v=2`) is dark. It is not a theme and has no switch: it
+remaps the colour roles inside `[data-home-variant='2']` only
+(`variants/chefs-table.css`), and the rest of the site stays light. Should
+it be chosen, the light-only decision is revisited, not worked around.
 
 - The choice is a cookie, `stager-admin-theme` (`Path=/admin`), read on the
   server in `src/app/admin/layout.tsx`, so the first byte is already themed:

@@ -2,10 +2,8 @@
 
 import type { ReactNode } from 'react';
 
-import {
-  ALL,
-  useCourseFilter,
-} from '@/modules/home-page/elements/open-kitchen/elements/academy-timetable/academy-timetable.service';
+import { OK_MOTION } from '@/modules/home-page/elements/open-kitchen/open-kitchen.constants';
+import { useFlipFilter } from '@/shared/lib/motion/use-flip-filter';
 
 type Chip = { id: string; label: string; count: number };
 
@@ -21,7 +19,10 @@ type AcademyTimetableProps = {
  * are server-rendered and passed in; this decides which are shown.
  */
 export function AcademyTimetable({ chips, filterLabel, rows }: AcademyTimetableProps) {
-  const { filter, choose, list } = useCourseFilter();
+  const { filter, choose, list, shows } = useFlipFilter<HTMLUListElement>({
+    itemSelector: '[data-course-row]',
+    ...OK_MOTION.flip,
+  });
 
   return (
     <div className="flex flex-col gap-8">
@@ -55,7 +56,7 @@ export function AcademyTimetable({ chips, filterLabel, rows }: AcademyTimetableP
             key={row.id}
             data-course-row
             data-category={row.category}
-            data-filtered-out={filter !== ALL && row.category !== filter ? '' : undefined}
+            data-filtered-out={shows(row.category) ? undefined : ''}
             className="border-line-strong border-b"
           >
             {row.node}

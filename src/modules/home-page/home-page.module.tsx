@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 
+import { ChefsTable } from '@/modules/home-page/elements/chefs-table/chefs-table.module';
 import { OpenKitchen } from '@/modules/home-page/elements/open-kitchen/open-kitchen.module';
 import { HOME_VARIANT_PARAM, HOME_VARIANTS } from '@/modules/home-page/home-page.constants';
 import { loadHomePageData, parseHomeVariant } from '@/modules/home-page/home-page.service';
@@ -8,7 +9,7 @@ import type { DbLocale } from '@/shared/types/enums';
 import { DesignVariantSwitcher } from '@/widgets/design-variant-switcher/design-variant-switcher.module';
 
 /** TEMPORARY — one composition per design under comparison. */
-const COMPOSITIONS = { '1': OpenKitchen } as const;
+const COMPOSITIONS = { '1': OpenKitchen, '2': ChefsTable } as const;
 
 type HomePageModuleProps = {
   locale: DbLocale;

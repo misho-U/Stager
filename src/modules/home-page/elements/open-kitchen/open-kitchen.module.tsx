@@ -10,11 +10,7 @@ import { VideoCameraIcon } from '@phosphor-icons/react/dist/ssr/VideoCamera';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
-import {
-  courseCategoryForService,
-  FEW_SEATS,
-  type PublicCourse,
-} from '@/entity/course/model/course.model';
+import { FEW_SEATS, type PublicCourse, relatedCourses } from '@/entity/course/model/course.model';
 import type { PublicInsightListItem } from '@/entity/insight/model/insight.model';
 import { homeSections, type PublicPage } from '@/entity/page/model/page.model';
 import type { PublicProjectListItem } from '@/entity/project/model/project.model';
@@ -353,7 +349,8 @@ export async function OpenKitchen({ locale, content }: OpenKitchenProps) {
     .filter((card) => card !== null)
     .map((card) => ({ ...card, showLabel: t('home.board.show', { name: card.name }) }));
 
-  // --- Course categories that have courses, for the Academy's filter ---
+  // --- The course each service points at, and the Academy's filter ---
+  const coursesByService = relatedCourses(services.items, courses.items);
   const categories = [...new Set(courses.items.map((course) => course.category))];
   const chips = [
     { id: 'all', label: t('academy.all'), count: courses.items.length },
@@ -500,10 +497,7 @@ export async function OpenKitchen({ locale, content }: OpenKitchenProps) {
               <div data-reveal>
                 <ServiceExplorer
                   items={services.items.map((service) => {
-                    const category = courseCategoryForService(service.icon);
-                    const related = category
-                      ? courses.items.find((course) => course.category === category)
-                      : undefined;
+                    const related = coursesByService.get(service.id);
                     return {
                       id: service.id,
                       tab: (

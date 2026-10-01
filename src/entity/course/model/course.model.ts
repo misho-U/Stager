@@ -61,3 +61,25 @@ const CATEGORY_BY_SERVICE_ICON: Partial<Record<string, CourseCategory>> = {
 export function courseCategoryForService(icon: string | null): CourseCategory | null {
   return (icon && CATEGORY_BY_SERVICE_ICON[icon]) || null;
 }
+
+/**
+ * The course each service points at, by service id: the next one on its
+ * subject that no service before it has taken. Two services on one subject
+ * would otherwise both name the same course; a service left without one of
+ * its own names none.
+ */
+export function relatedCourses(
+  services: ReadonlyArray<{ id: string; icon: string | null }>,
+  courses: readonly PublicCourse[],
+): ReadonlyMap<string, PublicCourse> {
+  const related = new Map<string, PublicCourse>();
+  const taken = new Set<string>();
+  for (const service of services) {
+    const category = courseCategoryForService(service.icon);
+    const course = courses.find((item) => item.category === category && !taken.has(item.id));
+    if (!course) continue;
+    related.set(service.id, course);
+    taken.add(course.id);
+  }
+  return related;
+}

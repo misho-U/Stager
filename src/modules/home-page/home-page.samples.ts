@@ -67,7 +67,7 @@ const COURSES: ReadonlyArray<
     slug: 'menu-engineering-and-food-cost',
     category: 'management',
     format: 'in-person',
-    inDays: 12,
+    inDays: 29,
     seatsTotal: 14,
     seatsLeft: 9,
     priceGel: 420,
@@ -119,7 +119,7 @@ const COURSES: ReadonlyArray<
     slug: 'opening-a-restaurant-step-by-step',
     category: 'management',
     format: 'online',
-    inDays: 29,
+    inDays: 12,
     seatsTotal: 40,
     seatsLeft: 22,
     priceGel: 180,
@@ -291,12 +291,15 @@ const VIDEOS: ReadonlyArray<
 ];
 
 export function sampleCourses(locale: DbLocale): PublicCourse[] {
-  return COURSES.map(({ inDays, text, ...course }) => ({
+  // Soonest first, as the API will list them.
+  return [...COURSES]
+    .sort((a, b) => a.inDays - b.inDays)
+    .map(({ inDays, text, ...course }) => ({
     ...course,
-    ...text[locale],
-    startsAt: fromToday(inDays),
-    cover: null,
-  }));
+      ...text[locale],
+      startsAt: fromToday(inDays),
+      cover: null,
+    }));
 }
 
 export function sampleVideos(locale: DbLocale): PublicVideo[] {

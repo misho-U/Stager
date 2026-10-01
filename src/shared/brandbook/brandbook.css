@@ -84,11 +84,13 @@
   --color-primary-disabled: var(--color-brand-sage);
   --color-on-primary: var(--color-brand-cream); /* text on primary */
   --color-focus: var(--color-brand-teal); /* keyboard focus ring */
+  --color-accent: var(--color-brand-teal); /* small emphasis: an active state, a highlight */
 
   /* --- Status --- */
   --color-success: #2f6b4f;
   --color-warning: #8a6a1f;
   --color-danger: #8f2f2f;
+  --color-danger-on-dark: #f3b4b0; /* the same red, readable on a dark ground */
 
   /* --- Typeface ---
      Noto Sans Georgian covers Georgian and Latin in one design, so headlines
@@ -268,6 +270,7 @@
   );
   --admin-dark-on-primary: var(--color-brand-teal);
   --admin-dark-focus: var(--color-brand-cream);
+  --admin-dark-accent: var(--color-brand-cream);
   --admin-dark-success: #6fbf94;
   --admin-dark-warning: #d9b45f;
   --admin-dark-danger: #e58b8b;
@@ -304,9 +307,11 @@
   --color-primary-disabled: var(--admin-dark-primary-disabled);
   --color-on-primary: var(--admin-dark-on-primary);
   --color-focus: var(--admin-dark-focus);
+  --color-accent: var(--admin-dark-accent);
   --color-success: var(--admin-dark-success);
   --color-warning: var(--admin-dark-warning);
   --color-danger: var(--admin-dark-danger);
+  --color-danger-on-dark: var(--admin-dark-danger);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -329,9 +334,11 @@
     --color-primary-disabled: var(--admin-dark-primary-disabled);
     --color-on-primary: var(--admin-dark-on-primary);
     --color-focus: var(--admin-dark-focus);
+    --color-accent: var(--admin-dark-accent);
     --color-success: var(--admin-dark-success);
     --color-warning: var(--admin-dark-warning);
     --color-danger: var(--admin-dark-danger);
+    --color-danger-on-dark: var(--admin-dark-danger);
   }
 }
 
@@ -398,9 +405,10 @@
   );
   --color-on-primary: var(--color-surface-inverse);
   --color-focus: var(--color-ink-inverse);
+  --color-accent: var(--color-ink-inverse);
   --color-success: #a9d8bb;
   --color-warning: #e6cd8f;
-  --color-danger: #f3b4b0;
+  --color-danger: var(--color-danger-on-dark);
 }
 
 /* In the base layer, so a utility class on the band still wins. */

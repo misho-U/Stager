@@ -17,12 +17,17 @@ export function cappedStagger(step: number, max = MAX_STAGGERED) {
  * moving anything. Georgian letters reach well below the baseline (and some
  * above the cap height), and at a display line-height of 1.05 a mask cut to
  * the line box clips them, during the entrance and for good after it.
+ *
+ * The clip is drawn past the box (a negative inset) rather than the box
+ * grown with padding and pulled back with negative margins: stacked line
+ * masks are blocks, their margins collapse into one another, and every line
+ * after the first would sit 0.2em lower than the text it replaced.
  */
 export function loosenMasks(split: SplitText): void {
   for (const mask of split.masks) {
     if (!(mask instanceof HTMLElement)) continue;
-    mask.style.paddingBlock = '0.2em';
-    mask.style.marginBlock = '-0.2em';
+    mask.style.overflow = 'visible';
+    mask.style.clipPath = 'inset(-0.2em -0.1em)';
   }
 }
 

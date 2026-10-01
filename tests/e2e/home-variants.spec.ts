@@ -12,7 +12,7 @@ import { expect, test, type Page } from '@playwright/test';
  * fails here rather than shipping.
  */
 
-const VARIANTS: readonly string[] = ['1'];
+const VARIANTS: readonly string[] = ['1', '2'];
 const LOCALES = ['ka', 'en'] as const;
 
 type Finding = {
@@ -401,6 +401,49 @@ test.describe('design 1: exploring in place', () => {
     await tabs.nth(2).click();
     await expect(tabs.nth(2)).toHaveAttribute('aria-expanded', 'true');
     await expect(page.locator('#services [data-explorer-panel]:visible')).toHaveCount(1);
+  });
+});
+
+test.describe('design 2: the tickets, the screening room and the menu', () => {
+  test('the Academy tabs show one category, and All brings the rest back', async ({ page }) => {
+    await openVariant(page, 'en', '2');
+    const tickets = page.locator('[data-testid="course-list"] > li:visible');
+    const total = await tickets.count();
+    const tab = page.locator('#academy [aria-pressed]').nth(1);
+    const count = Number((await tab.locator('span').textContent())?.trim());
+    await tab.click();
+    await expect(tab).toHaveAttribute('aria-pressed', 'true');
+    await expect(tickets).toHaveCount(count);
+    await page.locator('#academy [aria-pressed]').first().click();
+    await expect(tickets).toHaveCount(total);
+  });
+
+  test('a video opens full screen, and Escape returns to its card', async ({ page }) => {
+    await openVariant(page, 'en', '2');
+    const card = page.locator('#videos ul [data-video-card]').first();
+    const title = (await card.locator('h3').textContent())?.trim() ?? '';
+    const play = card.locator('[data-play]');
+    await play.click();
+
+    const player = page.locator('dialog[open]');
+    await expect(player).toBeVisible();
+    await expect(player).toHaveAttribute('aria-label', title);
+    await expect(player.getByRole('heading', { name: title })).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(player).toBeHidden();
+    await expect(play).toBeFocused();
+  });
+
+  test('the menu lists the sections and takes the visitor to one', async ({ page }) => {
+    await openVariant(page, 'en', '2');
+    await page.locator('[data-ct-header] button[aria-haspopup="dialog"]').click();
+    const menu = page.locator('dialog[open]');
+    const academy = menu.getByRole('link', { name: 'Academy' });
+    await expect(academy).toBeVisible();
+    await academy.click();
+    await expect(menu).toBeHidden();
+    await expect(page.locator('#academy-title')).toBeInViewport();
   });
 });
 

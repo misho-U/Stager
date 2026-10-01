@@ -22,6 +22,7 @@
    brandbook tokens, and adds the CSS only that design draws, inside its own
    [data-home-variant] scope. Removed with the variants once one is chosen. */
 @import '../shared/brandbook/variants/open-kitchen.css';
+@import '../shared/brandbook/variants/chefs-table.css';
 
 @layer base {
   html {
