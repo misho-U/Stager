@@ -8,7 +8,7 @@ import { QueryProvider } from '@/shared/components/query-provider';
 import { cn } from '@/shared/lib/cn';
 import type { DbLocale } from '@/shared/types/enums';
 import { INTERESTS } from '@/widgets/inquiry-form/inquiry-form.constants';
-import { useInquiryForm } from '@/widgets/inquiry-form/inquiry-form.service';
+import { useInquiryForm, type InquiryDefaults } from '@/widgets/inquiry-form/inquiry-form.service';
 
 type InquiryFormProps = {
   locale: DbLocale;
@@ -16,6 +16,8 @@ type InquiryFormProps = {
   submitLabel?: string;
   /** Two columns of short fields from md up, or everything in one column. */
   layout?: 'stacked' | 'two-column';
+  /** Where the form starts (see InquiryDefaults); read once, when it mounts. */
+  defaults?: InquiryDefaults;
 };
 
 /**
@@ -33,9 +35,17 @@ export function InquiryForm(props: InquiryFormProps) {
   );
 }
 
-function InquiryFormFields({ locale, submitLabel, layout = 'stacked' }: InquiryFormProps) {
+function InquiryFormFields({
+  locale,
+  submitLabel,
+  layout = 'stacked',
+  defaults,
+}: InquiryFormProps) {
   const t = useTranslations('contact');
-  const { form, onSubmit, fieldError, formError, sent, isSubmitting } = useInquiryForm(locale);
+  const { form, onSubmit, fieldError, formError, sent, isSubmitting } = useInquiryForm(
+    locale,
+    defaults,
+  );
 
   if (sent) {
     return (

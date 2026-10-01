@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * TEMPORARY — the five home page designs under comparison (`?v=a…e`).
+ * TEMPORARY — the home page designs under comparison (round 4, `?v=1`, `?v=2`).
  * Delete with the variants once one is chosen; its contrast and layout checks
  * then move to the chosen design's own spec.
  *
@@ -12,7 +12,7 @@ import { expect, test, type Page } from '@playwright/test';
  * fails here rather than shipping.
  */
 
-const VARIANTS = ['a', 'b', 'c', 'd', 'e'] as const;
+const VARIANTS: readonly string[] = ['1'];
 const LOCALES = ['ka', 'en'] as const;
 
 type Finding = {
@@ -320,7 +320,7 @@ for (const variant of VARIANTS) {
           '[data-home-variant] h1, [data-home-variant] h2, [data-testid="inquiry-form"]',
         ),
       ]
-        .filter((element) => !element.closest('[role="dialog"], [data-susan-item]'))
+        .filter((element) => !element.closest('dialog, [role="dialog"]'))
         .filter((element) => !shown(element))
         .map((element) => (element.textContent ?? '').trim().slice(0, 40));
     });
@@ -331,65 +331,116 @@ for (const variant of VARIANTS) {
   });
 }
 
-test.describe('the intro', () => {
-  test('plays once per visit, and any key skips it', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'chromium', 'one browser is enough for motion');
-    await page.emulateMedia({ reducedMotion: 'no-preference' });
-    await page.goto('/en?v=e');
-    const curtain = page.locator('[data-intro]');
-    await expect(curtain).toBeVisible();
+/**
+ * The Academy and the videos: entries the dashboard cannot hold yet are
+ * samples, and every design must say so; registering opens the site's own
+ * form, preset; a video without a link explains itself instead of playing.
+ */
+for (const variant of VARIANTS) {
+  test.describe(`design ${variant}: the Academy and the videos`, () => {
+    test('are marked as samples while the dashboard has none', async ({ page }) => {
+      await openVariant(page, 'en', variant);
+      await expect(page.locator('#academy [data-testid="sample-badge"]').first()).toBeVisible();
+      await expect(page.locator('#videos [data-testid="sample-badge"]').first()).toBeVisible();
+    });
 
-    await page.waitForTimeout(800);
-    await page.keyboard.press('Space');
-    await expect(curtain).toBeHidden({ timeout: 3000 });
+    test('Register opens the inquiry form, preset to the course', async ({ page }) => {
+      await openVariant(page, 'en', variant);
+      const register = page.locator('#academy [data-register]:visible').first();
+      await register.click();
 
-    // Played in this tab: a reload never shows it again.
-    await page.reload();
-    await expect(page.getByTestId('hero-heading')).toBeVisible();
-    await expect(curtain).toBeHidden();
+      const dialog = page.locator('dialog[open]');
+      await expect(dialog).toBeVisible();
+      await expect(dialog.locator('select')).toHaveValue('TRAINING');
+      await expect(dialog.locator('textarea')).not.toHaveValue('');
+      // The drawer meets the same contrast bar as the page.
+      expect(await contrastFindings(page)).toEqual([]);
+
+      await page.keyboard.press('Escape');
+      await expect(dialog).toBeHidden();
+      // Focus goes back to the button that opened it.
+      await expect(register).toBeFocused();
+    });
+
+    test('a video without a link says it is a sample instead of playing', async ({ page }) => {
+      await openVariant(page, 'en', variant);
+      await page.locator('#videos button[aria-label^="Play"]:visible').first().click();
+      await expect(
+        page.locator('#videos [role="status"], dialog[open] [role="status"]'),
+      ).toContainText('sample entry');
+    });
+  });
+}
+
+test.describe('design 1: exploring in place', () => {
+  test('the Academy filter shows one category, and All brings the rest back', async ({ page }) => {
+    await openVariant(page, 'en', '1');
+    const rows = page.locator('[data-testid="course-list"] > li:visible');
+    const total = await rows.count();
+    const chip = page.locator('#academy [aria-pressed]').nth(1);
+    const count = Number((await chip.locator('span').textContent())?.trim());
+    await chip.click();
+    await expect(chip).toHaveAttribute('aria-pressed', 'true');
+    await expect(rows).toHaveCount(count);
+    await page.locator('#academy [aria-pressed]').first().click();
+    await expect(rows).toHaveCount(total);
   });
 
-  test('never plays under reduced motion', async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/en?v=e');
-    await expect(page.getByTestId('hero-heading')).toBeVisible();
-    await expect(page.locator('[data-intro]')).toBeHidden();
+  test('choosing an episode shows it in the player', async ({ page }) => {
+    await openVariant(page, 'en', '1');
+    const episode = page.locator('#videos ol button').nth(2);
+    const title = (await episode.locator('span.font-semibold').textContent())?.trim() ?? '';
+    await episode.click();
+    await expect(episode).toHaveAttribute('aria-current', 'true');
+    await expect(page.locator('#videos h3').first()).toHaveText(title);
+  });
+
+  test('the services explorer opens one service at a time', async ({ page }) => {
+    await openVariant(page, 'en', '1');
+    const tabs = page.locator('#services [aria-expanded]');
+    await tabs.nth(2).click();
+    await expect(tabs.nth(2)).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('#services [data-explorer-panel]:visible')).toHaveCount(1);
   });
 });
 
 test.describe('the design comparison bar', () => {
   test('opens a design from a link and switches with plain links', async ({ page }) => {
-    await openVariant(page, 'ka', 'b');
+    const [first = '1', second] = VARIANTS;
+    await openVariant(page, 'ka', first);
 
     const bar = page.getByTestId('design-variant-switcher');
     await expect(bar).toBeVisible();
-    await expect(bar.getByRole('link')).toHaveText(['ა', 'ბ', 'გ', 'დ', 'ე']);
-    await expect(bar.getByRole('link', { name: 'ვარიანტი ბ' })).toHaveAttribute(
+    await expect(bar.getByRole('link')).toHaveText([...VARIANTS]);
+    await expect(bar.getByRole('link', { name: `ვარიანტი ${first}` })).toHaveAttribute(
       'aria-current',
       'page',
     );
 
-    await bar.getByRole('link', { name: 'ვარიანტი გ' }).click();
-    await expect(page).toHaveURL(/\/ka\?v=c$/);
-    await expect(page.locator('[data-home-variant="c"]')).toBeVisible();
+    if (second) {
+      await bar.getByRole('link', { name: `ვარიანტი ${second}` }).click();
+      await expect(page).toHaveURL(new RegExp(`/ka\\?v=${second}$`));
+      await expect(page.locator(`[data-home-variant="${second}"]`)).toBeVisible();
+    }
   });
 
   test('switching language keeps the design', async ({ page }) => {
-    await openVariant(page, 'ka', 'c');
+    const variant = VARIANTS.at(-1) ?? '1';
+    await openVariant(page, 'ka', variant);
     // The switcher reads the query inside a Suspense boundary, so its first
     // paint is a fallback without it. React reveals the streamed links a
     // moment later (it batches reveals, ~300ms, often after `load`), and a
     // click in between would drop the design. Wait for what a visitor sees.
     const english = page.getByRole('link', { name: 'ENG' });
-    await expect(english).toHaveAttribute('href', /[?&]v=c(&|$)/);
+    await expect(english).toHaveAttribute('href', new RegExp(`[?&]v=${variant}(&|$)`));
     await english.click();
-    await expect(page).toHaveURL(/\/en\?v=c$/);
-    await expect(page.locator('[data-home-variant="c"]')).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`/en\\?v=${variant}$`));
+    await expect(page.locator(`[data-home-variant="${variant}"]`)).toBeVisible();
   });
 
   test('an unknown design falls back to the first', async ({ page }) => {
     await page.goto('/ka?v=nope');
-    await expect(page.locator('[data-home-variant="a"]')).toBeVisible();
+    await expect(page.locator(`[data-home-variant="${VARIANTS[0] ?? '1'}"]`)).toBeVisible();
   });
 
   test('the preview is kept out of search engines', async ({ page }) => {

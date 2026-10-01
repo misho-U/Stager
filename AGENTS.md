@@ -263,10 +263,7 @@ Non-negotiable. Each exists because of a specific failure mode.
 - **The typeface is self-hosted**, declared with `@font-face` at the bottom of
   `brandbook.css`: Noto Sans Georgian, variable, one family split into
   georgian / latin / latin-ext files by `unicode-range` (files in
-  `src/shared/brandbook/fonts/`, SIL OFL 1.1 — see `fonts/OFL.txt`). Its serif
-  sibling, Noto Serif Georgian (`--font-serif`), is declared the same way and
-  under the same licence; a page downloads it only if something on it is set
-  in the serif.
+  `src/shared/brandbook/fonts/`, SIL OFL 1.1 — see `fonts/OFL.txt`).
   `next/font/google` downloads at build time and degrades to a system font on
   any machine that cannot reach Google — Georgian falls back worst.
   `next/font/local` is gone too: it generated a `local(Arial)` "Fallback"
@@ -321,22 +318,28 @@ and CLAUDE.md win wherever they disagree. The resolved conflicts:
   below the brandbook's values without checking /ka. A future display face
   needs a matching Georgian design (Noto Serif Georgian is one). Verify every
   typography change on /ka as well as /en.
-- **Dials:** per design while the home page designs are compared (round 3,
-  `?v=a…e`), from ა "Carte" at MOTION 2 to ე "Stages" at MOTION 9. The rules
-  in § Motion hold at every setting.
+- **Dials:** per design while the home page designs are compared (round 4,
+  `?v=1` and `?v=2`): 1 "Open Kitchen" (light) at MOTION 5, 2 "Chef's Table"
+  (dark) at MOTION 8. The rules in § Motion hold at every setting.
+- **No custom cursors**, and no scroll cues: the skill bans both, and round 3
+  showed why (a cursor disc that hid what it pointed at).
+- **Sample content is TEMPORARY and says so.** Academy courses and videos
+  have no dashboard yet; `home-page.samples.ts` supplies invented entries,
+  and every section showing them carries a "Sample" badge
+  (`shared/components/sample-badge.tsx`). They must be replaced by dashboard
+  data before launch, never shipped as content.
 - **Out of scope:** the admin dashboard — the skill excludes admin panels.
 
 ### Motion
 
-Approved for the public site with the round-3 designs: GSAP and Lenis. The
-dashboard has none.
+Approved for the public site in round 3 of the home page designs: GSAP and
+Lenis. The dashboard has none.
 
 - **Markup stays server-rendered; motion is one client leaf per design.** A
   design marks what moves with data attributes and its leaf animates them.
   Import GSAP from `@/shared/lib/motion/gsap` (core plugins registered once,
   client-side); a design that needs a heavier plugin (Draggable, Inertia,
-  DrawSVG, ScrambleText) registers it in its own service, so no other design
-  downloads it. `useMotion` scopes every tween to the design and reverts it on
+  Flip) registers it in its own service, so no other design downloads it. `useMotion` scopes every tween to the design and reverts it on
   unmount; Lenis comes from `widgets/smooth-scroll`.
 - **Reduced motion means none.** Every effect runs under
   `(prefers-reduced-motion: no-preference)`: with reduced motion the page is
@@ -344,10 +347,12 @@ dashboard has none.
   from `lg` up, cursor effects with a mouse only; below that, scenes stack.
 - **Nothing may be left hidden.** `data-enter` elements start invisible only
   when scripts run and motion is allowed, and globals.css shows them anyway if
-  the script never takes over. An intro (`data-intro`, `widgets/intro-gate`)
-  plays once per visit, is skipped by any key or click, and has the same
-  fallback. The variant spec scrolls every design with motion on and fails on
-  a heading left invisible.
+  the script never takes over. The variant spec scrolls every design with
+  motion on and fails on a heading left invisible.
+- **Drawers, menus and players are native `<dialog>`s** opened with
+  `showModal()`: the browser makes the page inert, holds focus inside, closes
+  on Escape and returns focus. Stop Lenis while one is open (globals.css
+  stops the page scrolling).
 - **Decoration takes no pointer events** (`data-decorative`): a drawn frame
   over the hero once swallowed every click on its call to action.
 - **SplitText masks are loosened** (`loosenMasks`, built into `splitReveal`):
@@ -360,7 +365,13 @@ dashboard has none.
   state switches on must beat utility classes: put it outside any
   `@layer`. A turning element widens the page on a phone: the design wrapper
   clips horizontal overflow (`overflow-x: clip`, which keeps sticky and pinned
-  scenes working, unlike `hidden`).
+  scenes working, unlike `hidden`). A filter or an accordion that changes the
+  page's height leaves every ScrollTrigger below it measured for the old page,
+  and its reveals never fire: `useMotion` re-measures when its scope's height
+  settles. Flip with `absolute: true` takes rows out of the flow, so tween the
+  list's own height alongside it. React must never re-render a style GSAP
+  owns: give a moving element a fixed starting style and leave the rest to
+  GSAP.
 
 ### Theme
 
@@ -483,10 +494,13 @@ work only. Delete the scaffold when the real homepage lands; keep the
 data-loading pattern in `home-page.service.ts`.
 
 Decided for the design phase: Noto Sans Georgian for both scripts, so headlines
-match across locales (Noto Serif Georgian allowed as a second face), and GSAP +
-Lenis motion under the rules in § Motion. Five home page designs are under
-comparison on a preview build (`?v=a…e`, round 3). Still open: which design,
-and the YouTube facade component.
+match across locales, and GSAP + Lenis motion under the rules in § Motion. Two
+home page designs are under comparison on a preview build (round 4: `?v=1`
+light, `?v=2` dark). Both add a Culinary Academy section and a video section,
+filled from sample entries until the dashboard holds courses and videos
+(`home-page.samples.ts`, typed by `entity/course` and `entity/video`). Still
+open: which design, and the dashboard sections, database tables and public
+endpoints for courses and videos.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

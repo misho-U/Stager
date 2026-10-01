@@ -35,7 +35,8 @@ const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : us
  *   `[data-home-variant]` wrapper, but only when motion is allowed: under
  *   reduced motion nothing was ever hidden and nothing animates.
  * - Pinned scenes are re-measured once the web fonts have loaded, since a
- *   heading that re-wraps in the real face changes every height below it.
+ *   heading that re-wraps in the real face changes every height below it,
+ *   and again whenever the scope's own height changes (a filtered list).
  */
 export function useMotion(
   scope: RefObject<HTMLElement | null>,
@@ -62,8 +63,24 @@ export function useMotion(
       if (!cancelled) ScrollTrigger.refresh();
     });
 
+    // Content that changes height after load (a filter, an accordion, a
+    // panel) moves every trigger below it, and a reveal measured for the old
+    // page would never fire. Re-measure once the height settles.
+    let lastHeight = element.offsetHeight;
+    let settle = 0;
+    const resize = new ResizeObserver(() => {
+      const height = element.offsetHeight;
+      if (Math.abs(height - lastHeight) < 1) return;
+      lastHeight = height;
+      window.clearTimeout(settle);
+      settle = window.setTimeout(() => ScrollTrigger.refresh(), 150);
+    });
+    resize.observe(element);
+
     return () => {
       cancelled = true;
+      resize.disconnect();
+      window.clearTimeout(settle);
       media.revert();
     };
     // `setup` is recreated on every render; the caller's deps decide when it re-runs.

@@ -21,11 +21,7 @@
 /* TEMPORARY — the home page design comparison. Each file only overrides
    brandbook tokens, and adds the CSS only that design draws, inside its own
    [data-home-variant] scope. Removed with the variants once one is chosen. */
-@import '../shared/brandbook/variants/variant-a.css';
-@import '../shared/brandbook/variants/variant-b.css';
-@import '../shared/brandbook/variants/variant-c.css';
-@import '../shared/brandbook/variants/variant-d.css';
-@import '../shared/brandbook/variants/variant-e.css';
+@import '../shared/brandbook/variants/open-kitchen.css';
 
 @layer base {
   html {
@@ -75,11 +71,16 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* Decoration (a drawn frame, a grid, a ring of words) never takes a click
-     meant for what lies under it. An intro is the exception: it covers the
-     page on purpose, and a click on it only skips it. */
-  [data-decorative]:not([data-intro]) {
+  /* Decoration (a glow, a perforation, a drawn line) never takes a click
+     meant for what lies under it. */
+  [data-decorative] {
     pointer-events: none;
+  }
+
+  /* A modal dialog is open (a registration drawer, a video): the page
+     underneath stays put. */
+  :root:has(dialog:modal) {
+    overflow: hidden;
   }
 
   /* Visible focus for keyboard users, suppressed for mouse clicks. */
@@ -138,29 +139,54 @@
   }
 }
 
-/* An intro (`data-intro`, see widgets/intro-gate) never plays under reduced
-   motion or without scripts, and cannot cover the page for long if its
-   design's script fails. */
-@media (prefers-reduced-motion: reduce), (scripting: none) {
-  [data-intro] {
-    display: none !important;
-  }
-}
-
-[data-home-variant]:not([data-motion='on']) [data-intro] {
-  animation: motion-fallback-out var(--duration-base) ease-out 3s forwards;
-}
-
 @keyframes motion-fallback-in {
   to {
     opacity: 1;
   }
 }
 
-@keyframes motion-fallback-out {
-  to {
-    opacity: 0;
-    visibility: hidden;
+@layer components {
+  /* The course registration drawer (widgets/course-registration). It slides
+     in from the right, or rises from the bottom on a phone; @starting-style
+     is the frame it opens from, so reduced motion (globals' 0.01ms
+     transitions) simply shows it. Colours come from the design it opens in. */
+  .registration-dialog {
+    margin: 0 0 0 auto;
+    width: 100%;
+    max-width: var(--drawer-width);
+    height: 100dvh;
+    max-height: 100dvh;
+    padding: 0;
+    border: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    box-shadow: var(--shadow-drawer);
+    translate: 0 0;
+    transition: translate var(--duration-drawer) var(--ease-brand);
+
+    &::backdrop {
+      background-color: var(--color-backdrop);
+    }
+
+    @starting-style {
+      &[open] {
+        translate: 100% 0;
+      }
+    }
+
+    @variant max-sm {
+      margin: auto 0 0;
+      max-width: none;
+      height: auto;
+      max-height: var(--drawer-sheet-height);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+
+      @starting-style {
+        &[open] {
+          translate: 0 100%;
+        }
+      }
+    }
   }
 }
 

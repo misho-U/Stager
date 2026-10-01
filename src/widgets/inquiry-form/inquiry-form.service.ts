@@ -15,6 +15,16 @@ type FormInput = z.input<typeof contactSubmissionSchema>;
 type FormOutput = z.output<typeof contactSubmissionSchema>;
 type FieldName = 'name' | 'company' | 'email' | 'phone' | 'interest' | 'message';
 
+/**
+ * Values to start from instead of an empty form: a course's "Register" opens
+ * the form already set to Training, with a message naming the course. The
+ * visitor can still change both.
+ */
+export type InquiryDefaults = {
+  interest?: NonNullable<FormInput['interest']>;
+  message?: string;
+};
+
 const isEmpty = (value: unknown) =>
   value === undefined || value === null || String(value).trim() === '';
 
@@ -25,7 +35,7 @@ const isEmpty = (value: unknown) =>
  * shown from the site's own message files, chosen by the kind of error rather
  * than by the schema's English text — so a visitor on /ka reads Georgian.
  */
-export function useInquiryForm(locale: DbLocale) {
+export function useInquiryForm(locale: DbLocale, defaults: InquiryDefaults = {}) {
   const t = useTranslations();
   const submitMutation = useSubmitContactInquiry();
   const [sent, setSent] = useState(false);
@@ -45,10 +55,10 @@ export function useInquiryForm(locale: DbLocale) {
       company: '',
       email: '',
       phone: '',
-      // No interest is pre-selected; the empty option fails validation as
-      // "required", which is the point.
-      interest: '' as FormInput['interest'],
-      message: '',
+      // No interest is pre-selected unless the caller chose one; the empty
+      // option fails validation as "required", which is the point.
+      interest: defaults.interest ?? ('' as FormInput['interest']),
+      message: defaults.message ?? '',
       locale,
       website: '',
     },

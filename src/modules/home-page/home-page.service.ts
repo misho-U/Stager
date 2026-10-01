@@ -4,6 +4,7 @@ import {
   HOME_VARIANTS,
   type HomeVariant,
 } from '@/modules/home-page/home-page.constants';
+import { sampleCourses, sampleVideos } from '@/modules/home-page/home-page.samples';
 import type { PublicPage } from '@/entity/page/model/page.model';
 import type { PublicProjectListItem } from '@/entity/project/model/project.model';
 import type { PublicService } from '@/entity/service/model/service.model';
@@ -100,6 +101,11 @@ export async function loadHomePageData(locale: DbLocale) {
     projects: projects.data,
     services: services.data,
     insights: insights.data,
+    // TEMPORARY: the dashboard has no courses or videos yet (round-4 design
+    // comparison). `sample` puts a "Sample" badge on both sections; it goes
+    // when these become reads like the ones above.
+    courses: { items: sampleCourses(locale), sample: true },
+    videos: { items: sampleVideos(locale), sample: true },
     /** True when any read failed, so the page can say so instead of
      *  rendering placeholder copy that looks like real content. */
     readFailed:
