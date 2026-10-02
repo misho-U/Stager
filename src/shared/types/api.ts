@@ -86,6 +86,28 @@ export const seoInputSchema = z.object({
 /** Timestamps cross the wire as ISO-8601 strings, not Date objects. */
 export const isoDateTime = z.iso.datetime();
 
+type WithoutDefaults<Shape extends z.ZodRawShape> = {
+  [Key in keyof Shape]: Shape[Key] extends z.ZodDefault<infer Inner> ? Inner : Shape[Key];
+};
+
+/**
+ * The PATCH schema for a create schema: every field optional, and a field left
+ * out means "unchanged".
+ *
+ * zod 4 applies `.default()` even inside `.partial()`, so `.partial()` alone
+ * filled every omitted field with its default: hiding a social link
+ * (`{ isActive: false }`) also reset its order to 0, and any one-field update
+ * of a project or service would have set it back to DRAFT. The defaults are
+ * for creating; an update leaves what it does not mention alone.
+ */
+export function partialUpdate<Shape extends z.ZodRawShape>(schema: z.ZodObject<Shape>) {
+  const shape: Record<string, z.core.$ZodType> = {};
+  for (const [key, field] of Object.entries(schema.shape)) {
+    shape[key] = field instanceof z.ZodDefault ? field.unwrap() : field;
+  }
+  return z.object(shape as unknown as WithoutDefaults<Shape>).partial();
+}
+
 /** Common query string for public list endpoints. */
 export const publicListQuerySchema = z.object({
   locale: dbLocaleSchema,
@@ -126,6 +148,31 @@ export const youtubeUrlSchema = z
     }
     // The key names the dashboard's message for this check (validation-message.ts).
   }, { params: { key: 'youtube' } });
+
+/**
+ * A YouTube link that may be left blank. A cleared input sends "", which the
+ * link check alone rejects, so a saved link could never be removed. Blank
+ * (after trimming) means none; anything else must be a YouTube link, and that
+ * is the failure reported.
+ */
+export const optionalYoutubeUrlInput = () =>
+  z
+    .string()
+    .trim()
+    .pipe(z.union([youtubeUrlSchema, z.literal('')]))
+    .nullish()
+    .transform((value) => value || null);
+
+/**
+ * The value chosen in an optional dropdown: an id, or an enum member piped on
+ * to its own schema. The "none" option sends "", which `.min(1)` alone
+ * rejects, so a choice could never be taken back.
+ */
+export const optionalChoice = () =>
+  z
+    .union([z.string().min(1), z.literal('')])
+    .nullish()
+    .transform((value) => value || null);
 
 /** Reference to an uploaded image, or nothing. */
 export const mediaIdSchema = z.string().min(1).nullish();

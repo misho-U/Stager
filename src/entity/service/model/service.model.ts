@@ -6,6 +6,7 @@ import {
   isoDateTime,
   listResponseSchema,
   mediaIdSchema,
+  partialUpdate,
   seoFieldsSchema,
   seoInputSchema,
   slugSchema,
@@ -72,5 +73,5 @@ export type ServiceInput = z.output<typeof serviceInputSchema>;
 /** Raw form values, before defaults are applied. See the useForm generics. */
 export type ServiceFormValues = z.input<typeof serviceInputSchema>;
 
-export const serviceUpdateInputSchema = serviceInputSchema.partial();
+export const serviceUpdateInputSchema = partialUpdate(serviceInputSchema);
 export type ServiceUpdateInput = z.output<typeof serviceUpdateInputSchema>;

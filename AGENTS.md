@@ -246,6 +246,15 @@ Non-negotiable. Each exists because of a specific failure mode.
   `shared/types/api.ts` for emails and URLs. The trim runs before validation,
   so `.min(1)` rejects whitespace-only values. Leave ids, machine-generated
   values, honeypots and passwords untrimmed. Output schemas need none of this.
+- **An update schema is `partialUpdate(createSchema)`, never `.partial()`**
+  (`shared/types/api.ts`). zod 4 applies `.default()` inside `.partial()`, so
+  a one-field PATCH filled in every default it was not given: hiding a social
+  link reset its order to 0, and any one-field update would have set a record
+  back to DRAFT. A field left out of an update means "unchanged".
+- **An optional dropdown or link reads blank as none:** `optionalChoice()`,
+  `optionalYoutubeUrlInput()` (`shared/types/api.ts`). The "none" option and an
+  emptied input send "", which `.min(1)` or a link check rejects, so a value
+  once saved could never be removed.
 - **One file holds every visual value: `src/shared/brandbook/brandbook.css`.**
   Colour, typeface, type scale, spacing, radii and motion are tokens in its
   `@theme` block; `src/app/globals.css` only imports it. Never hard-code a
@@ -425,6 +434,7 @@ pnpm build             # prisma generate + next build
 pnpm lint              # ESLint, including the architecture boundaries
 pnpm typecheck         # tsc --noEmit
 pnpm db:migrate        # create + apply a migration (writes SQL to prisma/migrations)
+pnpm db:generate       # regenerate the Prisma client; run after db:migrate, which no longer does in Prisma 7
 pnpm db:seed           # idempotent seed
 pnpm db:studio         # browse the database
 pnpm test:e2e          # Playwright (loads .env.local; needs a seeded database)
