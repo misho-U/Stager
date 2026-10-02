@@ -76,6 +76,16 @@ export function useInquiryForm(locale: DbLocale, defaults: InquiryDefaults = {})
     return t('validation.required');
   };
 
+  // Why a send failed, in the visitor's language. A preview or a dev server
+  // refuses on purpose (DELIVERY_OFF, pkg/config/inquiry-delivery.ts):
+  // "please try again" there would send a tester round in circles.
+  const failureMessage = (error: unknown) => {
+    if (!isApiError(error)) return t('contact.failure');
+    if (error.code === 'RATE_LIMITED') return t('validation.rateLimited');
+    if (error.reason === 'DELIVERY_OFF') return t('contact.previewNotSent');
+    return t('contact.failure');
+  };
+
   const submit = async (values: FormOutput) => {
     setFormError(null);
     try {
@@ -86,11 +96,7 @@ export function useInquiryForm(locale: DbLocale, defaults: InquiryDefaults = {})
       });
       setSent(true);
     } catch (error) {
-      setFormError(
-        isApiError(error) && error.code === 'RATE_LIMITED'
-          ? t('validation.rateLimited')
-          : t('contact.failure'),
-      );
+      setFormError(failureMessage(error));
     }
   };
 

@@ -40,6 +40,7 @@
     "submitting": "Sending…",
     "success": "Thank you. Your message has been received.",
     "failure": "The message could not be sent. Please try again.",
+    "previewNotSent": "This is a preview of the site, so the message was not sent.",
     "interests": {
       "NEW_FOOD_BUSINESS": "New Food Business",
       "MENU_DEVELOPMENT": "Menu Development",
