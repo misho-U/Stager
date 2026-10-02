@@ -221,6 +221,14 @@ Non-negotiable. Each exists because of a specific failure mode.
 11. **Uploads**: admin-only, server-issued Blob tokens, mime allowlist, size cap,
     random suffix. No SVG — it is an executable document.
 12. **Audit every mutation** via `recordAudit`.
+13. **Only the live site delivers contact submissions.** Every deployment
+    shares one database and inbox, so a test sent from a Vercel preview
+    (design.stager.ge, a branch link) or from `pnpm dev` would reach the client
+    as a real lead. There, `/api/contact` validates as usual and then refuses
+    with `403 FORBIDDEN`, reason `DELIVERY_OFF`, before writing anything.
+    `INQUIRY_DELIVERY=on` lifts that for a preview or a dev server; nothing
+    turns the live site off. `pkg/config/inquiry-delivery.ts` holds the rule,
+    and `contact-form.spec.ts` pins every case.
 
 ---
 

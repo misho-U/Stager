@@ -1,11 +1,26 @@
 import { expect, test } from '@playwright/test';
 
+import { deliversInquiries } from '@pkg/config/inquiry-delivery';
+
 /**
  * The public contact endpoint.
  *
  * This is the only write path open to anonymous visitors, so its validation and
  * abuse controls carry more weight than anything else in the API.
  */
+
+/**
+ * Whether the server under test stores and emails a valid submission. It is
+ * `pnpm dev` locally and `pnpm start` in CI (playwright.config.ts), started
+ * with this process's environment. A dev server delivers only with
+ * INQUIRY_DELIVERY=on, so by default a local run cannot put test inquiries
+ * into whatever database `.env.local` points at.
+ */
+const serverDelivers = deliversInquiries({
+  nodeEnv: process.env.CI ? 'production' : 'development',
+  vercelEnv: process.env.VERCEL_ENV,
+  setting: process.env.INQUIRY_DELIVERY,
+});
 
 function validSubmission(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
@@ -104,12 +119,78 @@ test.describe('spam controls', () => {
   });
 });
 
+test.describe('delivery policy', () => {
+  // Every deployment shares the live database and inbox, so what decides
+  // delivery is pinned case by case (pkg/config/inquiry-delivery.ts).
+
+  test('only the live site delivers by default', () => {
+    expect(
+      deliversInquiries({ nodeEnv: 'production', vercelEnv: 'production', setting: undefined }),
+    ).toBe(true);
+    // design.stager.ge and every branch link.
+    expect(
+      deliversInquiries({ nodeEnv: 'production', vercelEnv: 'preview', setting: undefined }),
+    ).toBe(false);
+    // `pnpm dev`, whose .env.local may point at the live database.
+    expect(
+      deliversInquiries({ nodeEnv: 'development', vercelEnv: undefined, setting: undefined }),
+    ).toBe(false);
+  });
+
+  test('no setting can switch the live site off', () => {
+    for (const setting of ['off', 'OFF', '0', 'no']) {
+      expect(deliversInquiries({ nodeEnv: 'production', vercelEnv: 'production', setting })).toBe(
+        true,
+      );
+    }
+  });
+
+  test('a production build without Vercel system variables still delivers', () => {
+    // Fails open: losing real leads is worse than a preview delivering.
+    expect(
+      deliversInquiries({ nodeEnv: 'production', vercelEnv: undefined, setting: undefined }),
+    ).toBe(true);
+  });
+
+  test('only `on` switches a preview or the dev server on', () => {
+    for (const nodeEnv of ['production', 'development']) {
+      const vercelEnv = nodeEnv === 'production' ? 'preview' : undefined;
+      expect(deliversInquiries({ nodeEnv, vercelEnv, setting: 'on' })).toBe(true);
+      expect(deliversInquiries({ nodeEnv, vercelEnv, setting: ' On ' })).toBe(true);
+      for (const setting of ['off', 'true', '1', 'yes', 'onn']) {
+        expect(deliversInquiries({ nodeEnv, vercelEnv, setting })).toBe(false);
+      }
+    }
+  });
+});
+
 test.describe('happy path and rate limiting', () => {
   // Serial: the rate limiter is shared state, so these must not race each other
   // or run beside the other describe blocks' submissions.
   test.describe.configure({ mode: 'serial' });
 
+  test('a server that does not deliver refuses, says why, and stores nothing', async ({
+    request,
+  }) => {
+    test.skip(serverDelivers, 'This server delivers submissions (INQUIRY_DELIVERY=on, or CI).');
+
+    // The refusal comes before the rate limiter and the database write, so a
+    // 403 here means nothing was stored and no email was sent. Run against a
+    // server started with a different INQUIRY_DELIVERY, this fails with a 200.
+    const response = await request.post('/api/contact', { data: validSubmission() });
+
+    expect(response.status()).toBe(403);
+    const body = await response.json();
+    expect(body.error.code).toBe('FORBIDDEN');
+    expect(body.error.reason).toBe('DELIVERY_OFF');
+  });
+
   test('accepts a valid submission, then throttles repeats', async ({ request }) => {
+    test.skip(
+      !serverDelivers,
+      'This server does not deliver submissions. Set INQUIRY_DELIVERY=on, against a local database, to run this.',
+    );
+
     // A unique synthetic client address per run. The limiter buckets by hashed
     // IP for an hour, so reusing an address an earlier run exhausted makes the
     // very first request here come back 429. This drew from 203.0.113.1–254,

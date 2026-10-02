@@ -29,6 +29,9 @@ export const API_ERROR_REASONS = [
   'RATE_LIMITED',
   'PROVIDER_RATE_LIMITED',
   'MEDIA_IN_USE',
+  // A contact submission on a deployment that does not deliver them (a
+  // preview, the dev server): the form says nothing was sent, and why.
+  'DELIVERY_OFF',
 ] as const;
 
 export type ApiErrorReason = (typeof API_ERROR_REASONS)[number];

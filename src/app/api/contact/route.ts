@@ -4,7 +4,7 @@ import {
   contactSubmissionSchema,
   MIN_FORM_FILL_MS,
 } from '@/entity/contact-inquiry/model/contact-inquiry.model';
-import { serverEnv } from '@pkg/config/env.server';
+import { deliversInquiriesHere, serverEnv } from '@pkg/config/env.server';
 import { prisma } from '@pkg/db/prisma';
 import { apiFail, apiOk } from '@pkg/http/api-response';
 import { logger } from '@pkg/logger';
@@ -53,6 +53,17 @@ export const POST = withPublic(async ({ request }) => {
   if (submission.elapsedMs !== undefined && submission.elapsedMs < MIN_FORM_FILL_MS) {
     logger.warn('contact.too_fast', { elapsedMs: submission.elapsedMs });
     return apiOk({ ok: true as const, id: 'accepted' });
+  }
+
+  // A preview or a dev server shares the live database and inbox, so storing
+  // this would put a test in front of the client as a real lead
+  // (pkg/config/inquiry-delivery.ts). Checked after validation, so the form
+  // still behaves fully on a preview, and before anything is written.
+  if (!deliversInquiriesHere) {
+    logger.info('contact.delivery_off', {});
+    return apiFail('FORBIDDEN', 'This deployment does not deliver contact submissions', {
+      reason: 'DELIVERY_OFF',
+    });
   }
 
   const ipHash = hashIp(getClientIp(request));
