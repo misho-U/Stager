@@ -19,7 +19,9 @@
     "team": "Team",
     "insights": "Insights",
     "contact": "Contact",
-    "startProject": "Start a Project"
+    "startProject": "Start a Project",
+    "academy": "Academy",
+    "videos": "Videos"
   },
   "locale": {
     "switchLabel": "Change language",
@@ -46,7 +48,8 @@
       "HACCP_FOOD_SAFETY": "HACCP / Food Safety",
       "CONSULTING": "Consulting",
       "OTHER": "Other"
-    }
+    },
+    "choose": "Choose one"
   },
   "validation": {
     "required": "This field is required",
@@ -55,12 +58,88 @@
     "tooLong": "Too long",
     "rateLimited": "Too many requests. Please try again later."
   },
-  "admin": {
-    "signIn": "Sign in",
-    "signOut": "Sign out",
-    "email": "Email",
-    "password": "Password",
-    "invalidCredentials": "Email or password is incorrect",
-    "notAuthorized": "You do not have access to the admin dashboard"
+  "home": {
+    "readFailed": "Some content failed to load. This page may be incomplete.",
+    "noProjects": "Projects will be added soon.",
+    "contactDetails": "Contact details",
+    "sections": "Page sections",
+    "why": "Why us",
+    "previous": "Previous",
+    "next": "Next",
+    "menu": "Menu",
+    "close": "Close",
+    "board": {
+      "title": "What's on at STAGER",
+      "carousel": "carousel",
+      "slide": "card",
+      "show": "Show: {name}",
+      "pause": "Pause",
+      "resume": "Play"
+    },
+    "featuredProject": "Featured project",
+    "seeProjects": "See the projects",
+    "rights": "All rights reserved."
+  },
+  "preview": {
+    "pendingIntro": "A short text about STAGER will go here.",
+    "pendingWhy": "Three or four reasons to choose STAGER will go here.",
+    "pendingHint": "Dashboard → Page copy → Home",
+    "photoHero": "Main photo",
+    "photoProject": "Project photo",
+    "photoSection": "Photo for this section",
+    "photoHint": "Added from the dashboard"
+  },
+  "academy": {
+    "title": "STAGER Academy",
+    "intro": "Courses for chefs, kitchen teams and the people who run them.",
+    "filterLabel": "Show courses",
+    "all": "All",
+    "categories": {
+      "kitchen": "Kitchen",
+      "management": "Management",
+      "food-safety": "Food safety",
+      "hospitality": "Hospitality"
+    },
+    "formats": {
+      "in-person": "In person",
+      "online": "Online"
+    },
+    "seatsLeft": "{count, plural, one {# seat left} other {# seats left}}",
+    "full": "Fully booked",
+    "free": "Free",
+    "register": "Register",
+    "waitlist": "Waitlist",
+    "starts": "Starts {date}",
+    "next": "Next course",
+    "count": "{count, plural, one {# course} other {# courses}}",
+    "registerTitle": "Register for a course",
+    "waitlistTitle": "Join the waiting list",
+    "registerHint": "Leave your details and we will confirm your place.",
+    "registerMessage": "I would like to register for \"{course}\", starting {date}.",
+    "waitlistMessage": "I would like to join the waiting list for \"{course}\", starting {date}.",
+    "close": "Close",
+    "related": "At the Academy: {course}"
+  },
+  "videos": {
+    "title": "Videos",
+    "intro": "Episodes, conversations and masterclasses from our kitchens and projects.",
+    "kinds": {
+      "episode": "Episode",
+      "podcast": "Podcast",
+      "masterclass": "Masterclass"
+    },
+    "play": "Play",
+    "playTitle": "Play: {title}",
+    "minutes": "{count} min",
+    "latest": "Newest video",
+    "nowPlaying": "Now playing",
+    "allOnYouTube": "All videos on YouTube",
+    "unavailable": "This is a sample entry. The video will play here once its YouTube link is added in the dashboard.",
+    "close": "Close the video",
+    "list": "Episodes"
+  },
+  "sample": {
+    "badge": "Sample",
+    "hint": "Sample entries, shown until courses and videos are added in the dashboard."
   }
 }

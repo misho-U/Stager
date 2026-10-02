@@ -28,6 +28,7 @@ rather than adding a dependency.
 | Email | **Resend** |
 | Rich-text sanitising | **sanitize-html** — DOM-free. Never a jsdom-based sanitizer (see below) |
 | Icons | **@phosphor-icons/react** — per-icon imports: `…/dist/csr/<Name>` in client components, `…/dist/ssr/<Name>` in server components (the root re-exports ~1,500 icons) |
+| Motion (public site) | **GSAP 3.15** (every plugin is free) + **Lenis 1.3** smooth scroll, both pinned exactly — client leaf components only, through `shared/lib/motion` and `widgets/smooth-scroll` (§ Motion) |
 | i18n | **next-intl 4** |
 | Tests | **Playwright** |
 | Hosting | **Vercel** |
@@ -271,7 +272,14 @@ Non-negotiable. Each exists because of a specific failure mode.
   Georgian and Latin both load the bundled family, and that the files stay
   split by script. The CSP does not allowlist Google's font hosts.
 - **Bilingual content is authored in both languages at once.** Translation
-  tables, `@@unique([<parent>Id, locale])`, KA/EN tabs in the admin form.
+  tables, `@@unique([<parent>Id, locale])`, one ქართული | English toggle per
+  admin form (§ Dashboard language).
+- **A slug follows the English title (or name) while the item is being
+  created** (`shared/lib/use-slug-autofill.ts`), until someone edits the slug
+  by hand; emptying it hands it back to the title. A saved item's slug is never
+  changed automatically, draft or not: links to a published page may already
+  be out there, and a draft may have been published before. It follows the
+  English because `slugify()` keeps Latin letters and digits only.
 - **Comments explain why, not what.** Do not narrate the code.
 - **Never edit the database by hand.** Change `schema.prisma`, run
   `pnpm db:migrate`, commit the generated SQL.
@@ -288,8 +296,8 @@ defined as `--color-brand-*` in `brandbook.css`.
 site only**: layout, type scale, spacing rhythm, hierarchy, motion. This file
 and CLAUDE.md win wherever they disagree. The resolved conflicts:
 
-- **No extra packages.** No Motion, GSAP, design system or shadcn. Motion is
-  CSS only (see the dials below).
+- **No extra packages.** Motion is GSAP + Lenis (§ Motion); no Motion
+  (framer), design system or shadcn.
 - **Its values go into `brandbook.css` first.** Its examples use raw palette
   utilities and arbitrary values (`text-gray-600`, `max-w-[1400px]`,
   `tracking-[0.18em]`, `z-[60]`); translate each into a token, never inline.
@@ -308,17 +316,77 @@ and CLAUDE.md win wherever they disagree. The resolved conflicts:
   unchanged, so a label is capitals on /en and not on /ka. No italic: the faces
   are upright only, so the browser would fake the slant. No tracking or leading
   below the brandbook's values without checking /ka. A future display face
-  needs a matching Georgian design. Verify every typography change on /ka as
-  well as /en.
-- **Dials:** DESIGN_VARIANCE 5 / MOTION_INTENSITY 3 / VISUAL_DENSITY 3. At
-  MOTION 3 the skill itself prescribes CSS hover and press states only.
+  needs a matching Georgian design (Noto Serif Georgian is one). Verify every
+  typography change on /ka as well as /en.
+- **Dials:** per design while the home page designs are compared (round 4,
+  `?v=1` and `?v=2`): 1 "Open Kitchen" (light) at MOTION 5, 2 "Chef's Table"
+  (dark) at MOTION 8. The rules in § Motion hold at every setting.
+- **No custom cursors**, and no scroll cues: the skill bans both, and round 3
+  showed why (a cursor disc that hid what it pointed at).
+- **Sample content is TEMPORARY and says so.** Academy courses and videos
+  have no dashboard yet; `home-page.samples.ts` supplies invented entries,
+  and every section showing them carries a "Sample" badge
+  (`shared/components/sample-badge.tsx`). They must be replaced by dashboard
+  data before launch, never shipped as content.
 - **Out of scope:** the admin dashboard — the skill excludes admin panels.
+
+### Motion
+
+Approved for the public site in round 3 of the home page designs: GSAP and
+Lenis. The dashboard has none.
+
+- **Markup stays server-rendered; motion is one client leaf per design.** A
+  design marks what moves with data attributes and its leaf animates them.
+  Import GSAP from `@/shared/lib/motion/gsap` (core plugins registered once,
+  client-side); a design that needs a heavier plugin (Draggable, Inertia,
+  Flip) registers it in its own service, so no other design downloads it. `useMotion` scopes every tween to the design and reverts it on
+  unmount; Lenis comes from `widgets/smooth-scroll`.
+- **Reduced motion means none.** Every effect runs under
+  `(prefers-reduced-motion: no-preference)`: with reduced motion the page is
+  static and fully visible and Lenis is off. Pinned and sideways scenes run
+  from `lg` up, cursor effects with a mouse only; below that, scenes stack.
+- **Nothing may be left hidden.** `data-enter` elements start invisible only
+  when scripts run and motion is allowed, and globals.css shows them anyway if
+  the script never takes over. The variant spec scrolls every design with
+  motion on and fails on a heading left invisible.
+- **Drawers, menus and players are native `<dialog>`s** opened with
+  `showModal()`: the browser makes the page inert, holds focus inside, closes
+  on Escape and returns focus. Stop Lenis while one is open (globals.css
+  stops the page scrolling).
+- **Decoration takes no pointer events** (`data-decorative`): a drawn frame
+  over the hero once swallowed every click on its call to action.
+- **SplitText masks are loosened** (`loosenMasks`, built into `splitReveal`):
+  cut to the line box, a mask clips Georgian letters that reach below the
+  baseline, during the entrance and for good after it. Loosen with a clip
+  drawn past the box (`clip-path: inset(-0.2em …)`), never padding pulled
+  back by negative margins: line masks are blocks, their margins collapse,
+  and every line lands 0.2em lower than the text it replaced.
+- **Traps met on the way:** Draggable in scroll mode wraps a scroller's
+  children in a block of its own, so give the scroller its own flex track. A
+  transformed ancestor becomes the box its `fixed` children are placed in, so
+  a full-screen overlay cannot live inside an animated header. CSS a motion
+  state switches on must beat utility classes: put it outside any
+  `@layer`. A turning element widens the page on a phone: the design wrapper
+  clips horizontal overflow (`overflow-x: clip`, which keeps sticky and pinned
+  scenes working, unlike `hidden`). A filter or an accordion that changes the
+  page's height leaves every ScrollTrigger below it measured for the old page,
+  and its reveals never fire: `useMotion` re-measures when its scope's height
+  settles. Flip with `absolute: true` takes rows out of the flow, so tween the
+  list's own height alongside it. React must never re-render a style GSAP
+  owns: give a moving element a fixed starting style and leave the rest to
+  GSAP.
 
 ### Theme
 
 The **public site is light-only**, by decision. Only the **dashboard** has a
 theme switch — Light / Dark, beside the wordmark in the sidebar. Until one is
 picked, the dashboard follows the OS (the `system` cookie state).
+
+The one exception is temporary: home page design 2 under comparison
+("Chef's Table", `?v=2`) is dark. It is not a theme and has no switch: it
+remaps the colour roles inside `[data-home-variant='2']` only
+(`variants/chefs-table.css`), and the rest of the site stays light. Should
+it be chosen, the light-only decision is revisited, not worked around.
 
 - The choice is a cookie, `stager-admin-theme` (`Path=/admin`), read on the
   server in `src/app/admin/layout.tsx`, so the first byte is already themed:
@@ -334,6 +402,51 @@ picked, the dashboard follows the OS (the `system` cookie state).
   blocks have not drifted, and asserts the main text pairs stay readable in
   both themes.
 
+### Dashboard language
+
+The dashboard's own words are Georgian or English, the admin's choice, and
+**Georgian until one is picked**. That is a different thing from the language
+of the content being edited, and the two stay apart in code and in wording.
+
+- **Interface language:** the ქა | EN switch on the sidebar's account row and
+  on the sign-in form. A cookie, `stager-admin-locale` (`Path=/admin`), parsed
+  by `pkg/i18n/admin-locale.ts` (anything unknown reads as Georgian) and read by
+  `pkg/i18n/request.ts` for every request without a locale segment, so
+  `<html lang>` follows it. Switching refreshes the page in place: a
+  half-filled form survives it.
+- **Content language:** "რედაქტირება: ქართული | English" at the top of each
+  bilingual form (`shared/components/content-locale.tsx`). One toggle per page
+  switches every translated field, and it opens on Georgian every time. Both
+  languages' fields stay mounted, the other one hidden: unmounted fields drop
+  out of react-hook-form, and saving would wipe the language not on screen. A
+  red dot marks a language with errors, and a failed save whose problems are
+  all in the hidden language switches to it. `TranslatedFields` gives each
+  input the `lang` of its copy, for spellcheck and screen readers.
+- **Wording lives in `pkg/i18n/messages/admin.ka.json` and `admin.en.json`,
+  never in code.** Same keys and placeholders in both. Client components use
+  `useTranslations('admin…')`, server components `getTranslations`. The
+  site's own messages load too, so the dashboard reuses labels the site has
+  (the inquiry interests).
+- **Validation is worded from what failed, not from schema text.** The shared
+  schemas carry no messages. `shared/lib/validation-message.ts` maps a zod
+  issue (its code, limit and pattern) to a message key: live through
+  `useValidationErrorMap()` → `zodResolver(schema, { error })`, and after a 422
+  through the `issues` the API returns beside `fields`. A new refinement names
+  its message with `params: { key }`.
+- **Server errors are worded from `code` and `reason`**, never from the
+  server's English `message`, which stays for logs. A service gets both helpers
+  from `useFormErrors()`. Add a `reason` only where one code covers cases the
+  admin must tell apart (why a sign-in failed, an image still in use).
+- **The notification email is always Georgian:** it has one reader. Its wording
+  is under `email` in `admin.ka.json`.
+- `tests/e2e/admin-i18n.spec.ts` fails on a missing or mismatched key, a
+  message that does not format, a key the code asks for that a language lacks,
+  and wording written into dashboard code: JSX text, and strings given to
+  label, placeholder, hint, title, aria-label and similar props or to a column
+  `header`. Tests that find things by English wording pick English first
+  (`setDashboardLanguage()`); tests that expect Georgian read it from
+  `admin.ka.json`, so correcting a translation never breaks a test.
+
 ### Credential-gated tests
 
 Tests that need a signed-in admin are skipped unless `E2E_ADMIN_EMAIL` and
@@ -346,6 +459,8 @@ Tests that need a signed-in admin are skipped unless `E2E_ADMIN_EMAIL` and
   `test.use({ storageState: ADMIN_SESSION })` from `tests/e2e/admin-session.ts`.
   The login route allows ten sign-ins per 15 minutes per IP, and signing in per
   test used up a whole window in a single run.
+- **They run in English.** The setup project picks English before signing
+  in, and the saved session keeps the choice.
 - **Never sign out in one.** `signOut()` defaults to scope `global`, so it
   would end the session every other test is using.
 - **They write to whatever database `.env.local` points at.** Run them against
@@ -388,8 +503,13 @@ work only. Delete the scaffold when the real homepage lands; keep the
 data-loading pattern in `home-page.service.ts`.
 
 Decided for the design phase: Noto Sans Georgian for both scripts, so headlines
-match across locales, and CSS-only motion (dials 5/3/3 — see § Design skill).
-Still open: the YouTube facade component.
+match across locales, and GSAP + Lenis motion under the rules in § Motion. Two
+home page designs are under comparison on a preview build (round 4: `?v=1`
+light, `?v=2` dark). Both add a Culinary Academy section and a video section,
+filled from sample entries until the dashboard holds courses and videos
+(`home-page.samples.ts`, typed by `entity/course` and `entity/video`). Still
+open: which design, and the dashboard sections, database tables and public
+endpoints for courses and videos.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

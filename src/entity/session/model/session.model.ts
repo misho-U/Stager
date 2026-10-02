@@ -15,8 +15,8 @@ export const adminSessionSchema = z.object({
 export type AdminSessionView = z.infer<typeof adminSessionSchema>;
 
 export const loginInputSchema = z.object({
-  email: emailInput('Enter a valid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  email: emailInput(),
+  password: z.string().min(8),
 });
 
 export type LoginInput = z.infer<typeof loginInputSchema>;

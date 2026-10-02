@@ -1,3 +1,6 @@
+import type { Metadata } from 'next';
+
+import { HOME_VARIANT_PARAM } from '@/modules/home-page/home-page.constants';
 import { HomePageModule } from '@/modules/home-page/home-page.module';
 import { isAppLocale, toDbLocale, DEFAULT_LOCALE } from '@pkg/i18n/routing';
 
@@ -17,9 +20,21 @@ import { isAppLocale, toDbLocale, DEFAULT_LOCALE } from '@pkg/i18n/routing';
  */
 export const dynamic = 'force-dynamic';
 
-export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params;
+/**
+ * TEMPORARY — this build exists to compare designs (design.stager.ge), so no
+ * search engine may index it. Removed with the variants.
+ */
+export const metadata: Metadata = { robots: { index: false, follow: false } };
+
+export default async function HomePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const [{ locale }, search] = await Promise.all([params, searchParams]);
   const appLocale = isAppLocale(locale) ? locale : DEFAULT_LOCALE;
 
-  return <HomePageModule locale={toDbLocale(appLocale)} />;
+  return <HomePageModule locale={toDbLocale(appLocale)} variant={search[HOME_VARIANT_PARAM]} />;
 }

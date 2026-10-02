@@ -17,7 +17,8 @@ import {
   type SocialLinkFormValues,
   type SocialLinkInput,
 } from '@/entity/social-link/model/social-link.model';
-import { toFieldErrors, toFormErrorMessage } from '@/shared/lib/form-errors';
+import { useFormErrors } from '@/shared/lib/form-errors';
+import { useValidationErrorMap } from '@/shared/lib/use-validation-error-map';
 
 const EMPTY: SocialLinkFormValues = {
   platform: 'INSTAGRAM',
@@ -28,6 +29,8 @@ const EMPTY: SocialLinkFormValues = {
 };
 
 export function useAdminSocialLinks() {
+  const formErrors = useFormErrors();
+  const validationErrorMap = useValidationErrorMap();
   const { data, isLoading, error } = useQuery(adminSocialLinksQuery());
   const createLink = useCreateSocialLink();
   const updateLink = useUpdateSocialLink();
@@ -37,7 +40,7 @@ export function useAdminSocialLinks() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const form = useForm<SocialLinkFormValues, unknown, SocialLinkInput>({
-    resolver: zodResolver(socialLinkInputSchema),
+    resolver: zodResolver(socialLinkInputSchema, { error: validationErrorMap }),
     defaultValues: EMPTY,
   });
 
@@ -69,8 +72,8 @@ export function useAdminSocialLinks() {
       }
       startCreate();
     } catch (caught) {
-      setFormError(toFormErrorMessage(caught));
-      for (const [field, message] of Object.entries(toFieldErrors(caught))) {
+      setFormError(formErrors.message(caught));
+      for (const [field, message] of Object.entries(formErrors.fields(caught))) {
         form.setError(field as keyof SocialLinkFormValues, { type: 'server', message });
       }
     }
@@ -82,7 +85,7 @@ export function useAdminSocialLinks() {
     try {
       await updateLink.mutateAsync({ id: link.id, input: { isActive: !link.isActive } });
     } catch (caught) {
-      setFormError(toFormErrorMessage(caught));
+      setFormError(formErrors.message(caught));
     }
   };
 
@@ -92,14 +95,14 @@ export function useAdminSocialLinks() {
       await deleteLink.mutateAsync(id);
       if (editingId === id) startCreate();
     } catch (caught) {
-      setFormError(toFormErrorMessage(caught));
+      setFormError(formErrors.message(caught));
     }
   };
 
   return {
     links: data?.items ?? [],
     isLoading,
-    loadError: error ? toFormErrorMessage(error) : null,
+    loadError: error ? formErrors.message(error) : null,
     form,
     onSubmit,
     editingId,

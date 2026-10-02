@@ -21,16 +21,6 @@ import { sanitizePlainText } from '@pkg/security/sanitize';
 
 export const dynamic = 'force-dynamic';
 
-const INTEREST_LABELS: Record<string, string> = {
-  NEW_FOOD_BUSINESS: 'New Food Business',
-  MENU_DEVELOPMENT: 'Menu Development',
-  KITCHEN_OPERATIONS: 'Kitchen & Operations',
-  TRAINING: 'Training',
-  HACCP_FOOD_SAFETY: 'HACCP / Food Safety',
-  CONSULTING: 'Consulting',
-  OTHER: 'Other',
-};
-
 /**
  * Public contact form.
  *
@@ -107,7 +97,7 @@ export const POST = withPublic(async ({ request }) => {
     company: inquiry.company,
     email: inquiry.email,
     phone: inquiry.phone,
-    interestLabel: INTEREST_LABELS[submission.interest] ?? submission.interest,
+    interest: submission.interest,
     message: sanitizePlainText(submission.message),
     locale: submission.locale,
     submittedAt: inquiry.createdAt,

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { Button } from '@/shared/components/button';
@@ -20,6 +21,7 @@ type ConfirmButtonProps = {
  * mis-aimed click.
  */
 export function ConfirmButton({ label, confirmLabel, onConfirm, loading }: ConfirmButtonProps) {
+  const t = useTranslations('admin.common');
   const [armed, setArmed] = useState(false);
 
   if (!armed) {
@@ -36,7 +38,7 @@ export function ConfirmButton({ label, confirmLabel, onConfirm, loading }: Confi
         {confirmLabel}
       </Button>
       <Button variant="ghost" size="sm" onClick={() => setArmed(false)} disabled={loading}>
-        Cancel
+        {t('cancel')}
       </Button>
     </span>
   );

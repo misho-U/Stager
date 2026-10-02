@@ -1,0 +1,399 @@
+/* ===========================================================================
+   HOME PAGE OPTION 2 — "Chef's Table"              TEMPORARY: design comparison
+   ===========================================================================
+   The best seat in the house, at night: cinematic and media-forward. The
+   page is dark and the work is lit. The hero's screen grows to fill the
+   view, the services arrive one card over the next, the projects run past
+   as a filmstrip, the Academy's courses are admission tickets, the videos
+   open full screen, and the page ends at dawn: an iris opening onto teal.
+
+   Colour rule: a near-black teal night (the brand teal taken toward black)
+   carries the page; cream is the text and the primary button. The one
+   accent is the brand teal lifted for the dark (the same hue, lighter),
+   for active states, links, small highlights and the stage lights. The
+   finale is the brand teal itself. Every colour is the palette or a mix.
+
+   Type: Noto Sans Georgian, condensed (its width axis) and heavy for
+   headings, regular for reading. No capitals as a style, no italics,
+   leading never under 1.05 (Georgian).
+
+   Shape rule: buttons, chips and one-line fields are pills; cards, frames,
+   tickets and the message box are 24px; the finale's panel is 40px.
+
+   Section header: a condensed heading with an optional line under it;
+   actions at the right end of the same block.
+
+   Every value here overrides a brandbook.css token of the same name, or
+   defines one this design alone uses (--ct-*), inside
+   [data-home-variant='2'] only. The public site is light-only by decision;
+   this dark design is the comparison's exception.
+   =========================================================================== */
+[data-home-variant='2'] {
+  --ct-night: color-mix(in oklab, var(--color-brand-teal) 32%, black);
+  --ct-raised: color-mix(in oklab, var(--color-brand-teal) 50%, black);
+  --ct-lifted: color-mix(in oklab, var(--color-brand-teal) 64%, black);
+  /* The brand teal, lifted for the dark (see the @supports rule below for
+     the exact colour); a browser without relative colours gets sage. */
+  --ct-accent: color-mix(in oklab, var(--color-brand-sage) 55%, var(--color-brand-cream-light));
+
+  color-scheme: dark;
+
+  /* --- Colour roles --- */
+  --color-surface: var(--ct-night);
+  --color-surface-raised: var(--ct-raised);
+  --color-surface-muted: var(--ct-lifted);
+  --color-surface-inset: color-mix(in oklab, var(--color-brand-teal) 40%, black);
+  --color-surface-inverse: var(--color-brand-teal);
+  --color-ink: var(--color-brand-cream-light);
+  --color-ink-muted: color-mix(in oklab, var(--color-brand-cream) 70%, var(--color-brand-sage));
+  --color-ink-subtle: color-mix(in oklab, var(--color-brand-cream) 55%, var(--color-brand-sage));
+  --color-ink-inverse: var(--color-brand-cream-light);
+  --color-line: color-mix(in oklab, var(--color-brand-cream) 13%, var(--ct-night));
+  --color-line-strong: color-mix(in oklab, var(--color-brand-cream) 26%, var(--ct-night));
+  --color-line-input: color-mix(in oklab, var(--color-brand-cream) 48%, var(--ct-night));
+  --color-primary: var(--color-brand-cream-light);
+  --color-primary-hover: var(--ct-accent);
+  --color-on-primary: var(--color-brand-teal);
+  --color-focus: var(--ct-accent);
+  --color-accent: var(--ct-accent);
+  --color-danger: var(--color-danger-on-dark);
+
+  /* --- Light: pools of it, never a glowing edge --- */
+  --ct-glow: color-mix(in oklab, var(--ct-accent) 22%, transparent);
+  --ct-glow-soft: color-mix(in oklab, var(--ct-accent) 10%, transparent);
+  --ct-poster: radial-gradient(
+      120% 90% at 85% 100%,
+      color-mix(in oklab, var(--ct-accent) 28%, transparent),
+      transparent 60%
+    ),
+    linear-gradient(
+      160deg,
+      var(--color-brand-teal),
+      color-mix(in oklab, var(--color-brand-teal) 55%, black)
+    );
+  --ct-poster-mark: color-mix(in oklab, var(--color-brand-cream) 14%, transparent);
+
+  /* --- Elevation: deeper night, never grey --- */
+  --shadow-card: 0 30px 60px -30px color-mix(in oklab, black 70%, transparent);
+
+  /* --- Type --- */
+  --font-weight-hero: 750;
+  --font-weight-heading: 700;
+  --font-stretch-hero: 72%;
+  --font-stretch-heading: 78%;
+  --text-display: clamp(3.5rem, 1.4rem + 7.6vw, 9.5rem);
+  --text-display--line-height: 1.05;
+  --text-display--letter-spacing: -0.01em;
+  --text-headline: clamp(2.5rem, 1.4rem + 3.6vw, 5rem);
+  --text-headline--line-height: 1.05;
+  --text-title-lg: clamp(1.75rem, 1.3rem + 1.6vw, 2.75rem);
+  --text-title-lg--line-height: 1.15;
+  --text-title: clamp(1.5rem, 1.25rem + 0.8vw, 2rem);
+  --text-title--line-height: 1.15;
+  --text-title-sm: 1.375rem;
+  --text-title-sm--line-height: 1.25;
+  --text-lead: clamp(1.25rem, 1rem + 1vw, 1.875rem);
+  --text-lead--line-height: 1.45;
+  --text-caption: 0.8125rem;
+
+  /* --- Space --- */
+  --spacing-gutter: clamp(1.25rem, 0.5rem + 3vw, 3.5rem);
+  --spacing-section: clamp(5rem, 2.5rem + 6vw, 8.5rem);
+  --container-page: 88rem;
+
+  /* --- Shape (see the rule above) --- */
+  --radius-sm: 9999px;
+  --radius-md: 9999px;
+  --radius-lg: 1.5rem;
+  --radius-xl: 2.5rem;
+
+  /* --- Sizes this design alone uses --- */
+  --ct-header-h: 4.5rem;
+  --ct-pill-h: 3.75rem; /* the header once it has become a pill */
+  --ct-stack-top: 6.5rem; /* where each service card pins, below the header */
+  --ct-stack-card: min(72dvh, 42rem); /* a service card's height in the stack */
+  --ct-stack-step: 0.875rem; /* how much of the card underneath shows */
+  /* A filmstrip frame: as wide as a frame and its caption can be while the
+     whole strip fits the screen it is pinned to. */
+  --ct-frame-w: max(20rem, min(54vw, 46rem, calc((100dvh - 26rem) * 1.6)));
+  --ct-frame-w-sm: min(84vw, 30rem); /* a frame in the swipe rail (phones, no motion) */
+  /* The filmstrip starts in line with the page's content. Resolved inside
+     the projects section, whose width 100cqi is. */
+  --ct-film-inset: max(var(--spacing-gutter), calc((100cqi - var(--container-page)) / 2));
+  --ct-video-w-sm: 72vw; /* a video in the phone's swipe row */
+  --ct-ticket-stub: 9.5rem; /* the tear-off end of an Academy ticket */
+  --ct-notch: 0.875rem; /* the half-circles cut where a ticket tears */
+  --ct-play: 5.5rem;
+  --ct-play-sm: 3.5rem;
+  --ct-spot: 22rem; /* the light that follows the pointer over a card */
+  --ct-footer-mark: 31cqi; /* "STAGER" set condensed spans the footer */
+}
+
+/* The accent proper: the brand teal's own hue, lighter and a little richer,
+   so it reads on the night. Relative colour, derived from the token. */
+@supports (color: oklch(from white l c h)) {
+  [data-home-variant='2'] {
+    --ct-accent: oklch(from var(--color-brand-teal) 0.8 0.075 h);
+  }
+}
+
+/* Latin headings sit a little tighter; Georgian keeps the brandbook spacing. */
+[data-home-variant='2']:lang(en) {
+  --text-headline--letter-spacing: -0.01em;
+}
+
+:root:has([data-home-variant='2']) {
+  background-color: var(--ct-night);
+  color-scheme: dark;
+}
+
+/* A jump to a section lands clear of the header. */
+[data-home-variant='2'] :is(section, div)[id] {
+  scroll-margin-top: calc(var(--ct-pill-h) + 2rem);
+}
+
+@layer components {
+  /* The header: clear over the hero, a dark glass pill once the page moves. */
+  [data-home-variant='2'] .ct-glass {
+    background-color: color-mix(in oklab, var(--ct-raised) 78%, transparent);
+    backdrop-filter: blur(18px) saturate(140%);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    [data-home-variant='2'] .ct-glass {
+      background-color: var(--ct-raised);
+      backdrop-filter: none;
+    }
+  }
+
+  /* The language switch as a two-part pill: the current language filled. */
+  [data-home-variant='2'] .ct-lang nav {
+    gap: 0.125rem;
+    padding: 0.125rem;
+    border-radius: 9999px;
+    background-color: color-mix(in oklab, var(--color-brand-cream) 10%, transparent);
+  }
+
+  /* A pool of light: the hero's (it follows the pointer), the Academy's. */
+  [data-home-variant='2'] .ct-light {
+    background-image: radial-gradient(
+      var(--ct-spot-size, 60rem) circle at var(--x, 70%) var(--y, 30%),
+      var(--ct-glow),
+      transparent 70%
+    );
+  }
+  /* The Academy's: a wide wash from above, like a lamp over the table. */
+  [data-home-variant='2'] .ct-light-top {
+    --x: 50%;
+    --y: 0%;
+    --ct-spot-size: 70rem;
+  }
+
+  /* A poster for a video without a picture yet. */
+  [data-home-variant='2'] .ct-poster {
+    background-color: var(--color-brand-teal);
+    background-image: var(--ct-poster);
+    color: var(--ct-poster-mark);
+  }
+
+  /* Cards that light up under the pointer: a soft pool of light that
+     follows it (--x/--y, set by the design's script), inside the card. */
+  [data-home-variant='2'] .ct-spot {
+    position: relative;
+    isolation: isolate;
+  }
+  [data-home-variant='2'] .ct-spot::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(
+      var(--ct-spot) circle at var(--x, -100%) var(--y, -100%),
+      var(--ct-glow-soft),
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity var(--duration-base) var(--ease-brand);
+    pointer-events: none;
+  }
+  [data-home-variant='2'] .ct-spot:hover::before {
+    opacity: 1;
+  }
+
+  /* An Academy ticket: a body and a stub, torn along a dashed line with a
+     half-circle cut out of each edge. The cut is a mask, so the night shows
+     through it. */
+  [data-home-variant='2'] .ct-ticket {
+    --notch-x: calc(100% - var(--ct-ticket-stub));
+    mask:
+      radial-gradient(var(--ct-notch) at var(--notch-x) 0, transparent 98%, black) top / 100% 51%
+        no-repeat,
+      radial-gradient(var(--ct-notch) at var(--notch-x) 100%, transparent 98%, black) bottom /
+        100% 51% no-repeat;
+  }
+  [data-home-variant='2'] .ct-tear {
+    border-left: 2px dashed var(--color-line-strong);
+  }
+  /* On a phone the stub sits on top, torn along a horizontal line. */
+  [data-home-variant='2'] .ct-ticket {
+    @variant max-sm {
+      mask: none;
+    }
+  }
+  [data-home-variant='2'] .ct-tear {
+    @variant max-sm {
+      border-left: 0;
+      border-bottom: 2px dashed var(--color-line-strong);
+    }
+  }
+
+  /* The reasons, set as credits: no bullets, a line of air between them. */
+  [data-home-variant='2'] .ct-credits :is(ul, ol) {
+    list-style: none;
+    padding-left: 0;
+  }
+  [data-home-variant='2'] .ct-credits :is(p, li) + :is(p, li) {
+    margin-top: 0.75em;
+  }
+
+  /* The ticker's words: outlined and filled in turn. */
+  [data-home-variant='2'] .ct-outline {
+    color: transparent;
+    -webkit-text-stroke: 1px var(--color-ink-muted);
+  }
+
+  /* The footer's wordmark, as wide as its container, drawn in outline. */
+  [data-home-variant='2'] .ct-footer-mark {
+    font-size: var(--ct-footer-mark);
+    line-height: 0.82;
+    letter-spacing: 0;
+    color: transparent;
+    -webkit-text-stroke: 1px var(--color-line-input);
+  }
+
+  /* The full-screen video player and the menu: the whole screen. */
+  [data-home-variant='2'] .ct-fullscreen {
+    margin: 0;
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    padding: 0;
+    border: 0;
+    /* Frosted night: the page behind is only a blur of light. */
+    background-color: color-mix(in oklab, var(--ct-night) 90%, transparent);
+    backdrop-filter: blur(16px);
+    color: var(--color-ink);
+
+    &::backdrop {
+      background-color: transparent;
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    [data-home-variant='2'] .ct-fullscreen {
+      background-color: var(--ct-night);
+      backdrop-filter: none;
+    }
+  }
+
+  /* The menu fades in over the page. */
+  [data-home-variant='2'] .ct-menu {
+    opacity: 1;
+    transition: opacity var(--duration-base) var(--ease-brand);
+
+    @starting-style {
+      &[open] {
+        opacity: 0;
+      }
+    }
+  }
+
+  /* A course hidden by the Academy's filter (see open-kitchen.css). */
+  [data-home-variant='2'] [data-filtered-out] {
+    display: none;
+  }
+}
+
+/* Outside any layer on purpose: these must win over the utility classes the
+   shared widgets carry. */
+
+/* The message box is a 24px box, not a pill (see the shape rule). */
+[data-home-variant='2'] textarea {
+  border-radius: var(--radius-lg);
+}
+
+/* A pill-shaped select draws its own arrow, clear of the rounded end
+   (Chrome paints the native one at the very edge, whatever the padding).
+   Two gradients make the chevron; it takes the text's colour. */
+[data-home-variant='2'] select {
+  appearance: none;
+  padding-inline-end: 2.75rem;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 1.5rem) 55%,
+    calc(100% - 1.5rem + 0.3125rem) 55%;
+  background-size: 0.3125rem 0.3125rem;
+  background-repeat: no-repeat;
+}
+
+/* The language switch: no divider, the current language filled with cream. */
+[data-home-variant='2'] .ct-lang nav > span > span[aria-hidden] {
+  display: none;
+}
+[data-home-variant='2'] .ct-lang nav a {
+  min-width: 2.75rem;
+  border-radius: 9999px;
+  padding-inline: 0.75rem;
+  color: var(--color-ink-muted);
+  letter-spacing: 0;
+}
+[data-home-variant='2'] .ct-lang nav a[aria-current='true'] {
+  background-color: var(--color-brand-cream-light);
+  color: var(--color-brand-teal);
+}
+
+/* The hero's cinema: a full-size copy of its screen, shown only while the
+   screen-growing scene runs (motion on, a desktop). The screen in the page
+   then hides, keeping its place. */
+[data-home-variant='2'] [data-hero-cinema] {
+  display: none;
+}
+[data-home-variant='2'] [data-grow-on] [data-hero-cinema] {
+  display: block;
+}
+[data-home-variant='2'] [data-grow-on] [data-hero-slot] > * {
+  visibility: hidden;
+}
+
+/* With motion on a desktop the services stack: each card pins below the
+   header while the next slides over it. */
+[data-home-variant='2'] [data-stack-on] [data-stack-card] {
+  position: sticky;
+  /* Each pins a little lower than the one before, whose top edge shows. */
+  top: calc(var(--ct-stack-top) + var(--stack-index, 0) * var(--ct-stack-step));
+}
+[data-home-variant='2'] [data-stack-on] [data-stack-face] {
+  min-height: var(--ct-stack-card);
+}
+
+/* With motion on a desktop the filmstrip runs sideways, moved by the scroll
+   rather than scrolled itself, centred in the screen it is pinned to. */
+[data-home-variant='2'] [data-film-on] {
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  justify-content: center;
+  padding-block: calc(var(--ct-pill-h) + 2.5rem) 2.5rem;
+}
+[data-home-variant='2'] [data-film-on] [data-film-scroller] {
+  overflow: visible;
+}
+[data-home-variant='2'] [data-film-on] [data-film-track] {
+  flex-wrap: nowrap;
+  width: max-content;
+}
+[data-home-variant='2'] [data-film-on] [data-film-frame] {
+  width: var(--ct-frame-w);
+}

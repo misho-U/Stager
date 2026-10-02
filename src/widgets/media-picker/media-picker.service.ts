@@ -2,10 +2,11 @@
 
 import { upload } from '@vercel/blob/client';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { mediaListQuery, useRegisterMedia } from '@/entity/media/api/media.query';
-import { toFormErrorMessage } from '@/shared/lib/form-errors';
+import { useFormErrors } from '@/shared/lib/form-errors';
 import { readImageMetadata } from '@/widgets/media-picker/media-picker.utils';
 import {
   BLOB_PATH_PREFIX,
@@ -35,12 +36,11 @@ const UPLOAD_START_MS = 30_000;
  */
 const UPLOAD_SILENCE_MS = 120_000;
 
-const STALLED_MESSAGE =
-  'The upload stopped making progress, so it was cancelled. Check the connection and try again. If it keeps happening, uploads are being blocked: contact whoever maintains the site.';
-
 class UploadStalledError extends Error {}
 
 export function useMediaPicker() {
+  const t = useTranslations('admin.errors');
+  const formErrors = useFormErrors();
   const { data, isLoading, error } = useQuery(mediaListQuery());
   const registerMedia = useRegisterMedia();
 
@@ -62,12 +62,12 @@ export function useMediaPicker() {
 
     // Checked again server-side; this is just to fail fast with a clear message.
     if (!isAllowedImageType(file.type)) {
-      setUploadError('Only JPEG, PNG, WebP and AVIF images can be uploaded.');
+      setUploadError(t('unsupportedType'));
       return null;
     }
 
     if (file.size > MAX_UPLOAD_BYTES) {
-      setUploadError(`Images must be under ${Math.floor(MAX_UPLOAD_BYTES / (1024 * 1024))} MB.`);
+      setUploadError(t('fileTooBig', { max: Math.floor(MAX_UPLOAD_BYTES / (1024 * 1024)) }));
       return null;
     }
 
@@ -129,7 +129,7 @@ export function useMediaPicker() {
       });
     } catch (caught) {
       setUploadError(
-        caught instanceof UploadStalledError ? STALLED_MESSAGE : toFormErrorMessage(caught),
+        caught instanceof UploadStalledError ? t('uploadStalled') : formErrors.message(caught),
       );
       return null;
     } finally {
@@ -142,7 +142,7 @@ export function useMediaPicker() {
   return {
     items: data?.items ?? [],
     isLoading,
-    loadError: error ? toFormErrorMessage(error) : null,
+    loadError: error ? formErrors.message(error) : null,
     uploadFile,
     isUploading,
     /** 0–100 while an upload is running, otherwise null. */

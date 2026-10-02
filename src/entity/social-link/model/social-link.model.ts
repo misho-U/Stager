@@ -30,7 +30,7 @@ export type PublicSocialLink = z.infer<typeof publicSocialLinkSchema>;
 
 export const socialLinkInputSchema = z.object({
   platform: socialPlatformSchema,
-  url: urlInput('Enter a full URL, including https://'),
+  url: urlInput(),
   label: z.string().trim().max(80).nullish(),
   order: z.number().int().min(0).default(0),
   isActive: z.boolean().default(true),

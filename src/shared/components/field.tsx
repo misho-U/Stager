@@ -8,12 +8,29 @@ import type {
 } from 'react';
 import { useId } from 'react';
 
+import { useFieldLanguage } from '@/shared/components/content-locale';
 import { cn } from '@/shared/lib/cn';
 
 const CONTROL_CLASS =
-  'w-full rounded-md border border-line bg-surface-raised px-3 py-2 text-body-sm text-ink ' +
+  'w-full rounded-md border border-line-input bg-surface-raised text-ink ' +
   'placeholder:text-ink-subtle focus:border-primary focus:outline-none ' +
   'disabled:cursor-not-allowed disabled:bg-surface-muted';
+
+/**
+ * md is the dashboard's size. lg is for public pages: 16px text, because iOS
+ * zooms into any field set smaller when it takes focus, and a 44px target.
+ */
+type FieldSize = 'md' | 'lg';
+
+const CONTROL_SIZES: Record<FieldSize, string> = {
+  md: 'px-3 py-2 text-body-sm',
+  lg: 'min-h-11 px-4 py-2.5 text-body',
+};
+
+const TEXT_SIZES: Record<FieldSize, string> = {
+  md: 'text-caption',
+  lg: 'text-body-sm',
+};
 
 type FieldShellProps = {
   label: string;
@@ -21,6 +38,7 @@ type FieldShellProps = {
   error?: string | undefined;
   hint?: string | undefined;
   required?: boolean;
+  size: FieldSize;
   children: ReactNode;
 };
 
@@ -31,17 +49,17 @@ type FieldShellProps = {
  * rendered in red — a validation message nobody's screen reader announces is
  * not a validation message.
  */
-function FieldShell({ label, htmlFor, error, hint, required, children }: FieldShellProps) {
+function FieldShell({ label, htmlFor, error, hint, required, size, children }: FieldShellProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={htmlFor} className="text-caption font-medium text-ink-muted">
+      <label htmlFor={htmlFor} className={cn(TEXT_SIZES[size], 'text-ink-muted font-medium')}>
         {label}
-        {required ? <span className="ml-1 text-danger">*</span> : null}
+        {required ? <span className="text-danger ml-1">*</span> : null}
       </label>
       {children}
-      {hint && !error ? <p className="text-caption text-ink-subtle">{hint}</p> : null}
+      {hint && !error ? <p className={cn(TEXT_SIZES[size], 'text-ink-subtle')}>{hint}</p> : null}
       {error ? (
-        <p id={`${htmlFor}-error`} role="alert" className="text-caption text-danger">
+        <p id={`${htmlFor}-error`} role="alert" className={cn(TEXT_SIZES[size], 'text-danger')}>
           {error}
         </p>
       ) : null}
@@ -49,22 +67,34 @@ function FieldShell({ label, htmlFor, error, hint, required, children }: FieldSh
   );
 }
 
-type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> & {
+type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'id' | 'size'> & {
   label: string;
   error?: string | undefined;
   hint?: string | undefined;
+  size?: FieldSize;
 };
 
-export function TextField({ label, error, hint, required, ...props }: TextFieldProps) {
+export function TextField({ label, error, hint, required, size = 'md', ...props }: TextFieldProps) {
   const id = useId();
+  const language = useFieldLanguage();
 
   return (
-    <FieldShell label={label} htmlFor={id} error={error} hint={hint} required={required}>
+    <FieldShell
+      label={label}
+      htmlFor={id}
+      error={error}
+      hint={hint}
+      required={required}
+      size={size}
+    >
       <input
         id={id}
+        // The copy's language, not the dashboard's: spellcheck and screen
+        // readers then treat Georgian text as Georgian.
+        lang={language?.toLowerCase()}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
-        className={cn(CONTROL_CLASS, error && 'border-danger')}
+        className={cn(CONTROL_CLASS, CONTROL_SIZES[size], error && 'border-danger')}
         {...props}
       />
     </FieldShell>
@@ -75,6 +105,7 @@ type TextAreaFieldProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'id'
   label: string;
   error?: string | undefined;
   hint?: string | undefined;
+  size?: FieldSize;
 };
 
 export function TextAreaField({
@@ -83,30 +114,41 @@ export function TextAreaField({
   hint,
   required,
   rows = 4,
+  size = 'md',
   ...props
 }: TextAreaFieldProps) {
   const id = useId();
+  const language = useFieldLanguage();
 
   return (
-    <FieldShell label={label} htmlFor={id} error={error} hint={hint} required={required}>
+    <FieldShell
+      label={label}
+      htmlFor={id}
+      error={error}
+      hint={hint}
+      required={required}
+      size={size}
+    >
       <textarea
         id={id}
+        lang={language?.toLowerCase()}
         rows={rows}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
-        className={cn(CONTROL_CLASS, 'resize-y', error && 'border-danger')}
+        className={cn(CONTROL_CLASS, CONTROL_SIZES[size], 'resize-y', error && 'border-danger')}
         {...props}
       />
     </FieldShell>
   );
 }
 
-type SelectFieldProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'id'> & {
+type SelectFieldProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'id' | 'size'> & {
   label: string;
   error?: string | undefined;
   hint?: string | undefined;
   options: Array<{ value: string; label: string }>;
   placeholder?: string;
+  size?: FieldSize;
 };
 
 export function SelectField({
@@ -116,17 +158,25 @@ export function SelectField({
   required,
   options,
   placeholder,
+  size = 'md',
   ...props
 }: SelectFieldProps) {
   const id = useId();
 
   return (
-    <FieldShell label={label} htmlFor={id} error={error} hint={hint} required={required}>
+    <FieldShell
+      label={label}
+      htmlFor={id}
+      error={error}
+      hint={hint}
+      required={required}
+      size={size}
+    >
       <select
         id={id}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
-        className={cn(CONTROL_CLASS, error && 'border-danger')}
+        className={cn(CONTROL_CLASS, CONTROL_SIZES[size], error && 'border-danger')}
         {...props}
       >
         {placeholder ? <option value="">{placeholder}</option> : null}
@@ -153,7 +203,7 @@ export function CheckboxField({ label, hint, ...props }: CheckboxFieldProps) {
       <input
         id={id}
         type="checkbox"
-        className="mt-0.5 size-4 rounded-sm border-line accent-primary"
+        className="border-line-input accent-primary mt-0.5 size-4 rounded-sm"
         {...props}
       />
       <div className="flex flex-col gap-0.5">

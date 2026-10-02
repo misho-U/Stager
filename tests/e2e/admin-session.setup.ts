@@ -1,5 +1,6 @@
 import { expect, test as setup } from '@playwright/test';
 
+import { setDashboardLanguage } from './admin-locale';
 import { ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_SESSION, CREDENTIALS_PRESENT } from './admin-session';
 
 /**
@@ -11,7 +12,10 @@ setup.skip(
   'Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD to run the authenticated tests.',
 );
 
-setup('signs in as the admin', async ({ page }) => {
+setup('signs in as the admin', async ({ page, baseURL }) => {
+  // In English, saved with the session: the tests that share it find things
+  // by their English wording.
+  await setDashboardLanguage(page.context(), baseURL, 'en');
   await page.goto('/admin/login');
   await page.getByLabel('Email').fill(ADMIN_EMAIL!);
   await page.getByLabel('Password').fill(ADMIN_PASSWORD!);

@@ -1,5 +1,13 @@
+import type { PublicInsightListItem } from '@/entity/insight/model/insight.model';
+import {
+  DEFAULT_HOME_VARIANT,
+  HOME_VARIANTS,
+  type HomeVariant,
+} from '@/modules/home-page/home-page.constants';
+import { sampleCourses, sampleVideos } from '@/modules/home-page/home-page.samples';
 import type { PublicPage } from '@/entity/page/model/page.model';
 import type { PublicProjectListItem } from '@/entity/project/model/project.model';
+import type { PublicService } from '@/entity/service/model/service.model';
 import type { PublicLayoutData } from '@/entity/site-setting/model/site-setting.model';
 import type { ListResponse } from '@/shared/types/api';
 import type { DbLocale } from '@/shared/types/enums';
@@ -34,7 +42,7 @@ async function read<T>(label: string, request: Promise<T>, fallback: T): Promise
 }
 
 export async function loadHomePageData(locale: DbLocale) {
-  const [layout, page, projects] = await Promise.all([
+  const [layout, page, projects, services, insights] = await Promise.all([
     read<PublicLayoutData | null>(
       'layout',
       serverFetch<PublicLayoutData>(`/api/public/layout?locale=${locale}`, {
@@ -64,14 +72,51 @@ export async function loadHomePageData(locale: DbLocale) {
       ),
       { items: [], total: 0 },
     ),
+
+    read<ListResponse<PublicService>>(
+      'services',
+      serverFetch<ListResponse<PublicService>>(`/api/public/services?locale=${locale}&limit=12`, {
+        tags: [collectionTag('service')],
+        revalidate: PUBLIC_REVALIDATE_SECONDS,
+      }),
+      { items: [], total: 0 },
+    ),
+
+    read<ListResponse<PublicInsightListItem>>(
+      'insights',
+      serverFetch<ListResponse<PublicInsightListItem>>(
+        `/api/public/insights?locale=${locale}&limit=3`,
+        {
+          tags: [collectionTag('insight')],
+          revalidate: PUBLIC_REVALIDATE_SECONDS,
+        },
+      ),
+      { items: [], total: 0 },
+    ),
   ]);
 
   return {
     layout: layout.data,
     page: page.data,
     projects: projects.data,
-    /** True when any read failed, so the scaffold can say so instead of
+    services: services.data,
+    insights: insights.data,
+    // TEMPORARY: the dashboard has no courses or videos yet (round-4 design
+    // comparison). `sample` puts a "Sample" badge on both sections; it goes
+    // when these become reads like the ones above.
+    courses: { items: sampleCourses(locale), sample: true },
+    videos: { items: sampleVideos(locale), sample: true },
+    /** True when any read failed, so the page can say so instead of
      *  rendering placeholder copy that looks like real content. */
-    readFailed: layout.failed || page.failed || projects.failed,
+    readFailed:
+      layout.failed || page.failed || projects.failed || services.failed || insights.failed,
   };
+}
+
+export type HomePageData = Awaited<ReturnType<typeof loadHomePageData>>;
+
+/** TEMPORARY — which design `?v=` asks for; anything unknown gets the default. */
+export function parseHomeVariant(value: string | string[] | undefined): HomeVariant {
+  const requested = Array.isArray(value) ? value[0] : value;
+  return HOME_VARIANTS.find((variant) => variant.id === requested)?.id ?? DEFAULT_HOME_VARIANT;
 }

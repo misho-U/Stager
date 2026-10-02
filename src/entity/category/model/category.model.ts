@@ -29,7 +29,7 @@ export const categoryInputSchema = z.object({
   slug: slugSchema,
   order: z.number().int().min(0).default(0),
   translations: bothLocales(
-    z.object({ name: z.string().trim().min(1, 'Name is required').max(120) }),
+    z.object({ name: z.string().trim().min(1).max(120) }),
   ),
 });
 

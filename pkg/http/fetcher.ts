@@ -20,21 +20,21 @@ type ServerReadOptions = {
 async function toApiError(response: Response): Promise<ApiError> {
   let code: ApiErrorCode = 'INTERNAL';
   let message = response.statusText || 'Request failed';
-  let fields: Record<string, string[]> | undefined;
+  let details: ConstructorParameters<typeof ApiError>[3] = {};
 
   try {
     const body = (await response.json()) as Partial<ApiErrorBody>;
     if (body.error) {
       code = body.error.code ?? code;
       message = body.error.message ?? message;
-      fields = body.error.fields;
+      details = { reason: body.error.reason, fields: body.error.fields, issues: body.error.issues };
     }
   } catch {
     // Non-JSON error body (a proxy timeout page, for instance). The status
     // code is still meaningful, so fall through with the defaults.
   }
 
-  return new ApiError(response.status, code, message, fields);
+  return new ApiError(response.status, code, message, details);
 }
 
 async function parse<T>(response: Response): Promise<T> {

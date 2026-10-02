@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -14,9 +15,11 @@ import { ConfirmButton } from '@/shared/components/confirm-button';
 import { DataTable, type Column } from '@/shared/components/data-table';
 import { PageHeader } from '@/shared/components/page-header';
 import { ErrorNotice, Panel, StatusBadge } from '@/shared/components/panel';
-import { toFormErrorMessage } from '@/shared/lib/form-errors';
+import { useFormErrors } from '@/shared/lib/form-errors';
 
 export function AdminTeamModule() {
+  const t = useTranslations('admin');
+  const formErrors = useFormErrors();
   const { data, isLoading, error } = useQuery(adminTeamMembersQuery());
   const deleteMember = useDeleteTeamMember();
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -26,14 +29,14 @@ export function AdminTeamModule() {
     try {
       await deleteMember.mutateAsync(id);
     } catch (caught) {
-      setDeleteError(toFormErrorMessage(caught));
+      setDeleteError(formErrors.message(caught));
     }
   };
 
   const columns: Array<Column<AdminTeamMember>> = [
     {
       key: 'name',
-      header: 'Name',
+      header: t('team.columns.name'),
       render: (member) => (
         <Link
           href={`/admin/team/${member.id}`}
@@ -45,7 +48,7 @@ export function AdminTeamModule() {
     },
     {
       key: 'position',
-      header: 'Position',
+      header: t('team.columns.position'),
       secondary: true,
       render: (member) => (
         <span className="text-ink-muted">
@@ -53,15 +56,19 @@ export function AdminTeamModule() {
         </span>
       ),
     },
-    { key: 'status', header: 'Status', render: (member) => <StatusBadge status={member.status} /> },
+    {
+      key: 'status',
+      header: t('columns.status'),
+      render: (member) => <StatusBadge status={member.status} />,
+    },
     {
       key: 'actions',
       header: '',
       align: 'right',
       render: (member) => (
         <ConfirmButton
-          label="Delete"
-          confirmLabel="Confirm"
+          label={t('common.delete')}
+          confirmLabel={t('common.confirm')}
           loading={deleteMember.isPending && deleteMember.variables === member.id}
           onConfirm={() => remove(member.id)}
         />
@@ -72,27 +79,27 @@ export function AdminTeamModule() {
   return (
     <>
       <PageHeader
-        title="Team"
-        description="Founder, core team and experts."
+        title={t('team.title')}
+        description={t('team.description')}
         actions={
           <Link href="/admin/team/new">
-            <Button>New member</Button>
+            <Button>{t('team.new')}</Button>
           </Link>
         }
       />
 
-      {error ? <ErrorNotice message={toFormErrorMessage(error)} /> : null}
+      {error ? <ErrorNotice message={formErrors.message(error)} /> : null}
       {deleteError ? <ErrorNotice message={deleteError} /> : null}
 
       <Panel>
         {isLoading ? (
-          <p className="text-body-sm text-ink-subtle">Loading…</p>
+          <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
         ) : (
           <DataTable
             rows={data?.items ?? []}
             columns={columns}
             rowKey={(member) => member.id}
-            emptyTitle="No team members yet"
+            emptyTitle={t('team.emptyTitle')}
           />
         )}
       </Panel>
