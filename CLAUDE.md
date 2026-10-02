@@ -88,6 +88,10 @@ Do not add a library outside this list without raising it first.
   picks English. Shared schemas carry no messages: validation is worded from
   the zod issue (`shared/lib/validation-message.ts`), server errors from
   `code`/`reason`. `admin-i18n.spec.ts` fails on a hard-coded string.
+- **`pnpm dev` and Vercel previews refuse contact submissions** (403,
+  reason `DELIVERY_OFF`): they share the live database and inbox, and a test
+  would reach the client as a real lead. `INQUIRY_DELIVERY=on` lifts it, against
+  a local database only. The live site always delivers.
 - **The design skill (`design-taste-frontend`) is direction only.** AGENTS.md
   § Design skill lists what it may not change — dependencies, tokens, images
   and the CSP, folder structure, CMS copy — and the Georgian checks.

@@ -23,6 +23,7 @@ import {
   refFromDatabaseUrl,
   yellow,
 } from './lib/setup';
+import { deliversInquiries } from '../pkg/config/inquiry-delivery';
 
 type Status = 'pass' | 'fail' | 'warn';
 
@@ -150,6 +151,32 @@ function checkEmail() {
 
   const inbox = process.env.CONTACT_INBOX_EMAIL ?? process.env.ADMIN_EMAIL;
   record('pass', `Resend is configured (from ${from}, to ${inbox ?? 'unset'})`);
+}
+
+/**
+ * `pnpm dev` refuses contact submissions unless told otherwise
+ * (pkg/config/inquiry-delivery.ts). Said here so a refused test is not taken
+ * for a broken form, and so delivering from this machine is a visible choice:
+ * it puts every test in front of the client if the database is the live one.
+ */
+function checkInquiryDelivery() {
+  const delivers = deliversInquiries({
+    nodeEnv: 'development',
+    vercelEnv: undefined,
+    setting: process.env.INQUIRY_DELIVERY,
+  });
+
+  if (delivers) {
+    record(
+      'warn',
+      'pnpm dev does not deliver contact submissions',
+      'It does: INQUIRY_DELIVERY=on, so a test sent from this machine is stored and emailed ' +
+        'like a real lead. Keep it on only against a local database.',
+    );
+    return;
+  }
+
+  record('pass', 'pnpm dev does not deliver contact submissions');
 }
 
 function checkProjectRefs() {
@@ -333,6 +360,7 @@ async function main() {
 
   checkEnvironment();
   checkEmail();
+  checkInquiryDelivery();
   checkProjectRefs();
 
   const adminEmail = process.env.ADMIN_EMAIL;

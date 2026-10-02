@@ -2,6 +2,8 @@ import 'server-only';
 
 import { z } from 'zod';
 
+import { deliversInquiries } from '@pkg/config/inquiry-delivery';
+
 /**
  * Server-only environment.
  *
@@ -106,6 +108,16 @@ const serverEnvSchema = z.object({
   // Set by Vercel on every deployment, in all three environments. Used only to
   // guarantee the probe can never be switched on for the live site.
   VERCEL: z.string().optional(),
+
+  // Set by Vercel: production, preview or development. Read only to tell a
+  // preview apart (pkg/config/inquiry-delivery.ts), so any value is accepted.
+  VERCEL_ENV: z.preprocess(blankAsUnset, z.string().optional()),
+
+  // `on` makes a preview or the dev server store and email contact
+  // submissions, which they otherwise refuse (pkg/config/inquiry-delivery.ts).
+  // Any value is accepted: an optional switch must never fail the build, and
+  // only `on` changes anything.
+  INQUIRY_DELIVERY: z.preprocess(blankAsUnset, z.string().optional()),
 });
 
 const parsed = serverEnvSchema.safeParse(process.env);
@@ -136,3 +148,10 @@ export const isDevelopment = serverEnv.NODE_ENV === 'development';
  */
 export const isCacheProbeEnabled =
   serverEnv.VERCEL === undefined && serverEnv.ENABLE_CACHE_PROBE === '1';
+
+/** Whether this deployment stores and emails contact submissions. */
+export const deliversInquiriesHere = deliversInquiries({
+  nodeEnv: serverEnv.NODE_ENV,
+  vercelEnv: serverEnv.VERCEL_ENV,
+  setting: serverEnv.INQUIRY_DELIVERY,
+});
