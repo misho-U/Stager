@@ -125,7 +125,7 @@ test.describe('slug auto-fill', () => {
   test('categories: follows the English name while adding, never while editing', async ({
     page,
   }) => {
-    await page.goto('/admin/categories');
+    await page.goto('/admin/insights/categories');
     const slug = page.getByLabel(labelled(adminEn.fields.slug.label));
     const english = page.getByLabel(labelled(adminEn.categories.nameEn));
 

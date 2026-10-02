@@ -203,7 +203,9 @@ Non-negotiable. Each exists because of a specific failure mode.
    before debugging credentials by hand.
 4. **RLS is enabled on every table with no policies.** Prisma owns the tables and
    bypasses RLS; the `anon` and `authenticated` roles read zero rows. If you add
-   a table, add it to the RLS migration list.
+   a table, enable RLS on it in the migration that creates it, as
+   `20261002092246_academy_and_videos` does: the first RLS migration has
+   already run everywhere, so adding to its list would change nothing.
 5. **Validate at the boundary.** Every route handler parses its input with zod.
 6. **Sanitize rich text on write**, never on read — the database must only ever
    hold safe HTML.
@@ -287,6 +289,11 @@ Non-negotiable. Each exists because of a specific failure mode.
   Arial. Playwright asserts that no request goes to Google's font hosts, that
   Georgian and Latin both load the bundled family, and that the files stay
   split by script. The CSP does not allowlist Google's font hosts.
+- **A calendar day is a Postgres `date`, not a timestamp**: a course's start,
+  a video's release. It crosses the API as "2026-11-15" (`calendarDate`), so it
+  reads the same in every time zone, and "today" is Tbilisi's
+  (`shared/lib/calendar-date.ts`): a Vercel function runs in UTC, four hours
+  behind.
 - **Bilingual content is authored in both languages at once.** Translation
   tables, `@@unique([<parent>Id, locale])`, one ქართული | English toggle per
   admin form (§ Dashboard language).
@@ -435,6 +442,7 @@ pnpm lint              # ESLint, including the architecture boundaries
 pnpm typecheck         # tsc --noEmit
 pnpm db:migrate        # create + apply a migration (writes SQL to prisma/migrations)
 pnpm db:generate       # regenerate the Prisma client; run after db:migrate, which no longer does in Prisma 7
+pnpm db:migrate:deploy # apply committed migrations, no prompts and no resets: how the live database is updated
 pnpm db:seed           # idempotent seed
 pnpm db:studio         # browse the database
 pnpm test:e2e          # Playwright (loads .env.local; needs a seeded database)
@@ -452,6 +460,11 @@ Before pushing: `pnpm lint && pnpm typecheck && pnpm build && pnpm test:e2e`.
 
 Built: schema, migrations, seed, the full API, auth, the admin dashboard,
 security, caching, and the Playwright suite.
+
+Courses (with categories the owner adds) and videos have their tables,
+dashboard screens and public endpoints (`/api/public/courses`, which lists a
+course until its start date has passed, and `/api/public/videos`, newest
+first). The scaffold page lists both, proving the edit→live loop for them.
 
 **Not built: the public site design.** `src/app/[locale]/page.tsx` renders a
 deliberately unstyled scaffold that proves the edit→live loop and nothing more.

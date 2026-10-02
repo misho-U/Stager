@@ -14,8 +14,9 @@
       "projects": "Projects",
       "insights": "Insights",
       "services": "Services",
+      "courses": "Courses",
+      "videos": "Videos",
       "team": "Team",
-      "categories": "Categories",
       "media": "Media",
       "pages": "Page copy",
       "socialLinks": "Social links",
@@ -90,6 +91,7 @@
     "url": "Enter a full web address, starting with https://",
     "slug": "Use lowercase letters, numbers and hyphens only (e.g. kitchen-operations).",
     "youtube": "Must be a youtube.com or youtu.be link.",
+    "seatsLeftOverTotal": "Seats left can't be more than the seats in total.",
     "invalid": "Check this value."
   },
   "errors": {
@@ -133,6 +135,10 @@
       "writeArticle": {
         "label": "Write an article",
         "description": "Add a post to Insights, with or without a named author."
+      },
+      "addCourse": {
+        "label": "Add a course",
+        "description": "Put a new Academy course on the site, with its date, seats and price."
       },
       "editPages": {
         "label": "Edit page copy",
@@ -229,6 +235,7 @@
     "title": "Insights",
     "description": "Articles and news.",
     "new": "New article",
+    "categoriesLink": "Categories",
     "emptyTitle": "No articles yet",
     "authorShown": "Shown",
     "authorHidden": "Hidden",
@@ -261,6 +268,7 @@
   "categories": {
     "title": "Categories",
     "description": "Used to file articles under Insights.",
+    "back": "← Insights",
     "editTitle": "Edit category",
     "addTitle": "Add a category",
     "nameKa": "Name (Georgian)",
@@ -295,6 +303,119 @@
       },
       "submit": "Save service"
     }
+  },
+  "courses": {
+    "title": "Courses",
+    "description": "STAGER Academy courses. A course leaves the site by itself once its start date has passed.",
+    "new": "New course",
+    "categoriesLink": "Course categories",
+    "emptyTitle": "No courses yet",
+    "noDate": "No date yet",
+    "datePassed": "Date passed: not on the site",
+    "columns": {
+      "course": "Course",
+      "startsAt": "Starts",
+      "category": "Category"
+    },
+    "form": {
+      "titleEdit": "Edit course",
+      "titleNew": "New course",
+      "summary": {
+        "label": "Short description",
+        "hint": "Shown with the course on the site."
+      },
+      "duration": {
+        "label": "Duration",
+        "hint": "As it should read on the site, e.g. 4 weeks or 6 Saturdays."
+      },
+      "location": {
+        "label": "Location",
+        "hint": "Leave blank for an online course."
+      },
+      "schedulePanel": "Date, seats and price",
+      "startsAt": {
+        "label": "Start date",
+        "hint": "The course shows on the site up to and including this day. Leave blank if the next date is not set yet."
+      },
+      "format": "Format",
+      "seatsTotal": {
+        "label": "Seats in total",
+        "hint": "Leave blank to not show seats."
+      },
+      "seatsLeft": {
+        "label": "Seats left",
+        "hint": "Registrations arrive as inquiries, so update this by hand. 0 shows the course as full."
+      },
+      "price": {
+        "label": "Price (₾)",
+        "hint": "Whole lari. Leave blank for a free course."
+      },
+      "category": {
+        "label": "Category",
+        "none": "No category",
+        "hint": "Groups courses on the site. Add categories under Course categories."
+      },
+      "service": {
+        "label": "Related service",
+        "none": "None",
+        "hint": "The service whose section on the site points to this course."
+      },
+      "submit": "Save course"
+    }
+  },
+  "courseFormats": {
+    "IN_PERSON": "In person",
+    "ONLINE": "Online"
+  },
+  "courseCategories": {
+    "title": "Course categories",
+    "description": "Group the courses on the site. Separate from the categories of blog articles.",
+    "back": "← Courses",
+    "editTitle": "Edit course category",
+    "addTitle": "Add a course category",
+    "add": "Add category",
+    "allTitle": "All course categories",
+    "emptyTitle": "No course categories yet",
+    "emptyDescription": "A course can be published without one."
+  },
+  "videos": {
+    "title": "Videos",
+    "description": "Videos from STAGER's YouTube channel, newest first.",
+    "new": "New video",
+    "emptyTitle": "No videos yet",
+    "noLink": "No link yet",
+    "columns": {
+      "video": "Video",
+      "date": "Date",
+      "kind": "Kind"
+    },
+    "form": {
+      "titleEdit": "Edit video",
+      "titleNew": "New video",
+      "summary": {
+        "label": "Short description",
+        "hint": "Shown with the video on the site."
+      },
+      "youtube": {
+        "label": "YouTube link",
+        "hint": "The video plays from YouTube. You can save it without a link and add one later."
+      },
+      "kind": {
+        "label": "Kind",
+        "none": "Not set"
+      },
+      "publishedAt": {
+        "label": "Date",
+        "hint": "When it came out. The newest video is shown first."
+      },
+      "durationMinutes": "Length (minutes)",
+      "submit": "Save video"
+    }
+  },
+  "videoKinds": {
+    "EPISODE": "Episode",
+    "PODCAST": "Podcast",
+    "MASTERCLASS": "Masterclass"
   },
   "team": {
     "title": "Team",

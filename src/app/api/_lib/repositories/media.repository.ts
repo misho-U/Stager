@@ -121,6 +121,7 @@ export async function deleteMedia(
           projectCovers: true,
           projectGalleryItems: true,
           serviceCovers: true,
+          courseCovers: true,
           teamMemberPhotos: true,
           insightCovers: true,
           pageSectionMedia: true,

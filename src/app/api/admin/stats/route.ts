@@ -6,13 +6,16 @@ export const dynamic = 'force-dynamic';
 
 /** Counts for the dashboard landing page. */
 export const GET = withAdmin(async () => {
-  const [projects, insights, services, teamMembers, newInquiries] = await Promise.all([
-    prisma.project.count(),
-    prisma.insight.count(),
-    prisma.service.count(),
-    prisma.teamMember.count(),
-    prisma.contactInquiry.count({ where: { status: 'NEW' } }),
-  ]);
+  const [projects, insights, services, courses, videos, teamMembers, newInquiries] =
+    await Promise.all([
+      prisma.project.count(),
+      prisma.insight.count(),
+      prisma.service.count(),
+      prisma.course.count(),
+      prisma.video.count(),
+      prisma.teamMember.count(),
+      prisma.contactInquiry.count({ where: { status: 'NEW' } }),
+    ]);
 
-  return apiOk({ projects, insights, services, teamMembers, newInquiries });
+  return apiOk({ projects, insights, services, courses, videos, teamMembers, newInquiries });
 });

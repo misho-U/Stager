@@ -86,6 +86,21 @@ export const seoInputSchema = z.object({
 /** Timestamps cross the wire as ISO-8601 strings, not Date objects. */
 export const isoDateTime = z.iso.datetime();
 
+/**
+ * A calendar day, "2026-11-15": a course's start, a video's release. A day
+ * rather than an instant, so it reads the same in every time zone; stored in
+ * a Postgres `date` column. `new Date(value)` is that day's UTC midnight,
+ * which formats as the same day in Tbilisi.
+ */
+export const calendarDate = z.iso.date();
+
+/** A date input's value: a calendar day, or blank for none. */
+export const optionalCalendarDateInput = () =>
+  z
+    .union([z.iso.date(), z.literal('')])
+    .nullish()
+    .transform((value) => value || null);
+
 type WithoutDefaults<Shape extends z.ZodRawShape> = {
   [Key in keyof Shape]: Shape[Key] extends z.ZodDefault<infer Inner> ? Inner : Shape[Key];
 };

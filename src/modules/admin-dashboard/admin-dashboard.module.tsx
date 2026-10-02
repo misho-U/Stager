@@ -10,6 +10,8 @@ type AdminDashboardModuleProps = {
     projects: number;
     insights: number;
     services: number;
+    courses: number;
+    videos: number;
     teamMembers: number;
     newInquiries: number;
   };
@@ -30,6 +32,8 @@ export function AdminDashboardModule({ name, counts }: AdminDashboardModuleProps
     { label: t('sidebar.nav.projects'), value: counts.projects, href: '/admin/projects' },
     { label: t('sidebar.nav.insights'), value: counts.insights, href: '/admin/insights' },
     { label: t('sidebar.nav.services'), value: counts.services, href: '/admin/services' },
+    { label: t('sidebar.nav.courses'), value: counts.courses, href: '/admin/courses' },
+    { label: t('sidebar.nav.videos'), value: counts.videos, href: '/admin/videos' },
     { label: t('sidebar.nav.team'), value: counts.teamMembers, href: '/admin/team' },
   ];
 
@@ -54,7 +58,7 @@ export function AdminDashboardModule({ name, counts }: AdminDashboardModuleProps
         </Link>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {stats.map((stat) => (
           <Link
             key={stat.label}

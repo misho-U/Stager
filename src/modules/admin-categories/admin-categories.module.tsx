@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 import { useAdminCategories } from '@/modules/admin-categories/admin-categories.service';
 import { Button } from '@/shared/components/button';
@@ -79,6 +80,11 @@ export function AdminCategoriesModule() {
       <PageHeader
         title={t('categories.title')}
         description={t('categories.description')}
+        actions={
+          <Link href="/admin/insights">
+            <Button variant="ghost">{t('categories.back')}</Button>
+          </Link>
+        }
       />
 
       {loadError ? <ErrorNotice message={loadError} /> : null}

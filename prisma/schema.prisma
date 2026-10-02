@@ -78,6 +78,17 @@ enum SocialPlatform {
   OTHER
 }
 
+enum CourseFormat {
+  IN_PERSON
+  ONLINE
+}
+
+enum VideoKind {
+  EPISODE
+  PODCAST
+  MASTERCLASS
+}
+
 enum AuditAction {
   CREATE
   UPDATE
@@ -189,6 +200,7 @@ model Media {
   projectOgImages        ProjectTranslation[]  @relation("ProjectTranslationOg")
   projectGalleryItems    ProjectGalleryItem[]  @relation("ProjectGalleryMedia")
   serviceCovers          Service[]             @relation("ServiceCover")
+  courseCovers           Course[]              @relation("CourseCover")
   serviceOgImages        ServiceTranslation[]  @relation("ServiceTranslationOg")
   teamMemberPhotos       TeamMember[]          @relation("TeamMemberPhoto")
   insightCovers          Insight[]             @relation("InsightCover")
@@ -324,6 +336,7 @@ model Service {
 
   translations ServiceTranslation[]
   projects     ServicesOnProjects[]
+  courses      Course[]
 
   @@index([status, order])
   @@map("services")
@@ -472,6 +485,143 @@ model InsightTranslation {
 
   @@unique([insightId, locale])
   @@map("insight_translations")
+}
+
+// ---------------------------------------------------------------------------
+// Academy and videos
+// ---------------------------------------------------------------------------
+
+/// What the Academy's courses are grouped by: the filter on the site. The
+/// owner adds her own; a course may have none. Separate from `Category`,
+/// which files articles.
+model CourseCategory {
+  id   String @id @default(cuid())
+  slug String @unique
+
+  order Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  translations CourseCategoryTranslation[]
+  courses      Course[]
+
+  @@map("course_categories")
+}
+
+model CourseCategoryTranslation {
+  id String @id @default(cuid())
+
+  categoryId String
+  category   CourseCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  locale     Locale
+
+  name String
+
+  @@unique([categoryId, locale])
+  @@map("course_category_translations")
+}
+
+/// A STAGER Academy course. "Register" on the site opens the inquiry form
+/// preset to Training: a registration is an inquiry, not a booking, so the
+/// seat counts are typed in by hand rather than counted.
+model Course {
+  id   String @id @default(cuid())
+  slug String @unique
+
+  categoryId String?
+  category   CourseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  /// The consulting service this course teaches, so that service can point at it.
+  serviceId String?
+  service   Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  coverMediaId String?
+  coverMedia   Media?  @relation("CourseCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+
+  format CourseFormat @default(IN_PERSON)
+
+  /// A calendar day, not an instant: the first session, in Tbilisi. Null
+  /// while the next date is not set. The site lists a course until this day
+  /// has passed.
+  startsAt DateTime? @db.Date
+
+  /// Null hides the count; seatsLeft 0 shows the course as fully booked.
+  seatsTotal Int?
+  seatsLeft  Int?
+
+  /// Whole lari. Null for a free course.
+  priceGel Int?
+
+  status ContentStatus @default(DRAFT)
+  order  Int           @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  translations CourseTranslation[]
+
+  @@index([status, startsAt])
+  @@map("courses")
+}
+
+model CourseTranslation {
+  id String @id @default(cuid())
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  locale   Locale
+
+  title   String
+  summary String @default("") @db.Text
+  /// As it should read on the site: "2 days", "6 Saturdays".
+  duration String @default("")
+  /// Where it takes place; empty for an online course.
+  location String @default("")
+
+  @@unique([courseId, locale])
+  @@map("course_translations")
+}
+
+/// A video on STAGER's channel. Always a YouTube link, played through the
+/// privacy-preserving embed; never an uploaded file.
+model Video {
+  id   String @id @default(cuid())
+  slug String @unique
+
+  /// Null for an entry still waiting for its link.
+  youtubeUrl String?
+
+  kind VideoKind?
+
+  /// The day it came out. Videos are listed newest first.
+  publishedAt DateTime @db.Date
+
+  durationMinutes Int?
+
+  status ContentStatus @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  translations VideoTranslation[]
+
+  @@index([status, publishedAt])
+  @@map("videos")
+}
+
+model VideoTranslation {
+  id String @id @default(cuid())
+
+  videoId String
+  video   Video  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  locale  Locale
+
+  title   String
+  summary String @default("") @db.Text
+
+  @@unique([videoId, locale])
+  @@map("video_translations")
 }
 
 // ---------------------------------------------------------------------------

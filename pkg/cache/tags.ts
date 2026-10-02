@@ -17,6 +17,9 @@ export const CONTENT_ENTITIES = [
   'siteSetting',
   'socialLink',
   'media',
+  'course',
+  'courseCategory',
+  'video',
 ] as const;
 
 export type ContentEntity = (typeof CONTENT_ENTITIES)[number];
@@ -61,6 +64,10 @@ export function tagsToRevalidate(entity: ContentEntity, key?: string | null): st
 
   // Insights are listed by category and attributed to a team member.
   if (entity === 'category' || entity === 'teamMember') tags.push(collectionTag('insight'));
+
+  // A course carries its category's name and its service's id, and deleting
+  // either clears it from the course.
+  if (entity === 'courseCategory' || entity === 'service') tags.push(collectionTag('course'));
 
   return tags;
 }

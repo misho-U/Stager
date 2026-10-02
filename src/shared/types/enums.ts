@@ -57,8 +57,16 @@ export const socialPlatformSchema = z.enum([
 ]);
 export type SocialPlatform = z.infer<typeof socialPlatformSchema>;
 
+export const courseFormatSchema = z.enum(['IN_PERSON', 'ONLINE']);
+export type CourseFormat = z.infer<typeof courseFormatSchema>;
+
+export const videoKindSchema = z.enum(['EPISODE', 'PODCAST', 'MASTERCLASS']);
+export type VideoKind = z.infer<typeof videoKindSchema>;
+
 /** Ordered for admin dropdowns. */
 export const CONTENT_STATUSES = contentStatusSchema.options;
+export const COURSE_FORMATS = courseFormatSchema.options;
+export const VIDEO_KINDS = videoKindSchema.options;
 export const DB_LOCALES = dbLocaleSchema.options;
 export const INQUIRY_INTERESTS = inquiryInterestSchema.options;
 export const SOCIAL_PLATFORMS = socialPlatformSchema.options;

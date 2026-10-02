@@ -78,6 +78,19 @@ export function toIsoRequired(value: Date): string {
   return value.toISOString();
 }
 
+/**
+ * A Postgres `date` column (a course's start, a video's release) reaches
+ * Prisma as that day's UTC midnight, and leaves the API as "2026-11-15".
+ */
+export function toCalendarDate(value: Date): string {
+  return value.toISOString().slice(0, 10);
+}
+
+/** "2026-11-15" as the Date Prisma writes to a `date` column as that day. */
+export function fromCalendarDate(value: string): Date {
+  return new Date(`${value}T00:00:00.000Z`);
+}
+
 /** Prisma `include` fragment for any media relation. */
 export const mediaInclude = {
   select: {
