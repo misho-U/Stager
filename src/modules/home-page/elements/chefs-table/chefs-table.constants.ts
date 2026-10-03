@@ -20,8 +20,6 @@ export const CT_MOTION = {
    * of scroll; the rest are shares of that scroll.
    */
   screen: { length: 1, open: 0.75, copyOut: 0.45, captionAt: 0.72 },
-  /** The ticker: seconds per loop at rest, how much scrolling speeds it up. */
-  ticker: { duration: 42, boost: 5, settle: 1.2 },
   /** The intro read along: how faint the words start. */
   readAlong: { from: 0.16 },
   /** A service card as the next one covers it. */

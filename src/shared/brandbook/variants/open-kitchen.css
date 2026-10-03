@@ -3,16 +3,19 @@
    ===========================================================================
    An open kitchen hides nothing: every station is in view and within reach.
    The page is bright and precise, and everything on it can be explored where
-   it stands: a board of what is happening now, a service explorer, a rail of
-   projects, the Academy's timetable, a video playlist.
+   it stands: a board of what is happening now, the services as a journey
+   from an idea to a working business, a rail of projects, the Academy's
+   timetable, a video playlist.
 
    Colour rule: neutrals carry the page (a white with the brand's warmth, a
    near-black ink with its teal in it). Teal is the one accent: actions,
    active states, the video posters. Cream is the Academy's own ground, sage
    draws the hairlines. Every colour is the brand palette or a mix of it.
 
-   Type: Noto Sans Georgian at its regular width, semibold for headings. No
-   capitals as a style, no italics, leading never under 1.05 (Georgian).
+   Type: Noto Sans Georgian at its regular width; headings a medium weight,
+   lighter in Georgian, whose letters carry more ink at the same weight.
+   Statements are set large and regular. No capitals as a style, no italics,
+   leading never under 1.05 (Georgian).
 
    Shape rule: buttons, chips and one-line fields are pills; cards, photos,
    posters and the message box are 20px; the playlist's small posters 10px;
@@ -49,6 +52,8 @@
 
   /* The Academy's ground, and the posters of videos without a picture. */
   --ok-academy: var(--color-brand-cream);
+  /* The services' band: the cream, lighter, so the stage cards stand on it. */
+  --ok-band: color-mix(in oklab, var(--color-brand-cream) 70%, white);
   --ok-poster: linear-gradient(
     150deg,
     var(--color-brand-teal),
@@ -64,8 +69,11 @@
   --ok-shadow-deck: 0 30px 60px -28px color-mix(in oklab, var(--color-brand-teal) 38%, transparent);
 
   /* --- Type --- */
-  --font-weight-hero: 600;
-  --font-weight-heading: 600;
+  --font-weight-hero: 560;
+  --font-weight-heading: 540;
+  /* A statement: the intro, set as one large sentence or two. */
+  --ok-statement: clamp(1.75rem, 1.15rem + 2.1vw, 3rem);
+  --ok-statement--line-height: 1.28;
   --text-display: clamp(2.75rem, 1.5rem + 4.4vw, 5.5rem);
   --text-display--line-height: 1.06;
   --text-display--letter-spacing: -0.02em;
@@ -83,7 +91,7 @@
 
   /* --- Space --- */
   --spacing-gutter: clamp(1.25rem, 0.5rem + 3vw, 3rem);
-  --spacing-section: clamp(5rem, 3rem + 6vw, 9rem);
+  --spacing-section: clamp(4.5rem, 2.5rem + 5vw, 7.5rem);
   --container-page: 82rem;
 
   /* --- Shape (see the rule above) --- */
@@ -107,7 +115,15 @@
   --ok-row-md: 5.5rem minmax(0, 1fr);
   --ok-row-lg: 6.5rem minmax(0, 1fr) 11rem 10rem;
   --ok-playlist-row: 7.5rem 1fr;
+  --ok-episode-w: min(64vw, 16rem); /* an episode in the phone's swipe row */
+  /* The services' journey: the stage marker, the room around a stage, the
+     gap between stages; the line between two markers spans them. */
+  --ok-node: 3.75rem;
+  --ok-step-gap: 1rem;
   --ok-play: 5rem; /* the big play button */
+  /* Lifts the big play button above the caption on its poster: a padding
+     under it, as a share of the frame's width (16:9 at any size). */
+  --ok-play-lift: 14%;
   --ok-play-sm: 3.75rem;
   --ok-footer-mark: 22cqi; /* of the footer panel's width: STAGER fills it */
 
@@ -130,9 +146,14 @@
   );
 }
 
-/* Latin headings sit a little tighter; Georgian keeps the brandbook spacing. */
+/* Latin headings sit a little tighter; Georgian keeps the brandbook spacing,
+   and a lighter weight: its letters carry more ink at the same one. */
 [data-home-variant='1']:lang(en) {
   --text-headline--letter-spacing: -0.01em;
+}
+[data-home-variant='1']:lang(ka) {
+  --font-weight-hero: 500;
+  --font-weight-heading: 480;
 }
 
 :root:has([data-home-variant='1']) {
@@ -175,6 +196,49 @@
     background-color: var(--color-brand-teal);
     background-image: var(--ok-poster);
     color: var(--ok-poster-mark);
+  }
+
+  /* The caption on the big player's poster: the episode's meta, title and
+     summary in cream over a scrim that darkens toward the bottom edge, so
+     they read on any picture. It recedes when a mouse rests on the frame
+     (.video-caption, globals.css). */
+  [data-home-variant='1'] .ok-caption {
+    padding: 3.5rem 1rem 1rem;
+    background-image: linear-gradient(
+      to top,
+      color-mix(in oklab, var(--ok-ink) 86%, transparent),
+      color-mix(in oklab, var(--ok-ink) 45%, transparent) 60%,
+      transparent
+    );
+    color: var(--color-brand-cream-light);
+
+    @variant sm {
+      padding: 7rem 2rem 1.75rem;
+    }
+  }
+  [data-home-variant='1'] .ok-caption-meta {
+    color: var(--color-brand-cream);
+  }
+
+  /* "YouTube" on a poster's corner: a dark glass pill. */
+  [data-home-variant='1'] .ok-youtube {
+    z-index: var(--z-raised);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 2.25rem;
+    padding-inline: 0.875rem;
+    border-radius: 9999px;
+    background-color: color-mix(in oklab, var(--ok-ink) 78%, transparent);
+    backdrop-filter: blur(8px);
+    color: var(--color-brand-cream-light);
+    font-size: var(--text-body-sm);
+    font-weight: 500;
+    --color-focus: var(--color-brand-cream-light);
+
+    &:hover {
+      background-color: var(--ok-ink);
+    }
   }
 
   /* The play button over a poster: its focus ring is drawn inside the
@@ -221,23 +285,194 @@
     margin-bottom: -0.08em;
   }
 
-  /* The reasons to choose STAGER: a short teal rule instead of a bullet. */
-  [data-home-variant='1'] .ok-why ul {
-    list-style: none;
+  /* A statement (the intro): large, regular, in the ink. */
+  [data-home-variant='1'] .ok-statement {
+    font-size: var(--ok-statement);
+    line-height: var(--ok-statement--line-height);
+    font-weight: 400;
+    color: var(--color-ink);
+  }
+  [data-home-variant='1']:lang(en) .ok-statement {
+    letter-spacing: -0.01em;
+  }
+
+  /* The reasons to choose STAGER (CMS rich text): an opening line, then each
+     reason a card of its own, numbered. Two to a row from sm. */
+  [data-home-variant='1'] .ok-why ul,
+  [data-home-variant='1'] .ok-why ol {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 2rem;
     padding-left: 0;
+    list-style: none;
+    counter-reset: reason;
+
+    @variant sm {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
   [data-home-variant='1'] .ok-why li {
-    position: relative;
-    padding-left: 1.75em;
+    counter-increment: reason;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 0;
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface-raised);
+    box-shadow: 0 0 0 1px var(--color-line);
+    font-size: var(--text-body-lg);
+    line-height: var(--text-body-lg--line-height);
+  }
+  [data-home-variant='1'] .ok-why li:last-child:nth-child(odd) {
+    @variant sm {
+      grid-column: 1 / -1;
+    }
   }
   [data-home-variant='1'] .ok-why li::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0.75em;
-    width: 0.875em;
-    height: 2px;
+    content: counter(reason);
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    background-color: var(--color-surface-muted);
+    color: var(--color-primary);
+    font-size: var(--text-body-sm);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The services as a journey. Each stage is its marker on the line and,
+     under it, a card: the service's name, what it is, and the Academy course
+     on the same subject. A row of stages from lg, the line running through
+     the markers; one column below that, the markers down the left on a
+     vertical line. The line from a marker to the next is the stage's own
+     ::after; --fill (0 to 1) is how much of it the page has drawn in teal,
+     set by the design's motion as the stages are reached. */
+  [data-home-variant='1'] .ok-journey {
+    display: grid;
+    gap: var(--ok-step-gap);
+
+    @variant lg {
+      grid-template-columns: repeat(var(--steps), minmax(0, 1fr));
+    }
+  }
+  [data-home-variant='1'] .ok-step {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--ok-node) minmax(0, 1fr);
+    align-items: start;
+    gap: 1rem;
+
+    @variant lg {
+      grid-template-columns: minmax(0, 1fr);
+      /* The marker's row keeps its height when the stage is stretched to
+         the tallest one; the card takes the rest, so all cards start level
+         and end level. */
+      grid-template-rows: var(--ok-node) 1fr;
+      gap: 1.25rem;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: calc(var(--ok-node) / 2 - 1px);
+      top: var(--ok-node);
+      width: 2px;
+      height: calc(100% - var(--ok-node) + var(--ok-step-gap));
+      background: linear-gradient(
+        to bottom,
+        var(--color-primary) calc(var(--fill, 0) * 100%),
+        var(--color-line-strong) 0
+      );
+      pointer-events: none;
+
+      @variant lg {
+        left: var(--ok-node);
+        top: calc(var(--ok-node) / 2 - 1px);
+        width: calc(100% - var(--ok-node) + var(--ok-step-gap));
+        height: 2px;
+        background: linear-gradient(
+          to right,
+          var(--color-primary) calc(var(--fill, 0) * 100%),
+          var(--color-line-strong) 0
+        );
+      }
+    }
+
+    &:last-child::after {
+      display: none;
+    }
+  }
+  [data-home-variant='1'] .ok-step-node {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: var(--ok-node);
+    height: var(--ok-node);
+    border-radius: 9999px;
+    background-color: var(--color-surface-raised);
+    box-shadow: 0 0 0 1px var(--color-line-strong);
+    color: var(--color-ink);
+    font-size: var(--text-title);
+    transition:
+      background-color var(--duration-base) var(--ease-brand),
+      color var(--duration-base) var(--ease-brand),
+      box-shadow var(--duration-base) var(--ease-brand),
+      scale var(--duration-base) var(--ease-brand);
+  }
+  [data-home-variant='1'] .ok-step-card {
+    display: flex;
+    min-width: 0;
+    height: 100%;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface-raised);
+    box-shadow: 0 0 0 1px var(--color-line);
+    transition:
+      box-shadow var(--duration-base) var(--ease-brand),
+      translate var(--duration-base) var(--ease-brand);
+  }
+  /* A stage the page has reached: its marker ringed in teal. */
+  [data-home-variant='1'] .ok-step[data-reached] .ok-step-node {
+    box-shadow: 0 0 0 2px var(--color-primary);
+    color: var(--color-primary);
+  }
+  /* The stage under the pointer, or holding focus, steps forward. */
+  [data-home-variant='1'] .ok-step:is(:hover, :focus-within) .ok-step-card {
+    box-shadow:
+      0 0 0 1px var(--color-line-strong),
+      var(--shadow-card);
+    translate: 0 -0.25rem;
+  }
+  [data-home-variant='1'] .ok-step:is(:hover, :focus-within) .ok-step-node {
     background-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary);
+    color: var(--color-on-primary);
+    scale: 1.06;
+  }
+  /* The Academy course on a stage's subject: a quiet link, its arrow the cap. */
+  [data-home-variant='1'] .ok-step-course {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    margin-top: auto;
+    padding-top: 0.75rem;
+    color: var(--color-primary);
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm--line-height);
+    font-weight: 500;
+    text-wrap: pretty;
+
+    &:hover {
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+    }
   }
 
   /* The phone menu: the whole screen, fading down into place. */
@@ -305,37 +540,4 @@
 [data-home-variant='1'] .ok-lang nav a[aria-current='true'] {
   background-color: var(--color-ink);
   color: var(--color-brand-white);
-}
-
-/* The services explorer: on a wide screen the open service's panel takes
-   the right-hand column, level with the top of the list, and stays in view
-   while the list is read. Below that it opens under its own heading. */
-[data-home-variant='1'] [data-explorer] {
-  @variant lg {
-    display: grid;
-    grid-template-columns: 5fr 7fr;
-    /* One row per service, sized by its heading, and a last row that takes
-       whatever height the open panel needs beyond them. */
-    grid-template-rows: repeat(var(--explorer-rows), auto) 1fr;
-    column-gap: clamp(2.5rem, 1rem + 4vw, 6rem);
-  }
-}
-[data-home-variant='1'] [data-explorer-item] {
-  @variant lg {
-    display: contents;
-  }
-}
-[data-home-variant='1'] [data-explorer-tab] {
-  @variant lg {
-    grid-column: 1;
-  }
-}
-[data-home-variant='1'] [data-explorer-panel] {
-  @variant lg {
-    grid-column: 2;
-    grid-row: 1 / -1;
-    align-self: start;
-    position: sticky;
-    top: calc(var(--ok-header-top) + var(--ok-header-h) + 2rem);
-  }
 }

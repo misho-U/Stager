@@ -26,6 +26,21 @@ export function isBlankHtml(html: string | null | undefined): boolean {
 }
 
 /**
+ * How many characters of text stored rich text shows, roughly: tags dropped,
+ * entities counted as one character. For choosing a layout by length (a
+ * one-sentence intro set as a statement, a long one as reading text), never
+ * for display.
+ */
+export function plainTextLength(html: string | null | undefined): number {
+  if (!html) return 0;
+  return html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&[a-z0-9#]+;/gi, '_')
+    .replace(/\s+/g, ' ')
+    .trim().length;
+}
+
+/**
  * Joins the non-empty parts of a metadata line. The separator is a comma, not a
  * middle dot: one line of project metadata reads as a phrase ("Client name,
  * Tbilisi, 2025"), and dots between every part are a template tell.

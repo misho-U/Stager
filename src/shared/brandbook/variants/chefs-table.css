@@ -3,9 +3,10 @@
    ===========================================================================
    The best seat in the house, at night: cinematic and media-forward. The
    page is dark and the work is lit. The hero's screen grows to fill the
-   view, the services arrive one card over the next, the projects run past
-   as a filmstrip, the Academy's courses are admission tickets, the videos
-   open full screen, and the page ends at dawn: an iris opening onto teal.
+   view, the services arrive one card over the next under an index that
+   follows them, the projects run past as a filmstrip, the Academy's courses
+   are admission tickets, the videos open full screen, and the page ends at
+   dawn: an iris opening onto teal.
 
    Colour rule: a near-black teal night (the brand teal taken toward black)
    carries the page; cream is the text and the primary button. The one
@@ -13,9 +14,10 @@
    for active states, links, small highlights and the stage lights. The
    finale is the brand teal itself. Every colour is the palette or a mix.
 
-   Type: Noto Sans Georgian, condensed (its width axis) and heavy for
-   headings, regular for reading. No capitals as a style, no italics,
-   leading never under 1.05 (Georgian).
+   Type: Noto Sans Georgian, condensed (its width axis) for headings, at a
+   semibold that stays clear of heavy; Georgian a touch wider and lighter,
+   since its letters carry more ink. Regular for reading. No capitals as a
+   style, no italics, leading never under 1.05 (Georgian).
 
    Shape rule: buttons, chips and one-line fields are pills; cards, frames,
    tickets and the message box are 24px; the finale's panel is 40px.
@@ -77,11 +79,11 @@
   --shadow-card: 0 30px 60px -30px color-mix(in oklab, black 70%, transparent);
 
   /* --- Type --- */
-  --font-weight-hero: 750;
-  --font-weight-heading: 700;
-  --font-stretch-hero: 72%;
-  --font-stretch-heading: 78%;
-  --text-display: clamp(3.5rem, 1.4rem + 7.6vw, 9.5rem);
+  --font-weight-hero: 620;
+  --font-weight-heading: 580;
+  --font-stretch-hero: 76%;
+  --font-stretch-heading: 82%;
+  --text-display: clamp(3.25rem, 1.3rem + 5.6vw, 7.25rem);
   --text-display--line-height: 1.05;
   --text-display--letter-spacing: -0.01em;
   --text-headline: clamp(2.5rem, 1.4rem + 3.6vw, 5rem);
@@ -93,6 +95,9 @@
   --text-title-sm: 1.375rem;
   --text-title-sm--line-height: 1.25;
   --text-lead: clamp(1.25rem, 1rem + 1vw, 1.875rem);
+  /* A statement: a short intro, set as one large sentence or two. */
+  --ct-statement: clamp(1.875rem, 1.2rem + 2.4vw, 3.375rem);
+  --ct-statement--line-height: 1.22;
   --text-lead--line-height: 1.45;
   --text-caption: 0.8125rem;
 
@@ -110,8 +115,9 @@
   /* --- Sizes this design alone uses --- */
   --ct-header-h: 4.5rem;
   --ct-pill-h: 3.75rem; /* the header once it has become a pill */
-  --ct-stack-top: 6.5rem; /* where each service card pins, below the header */
-  --ct-stack-card: min(72dvh, 42rem); /* a service card's height in the stack */
+  --ct-index-top: calc(var(--ct-pill-h) + 1.5rem); /* the services index, under the header */
+  --ct-stack-top: calc(var(--ct-index-top) + 4.25rem); /* where each service card pins, under the index */
+  --ct-stack-card: min(62dvh, 36rem); /* a service card's height in the stack */
   --ct-stack-step: 0.875rem; /* how much of the card underneath shows */
   /* A filmstrip frame: as wide as a frame and its caption can be while the
      whole strip fits the screen it is pinned to. */
@@ -125,6 +131,9 @@
   --ct-notch: 0.875rem; /* the half-circles cut where a ticket tears */
   --ct-play: 5.5rem;
   --ct-play-sm: 3.5rem;
+  /* Lifts the play button above a caption on its poster: a padding under
+     it, as a share of the frame's width (16:9 at any size). */
+  --ct-play-lift: 14%;
   --ct-spot: 22rem; /* the light that follows the pointer over a card */
   --ct-footer-mark: 31cqi; /* "STAGER" set condensed spans the footer */
 }
@@ -137,9 +146,16 @@
   }
 }
 
-/* Latin headings sit a little tighter; Georgian keeps the brandbook spacing. */
+/* Latin headings sit a little tighter; Georgian keeps the brandbook spacing,
+   and is set a touch wider and lighter: condensed Mkhedruli darkens fast. */
 [data-home-variant='2']:lang(en) {
   --text-headline--letter-spacing: -0.01em;
+}
+[data-home-variant='2']:lang(ka) {
+  --font-weight-hero: 560;
+  --font-weight-heading: 520;
+  --font-stretch-hero: 84%;
+  --font-stretch-heading: 88%;
 }
 
 :root:has([data-home-variant='2']) {
@@ -148,7 +164,7 @@
 }
 
 /* A jump to a section lands clear of the header. */
-[data-home-variant='2'] :is(section, div)[id] {
+[data-home-variant='2'] :is(section, div, li)[id] {
   scroll-margin-top: calc(var(--ct-pill-h) + 2rem);
 }
 
@@ -256,12 +272,6 @@
     margin-top: 0.75em;
   }
 
-  /* The ticker's words: outlined and filled in turn. */
-  [data-home-variant='2'] .ct-outline {
-    color: transparent;
-    -webkit-text-stroke: 1px var(--color-ink-muted);
-  }
-
   /* The footer's wordmark, as wide as its container, drawn in outline. */
   [data-home-variant='2'] .ct-footer-mark {
     font-size: var(--ct-footer-mark);
@@ -305,6 +315,164 @@
       &[open] {
         opacity: 0;
       }
+    }
+  }
+
+  /* A statement (a short intro): large and regular, at the face's own width. */
+  [data-home-variant='2'] .ct-statement {
+    font-size: var(--ct-statement);
+    line-height: var(--ct-statement--line-height);
+    font-weight: 400;
+  }
+
+  /* The services index: every service in a dark glass pill, the one in
+     front of the stack filled. A row that scrolls sideways where it does not
+     fit; it stays in view over the stack (see [data-stack-on] below). */
+  [data-home-variant='2'] .ct-index {
+    max-width: 100%;
+    align-self: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-radius: 9999px;
+  }
+  [data-home-variant='2'] .ct-index::-webkit-scrollbar {
+    display: none;
+  }
+  [data-home-variant='2'] .ct-index-list {
+    display: flex;
+    width: max-content;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border-radius: 9999px;
+    background-color: color-mix(in oklab, var(--ct-raised) 82%, transparent);
+    backdrop-filter: blur(18px) saturate(140%);
+    box-shadow: 0 0 0 1px var(--color-line);
+  }
+  [data-home-variant='2'] .ct-index-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding-inline: 1rem;
+    border-radius: 9999px;
+    color: var(--color-ink-muted);
+    font-size: var(--text-body-sm);
+    font-weight: 500;
+    transition:
+      background-color var(--duration-base) var(--ease-brand),
+      color var(--duration-base) var(--ease-brand);
+
+    &:hover {
+      color: var(--color-ink);
+      background-color: var(--color-surface-muted);
+    }
+    &[aria-current='true'] {
+      background-color: var(--color-primary);
+      color: var(--color-on-primary);
+    }
+  }
+
+  /* The Academy course on a service's subject, as the half of its card a
+     photo would take: a ticket-like panel, outlined like every control on
+     the page (3:1 against the card), filled under the pointer, with a
+     dashed tear above its price. */
+  [data-home-variant='2'] .ct-course-stub {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.75rem;
+    border: 1px solid var(--color-line-input);
+    border-radius: var(--radius-lg);
+    transition: background-color var(--duration-base) var(--ease-brand);
+
+    &:hover {
+      background-color: var(--color-surface-muted);
+    }
+  }
+  [data-home-variant='2'] .ct-stub-arrow {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 9999px;
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    transition: translate var(--duration-base) var(--ease-brand);
+  }
+  [data-home-variant='2'] .ct-course-stub:hover .ct-stub-arrow {
+    translate: 0.25rem 0;
+  }
+
+  /* A video's title on its frame (a phone's newest video): cream over a
+     scrim of night toward the bottom edge. Recedes under a resting mouse
+     (.video-caption, globals.css). */
+  [data-home-variant='2'] .ct-caption {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 3rem 1rem 1rem;
+    background-image: linear-gradient(
+      to top,
+      color-mix(in oklab, var(--ct-night) 88%, transparent),
+      color-mix(in oklab, var(--ct-night) 40%, transparent) 60%,
+      transparent
+    );
+    color: var(--color-brand-cream-light);
+
+    @variant sm {
+      gap: 0.5rem;
+      padding: 6rem 2rem 1.75rem;
+    }
+  }
+  [data-home-variant='2'] .ct-caption-meta {
+    color: var(--color-brand-cream);
+  }
+
+  /* A programme's kind and length on its poster, like a label on a can. */
+  [data-home-variant='2'] .ct-tag {
+    pointer-events: none;
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.75rem;
+    padding-inline: 0.75rem;
+    border-radius: 9999px;
+    background-color: color-mix(in oklab, var(--ct-night) 72%, transparent);
+    backdrop-filter: blur(8px);
+    color: var(--color-brand-cream-light);
+    font-size: var(--text-caption);
+    font-weight: 500;
+  }
+
+  /* "YouTube": a glass pill on a frame's corner, or a quiet link by a title. */
+  [data-home-variant='2'] .ct-youtube {
+    z-index: var(--z-raised);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 2.25rem;
+    padding-inline: 0.875rem;
+    border-radius: 9999px;
+    background-color: color-mix(in oklab, var(--ct-night) 72%, transparent);
+    backdrop-filter: blur(8px);
+    color: var(--color-brand-cream-light);
+    font-size: var(--text-body-sm);
+    font-weight: 500;
+
+    &:hover {
+      background-color: var(--ct-night);
+    }
+  }
+  [data-home-variant='2'] .ct-youtube-quiet {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 2.75rem;
+    color: var(--color-ink-muted);
+    font-size: var(--text-body-sm);
+
+    &:hover {
+      color: var(--color-ink);
     }
   }
 
@@ -369,6 +537,11 @@
 
 /* With motion on a desktop the services stack: each card pins below the
    header while the next slides over it. */
+[data-home-variant='2'] [data-stack-on] [data-stack-index] {
+  position: sticky;
+  top: var(--ct-index-top);
+  z-index: var(--z-raised);
+}
 [data-home-variant='2'] [data-stack-on] [data-stack-card] {
   position: sticky;
   /* Each pins a little lower than the one before, whose top edge shows. */

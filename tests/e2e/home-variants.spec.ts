@@ -386,21 +386,27 @@ test.describe('design 1: exploring in place', () => {
     await expect(rows).toHaveCount(total);
   });
 
-  test('choosing an episode shows it in the player', async ({ page }) => {
+  test('choosing an episode writes its title on the player', async ({ page }) => {
     await openVariant(page, 'en', '1');
     const episode = page.locator('#videos ol button').nth(2);
-    const title = (await episode.locator('span.font-semibold').textContent())?.trim() ?? '';
+    const title = (await episode.locator('[data-episode-title]').textContent())?.trim() ?? '';
     await episode.click();
     await expect(episode).toHaveAttribute('aria-current', 'true');
-    await expect(page.locator('#videos h3').first()).toHaveText(title);
+    // The title sits on the frame itself, over the poster.
+    await expect(page.locator('#videos [data-video-player] h3')).toHaveText(title);
   });
 
-  test('the services explorer opens one service at a time', async ({ page }) => {
+  test('the services read as a journey, one stage per service', async ({ page }) => {
     await openVariant(page, 'en', '1');
-    const tabs = page.locator('#services [aria-expanded]');
-    await tabs.nth(2).click();
-    await expect(tabs.nth(2)).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.locator('#services [data-explorer-panel]:visible')).toHaveCount(1);
+    const stages = page.locator('#services [data-journey-step]');
+    const count = await stages.count();
+    expect(count).toBeGreaterThan(1);
+    await expect(page.locator('#services [data-journey-step] h3')).toHaveCount(count);
+    // A stage's Academy course takes the visitor to the Academy.
+    const course = page.locator('#services .ok-step-course').first();
+    if ((await course.count()) > 0) {
+      await expect(course).toHaveAttribute('href', '#academy');
+    }
   });
 });
 
@@ -433,6 +439,38 @@ test.describe('design 2: the tickets, the screening room and the menu', () => {
     await page.keyboard.press('Escape');
     await expect(player).toBeHidden();
     await expect(play).toBeFocused();
+  });
+
+  test('the services index lists every service and takes the visitor to one', async ({
+    page,
+  }, testInfo) => {
+    // With motion: on a desktop that is when the cards stack under the index.
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto('/en?v=2');
+    await expect(page.locator('[data-home-variant="2"]')).toBeVisible();
+    const links = page.locator('[data-stack-index] [data-index-link]');
+    const cards = page.locator('[data-stack-card]');
+    await expect(links).toHaveCount(await cards.count());
+    const target = 2;
+    await links.nth(target).click();
+    await expect(cards.nth(target)).toBeInViewport();
+    // On a desktop the cards stack, and the index marks the one in front.
+    if (testInfo.project.name === 'chromium') {
+      await expect(links.nth(target)).toHaveAttribute('aria-current', 'true');
+    }
+  });
+
+  test('the newest video is described from the top of its frame', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium', 'the description sits beside the frame on a desktop');
+    await openVariant(page, 'en', '2');
+    const frame = page.locator('#videos [data-video-card]').first();
+    const heading = page.locator('#videos article').first().locator('h3');
+    await frame.scrollIntoViewIfNeeded();
+    const [frameBox, textBox] = await Promise.all([
+      frame.boundingBox(),
+      heading.locator('xpath=..').boundingBox(),
+    ]);
+    expect(Math.abs((frameBox?.y ?? 0) - (textBox?.y ?? 0))).toBeLessThanOrEqual(2);
   });
 
   test('the menu lists the sections and takes the visitor to one', async ({ page }) => {

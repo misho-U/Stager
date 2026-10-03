@@ -190,6 +190,12 @@
   --shadow-drawer: 0 0 0 1px rgb(29 70 74 / 0.06), -24px 0 64px rgb(29 70 74 / 0.18);
 }
 
+/* --- Video frames: the title a poster carries gives way to the picture
+       when a pointer rests on it (`.video-caption` in globals.css). --- */
+@theme static {
+  --duration-caption-hold: 700ms; /* how long the pointer rests first */
+}
+
 /* Outside @theme so they are always emitted: utilities in globals.css use
    them too. */
 @keyframes rise {

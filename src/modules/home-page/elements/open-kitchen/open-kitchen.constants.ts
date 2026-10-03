@@ -29,8 +29,11 @@ export const OK_MOTION = {
     /** How much smaller each card behind the front one is. */
     shrink: 0.05,
   },
-  /** The services explorer's panel when another service opens. */
-  explorer: { duration: 0.5, ease: 'power3.out', hoverIntent: 140 },
+  /**
+   * The services' journey: where on the screen its line starts and finishes
+   * filling (ScrollTrigger start/end, the journey's edges against the screen).
+   */
+  journey: { start: 'top 70%', end: 'bottom 60%' },
   /** The Academy's rows re-ordering after a filter. */
   flip: { duration: 0.55, ease: 'power3.inOut' },
   /** The video player when another episode is chosen. */

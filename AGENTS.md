@@ -382,7 +382,17 @@ Lenis. The dashboard has none.
   settles. Flip with `absolute: true` takes rows out of the flow, so tween the
   list's own height alongside it. React must never re-render a style GSAP
   owns: give a moving element a fixed starting style and leave the rest to
-  GSAP.
+  GSAP. Tween `filter` with `fromTo` and an explicit start: from the
+  computed `none`, GSAP starts at `brightness(0)`, and a stacked card began
+  black. A `position: sticky` element reports its stuck box, not its place
+  in the page, so scroll targets and trigger positions for a sticky stack
+  come from the flow (the stack's top plus the cards before it). Lenis
+  glides every `#` link from the window and ignores `preventDefault()`: a
+  handler that scrolls a link itself must also stop the click's propagation.
+- **A video's poster carries its title** (`VideoCaption`, by the client's
+  request): over a scrim, receding once a mouse has rested on the frame
+  (`.video-caption` in globals.css), gone once it plays. Touch keeps it, so
+  nothing on a timer may hide it: on a phone it is the only copy.
 
 ### Theme
 

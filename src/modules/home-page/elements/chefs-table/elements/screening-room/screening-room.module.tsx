@@ -43,7 +43,13 @@ export function PlayButton({
   );
 }
 
-type PlayerVideo = { id: string; title: string; meta: string; youtubeId: string | null };
+type PlayerVideo = {
+  id: string;
+  title: string;
+  meta: string;
+  summary: string;
+  youtubeId: string | null;
+};
 
 /**
  * The full-screen player: the screen darkens, the video's frame grows out of
@@ -101,6 +107,9 @@ export function ScreeningPlayer({
           >
             <p className="text-body-sm text-ink-muted">{video.meta}</p>
             <h2 className="text-title font-heading stretch-heading text-balance">{video.title}</h2>
+            {video.summary ? (
+              <p className="text-body-lg text-ink-muted max-w-3xl text-pretty">{video.summary}</p>
+            ) : null}
           </div>
         ) : null}
       </div>

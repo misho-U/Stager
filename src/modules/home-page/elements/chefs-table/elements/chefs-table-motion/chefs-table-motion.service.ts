@@ -7,7 +7,7 @@ import { gsap, ScrollTrigger } from '@/shared/lib/motion/gsap';
 import { magnetic } from '@/shared/lib/motion/pointer';
 import { cappedStagger, splitReveal } from '@/shared/lib/motion/split';
 import { useMotion } from '@/shared/lib/motion/use-motion';
-import { useSmoothScroll } from '@/widgets/smooth-scroll/smooth-scroll.service';
+import { getSmoothScroll, useSmoothScroll } from '@/widgets/smooth-scroll/smooth-scroll.service';
 
 type Cleanup = () => void;
 
@@ -27,7 +27,6 @@ export function useChefsTableMotion(scope: RefObject<HTMLElement | null>) {
     assembleHero(root);
     if (finePointer) cleanups.push(followLight(root));
     if (desktop) cleanups.push(growScreen(root));
-    cleanups.push(runTicker(root));
     readAlong(root);
     if (desktop) cleanups.push(stackServices(root));
     if (desktop) cleanups.push(runFilm(root));
@@ -39,9 +38,7 @@ export function useChefsTableMotion(scope: RefObject<HTMLElement | null>) {
       cleanups.push(spotlights(root));
       const pulled = [
         ...root.querySelectorAll<HTMLElement>('[data-magnetic]'),
-        ...root.querySelectorAll<HTMLElement>(
-          '[data-testid="inquiry-form"] button[type="submit"]',
-        ),
+        ...root.querySelectorAll<HTMLElement>('[data-testid="inquiry-form"] button[type="submit"]'),
       ];
       for (const element of pulled) cleanups.push(magnetic(element, 0.25));
     }
@@ -210,33 +207,6 @@ function growScreen(root: HTMLElement): Cleanup {
   };
 }
 
-/** The ticker of services runs on; scrolling speeds it up, and turns it the way of the scroll. */
-function runTicker(root: HTMLElement): Cleanup {
-  const track = root.querySelector<HTMLElement>('[data-ticker-track]');
-  if (!track) return () => {};
-  const loop = gsap.to(track, { xPercent: -50, ease: 'none', duration: M.ticker.duration, repeat: -1 });
-  const trigger = ScrollTrigger.create({
-    trigger: track,
-    start: 'top bottom',
-    end: 'bottom top',
-    onUpdate: (self) => {
-      const speed = 1 + Math.min(M.ticker.boost, Math.abs(self.getVelocity()) / 300);
-      gsap.to(loop, {
-        timeScale: speed * self.direction,
-        duration: 0.2,
-        overwrite: true,
-        onComplete: () => {
-          gsap.to(loop, { timeScale: self.direction, duration: M.ticker.settle });
-        },
-      });
-    },
-  });
-  return () => {
-    trigger.kill();
-    loop.kill();
-  };
-}
-
 /** The intro lights up word by word as it is read. */
 function readAlong(root: HTMLElement) {
   for (const text of root.querySelectorAll<HTMLElement>('[data-read-along]')) {
@@ -257,35 +227,103 @@ function readAlong(root: HTMLElement) {
   }
 }
 
-/** Each service card stays pinned while the next slides over it, and steps back. */
+/**
+ * Each service card stays pinned while the next slides over it, and steps
+ * back. The index above the stack marks the card in front and jumps to any.
+ *
+ * Positions are taken from the flow, never from a card's box: a stuck card
+ * reports where it is pinned, not where it sits in the page, so a card's
+ * place is the stack's top plus the cards and gaps before it.
+ */
 function stackServices(root: HTMLElement): Cleanup {
-  const stack = root.querySelector<HTMLElement>('[data-stack]');
-  if (!stack) return () => {};
+  const section = root.querySelector<HTMLElement>('[data-stack-section]');
+  const stack = section?.querySelector<HTMLElement>('[data-stack]');
+  if (!section || !stack) return () => {};
   const cards = [...stack.querySelectorAll<HTMLElement>('[data-stack-card]')];
   if (cards.length < 2) return () => {};
-  stack.setAttribute('data-stack-on', '');
+  const links = [...section.querySelectorAll<HTMLAnchorElement>('[data-index-link]')];
+  section.setAttribute('data-stack-on', '');
+
+  const gap = () => parseFloat(getComputedStyle(stack).rowGap) || 0;
+  /** Where card `index` sits in the page, as if nothing were stuck. */
+  const placeOf = (index: number) => {
+    let top = stack.getBoundingClientRect().top + window.scrollY;
+    for (const card of cards.slice(0, index)) top += card.offsetHeight + gap();
+    return top;
+  };
+  /** The line card `index` is pinned at, from the top of the screen. */
+  const pinOf = (index: number) => parseFloat(getComputedStyle(cards[index]!).top) || 0;
+  /** The scroll position at which card `index` arrives at its line. */
+  const arrival = (index: number) => placeOf(index) - pinOf(index);
+
+  const mark = (current: number) => {
+    links.forEach((link, index) => {
+      if (index === current) link.setAttribute('aria-current', 'true');
+      else link.removeAttribute('aria-current');
+    });
+  };
+  mark(0);
+
+  const triggers: ScrollTrigger[] = [];
   cards.forEach((card, index) => {
+    // The card in front, for the index.
+    if (index > 0) {
+      triggers.push(
+        ScrollTrigger.create({
+          start: () => arrival(index) - 1,
+          end: () => arrival(index),
+          onEnter: () => mark(index),
+          onLeaveBack: () => mark(index - 1),
+        }),
+      );
+    }
+    // Shrinks toward its top edge, which stays in view above the next card;
+    // dims late, as the next card is nearly over it, not as it appears.
     const next = cards[index + 1];
     const face = card.querySelector<HTMLElement>('[data-stack-face]');
     if (!next || !face) return;
-    // Shrinks toward its top edge, which stays in view above the next card;
-    // dims late, as the next card is nearly over it, not as it appears.
-    gsap.to(face, {
-      scale: M.stack.scale,
-      filter: `brightness(${1 - M.stack.dim})`,
-      transformOrigin: '50% 0%',
-      ease: 'power2.in',
-      scrollTrigger: {
-        trigger: next,
-        start: 'top bottom',
-        // Fully covered when the next card reaches the line it pins at.
-        end: () => `top ${parseFloat(getComputedStyle(next).top) || 0}px`,
-        scrub: true,
-        invalidateOnRefresh: true,
+    // From an explicit brightness(1): from the computed `none`, GSAP would
+    // start at brightness(0) and the card in front would begin black.
+    const tween = gsap.fromTo(
+      face,
+      { scale: 1, filter: 'brightness(1)' },
+      {
+        scale: M.stack.scale,
+        filter: `brightness(${1 - M.stack.dim})`,
+        transformOrigin: '50% 0%',
+        ease: 'power2.in',
+        scrollTrigger: {
+          start: () => placeOf(index + 1) - window.innerHeight,
+          end: () => arrival(index + 1),
+          scrub: true,
+          invalidateOnRefresh: true,
+        },
       },
-    });
+    );
+    if (tween.scrollTrigger) triggers.push(tween.scrollTrigger);
   });
-  return () => stack.removeAttribute('data-stack-on');
+
+  // The index jumps to a card where it arrives in the stack: its own link
+  // would aim at the card's pinned box. Lenis, which glides every in-page
+  // link from the window, must not hear the click and aim there instead.
+  const onClick = (event: MouseEvent) => {
+    const link = (event.target as Element | null)?.closest<HTMLAnchorElement>('[data-index-link]');
+    const index = link ? links.indexOf(link) : -1;
+    if (index < 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const lenis = getSmoothScroll();
+    if (lenis) lenis.scrollTo(arrival(index));
+    else window.scrollTo({ top: arrival(index) });
+  };
+  section.addEventListener('click', onClick);
+
+  return () => {
+    section.removeEventListener('click', onClick);
+    for (const trigger of triggers) trigger.kill();
+    for (const link of links) link.removeAttribute('aria-current');
+    section.removeAttribute('data-stack-on');
+  };
 }
 
 /** The projects run past as a filmstrip, leaning into the scroll's speed. */
@@ -355,7 +393,11 @@ function rollCredits(root: HTMLElement) {
       .timeline({
         scrollTrigger: { trigger: line, start: 'top 90%', end: 'bottom 10%', scrub: true },
       })
-      .fromTo(line, { opacity: 0.2, filter: 'blur(3px)' }, { opacity: 1, filter: 'blur(0px)', ease: 'none' })
+      .fromTo(
+        line,
+        { opacity: 0.2, filter: 'blur(3px)' },
+        { opacity: 1, filter: 'blur(0px)', ease: 'none' },
+      )
       .to(line, { opacity: 0.2, filter: 'blur(3px)', ease: 'none' });
   }
 }

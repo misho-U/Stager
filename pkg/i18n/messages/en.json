@@ -135,6 +135,7 @@
     "latest": "Newest video",
     "nowPlaying": "Now playing",
     "allOnYouTube": "All videos on YouTube",
+    "watchOnYouTube": "Watch on YouTube: {title}",
     "unavailable": "This is a sample entry. The video will play here once its YouTube link is added in the dashboard.",
     "close": "Close the video",
     "list": "Episodes"

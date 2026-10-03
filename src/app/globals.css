@@ -189,6 +189,24 @@
       }
     }
   }
+
+  /* The title a video's poster carries (widgets/video-player, VideoCaption)
+     gives way to the picture: with a mouse it recedes once the pointer has
+     rested on the frame a moment, or focus lands inside, and is back the
+     moment it leaves. A touch screen has no hover and keeps it; a screen
+     reader reads it either way. The design draws the text and its scrim. */
+  .video-caption {
+    transition:
+      opacity var(--duration-base) var(--ease-brand),
+      translate var(--duration-base) var(--ease-brand);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    [data-video-card]:is(:hover, :focus-within) .video-caption {
+      opacity: 0;
+      translate: 0 calc(var(--spacing) * 3);
+      transition-delay: var(--duration-caption-hold);
+    }
+  }
 }
 
 @layer utilities {

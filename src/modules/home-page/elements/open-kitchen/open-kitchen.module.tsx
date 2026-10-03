@@ -3,12 +3,13 @@ import { ArrowUpRightIcon } from '@phosphor-icons/react/dist/ssr/ArrowUpRight';
 import { ChefHatIcon } from '@phosphor-icons/react/dist/ssr/ChefHat';
 import { ClockIcon } from '@phosphor-icons/react/dist/ssr/Clock';
 import { GlobeSimpleIcon } from '@phosphor-icons/react/dist/ssr/GlobeSimple';
+import { GraduationCapIcon } from '@phosphor-icons/react/dist/ssr/GraduationCap';
 import { MapPinIcon } from '@phosphor-icons/react/dist/ssr/MapPin';
 import { MicrophoneIcon } from '@phosphor-icons/react/dist/ssr/Microphone';
 import { PlayIcon } from '@phosphor-icons/react/dist/ssr/Play';
 import { VideoCameraIcon } from '@phosphor-icons/react/dist/ssr/VideoCamera';
 import { getFormatter, getTranslations } from 'next-intl/server';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
 import { FEW_SEATS, type PublicCourse, relatedCourses } from '@/entity/course/model/course.model';
 import type { PublicInsightListItem } from '@/entity/insight/model/insight.model';
@@ -22,7 +23,6 @@ import { LiveBoard } from '@/modules/home-page/elements/open-kitchen/elements/li
 import { OkHeader } from '@/modules/home-page/elements/open-kitchen/elements/ok-header/ok-header.module';
 import { OpenKitchenMotion } from '@/modules/home-page/elements/open-kitchen/elements/open-kitchen-motion/open-kitchen-motion.module';
 import { ProjectRail } from '@/modules/home-page/elements/open-kitchen/elements/project-rail/project-rail.module';
-import { ServiceExplorer } from '@/modules/home-page/elements/open-kitchen/elements/service-explorer/service-explorer.module';
 import {
   PlayInSectionButton,
   VideoPlaylist,
@@ -37,7 +37,7 @@ import { hasServiceIcon, ServiceIcon } from '@/shared/components/service-icon';
 import { SocialLinks } from '@/shared/components/social-links';
 import { Wordmark } from '@/shared/components/wordmark';
 import { cn } from '@/shared/lib/cn';
-import { isBlankHtml, joinMeta } from '@/shared/lib/content';
+import { isBlankHtml, joinMeta, plainTextLength } from '@/shared/lib/content';
 import { youtubeId } from '@/shared/lib/youtube';
 import type { ListResponse } from '@/shared/types/api';
 import type { DbLocale } from '@/shared/types/enums';
@@ -74,6 +74,9 @@ const BUTTON_PRIMARY = `${BUTTON} bg-primary text-on-primary hover:bg-primary-ho
 const BUTTON_OUTLINE = `${BUTTON} border border-line-input text-ink hover:bg-surface-raised`;
 const CHIP =
   'text-body-sm bg-surface-raised text-ink-muted inline-flex min-h-8 items-center gap-1.5 rounded-full px-3';
+
+/** Up to this many characters, the intro is set as one large statement. */
+const INTRO_STATEMENT_MAX = 220;
 
 /** The projects rail's photo-less tiles take these in turn. */
 const TILE_TONES = ['light', 'sage', 'deep'] as const;
@@ -197,6 +200,9 @@ export async function OpenKitchen({ locale, content }: OpenKitchenProps) {
     date: longDate(course.startsAt),
     full: course.seatsLeft === 0,
   });
+
+  // A short intro reads as one statement, set large; a long one as text.
+  const introIsStatement = plainTextLength(section.intro?.body) <= INTRO_STATEMENT_MAX;
 
   const sampleBadge = <SampleBadge label={t('sample.badge')} hint={t('sample.hint')} />;
   const nextCourse = courses.items.find((course) => course.seatsLeft !== 0) ?? courses.items[0];
@@ -384,7 +390,7 @@ export async function OpenKitchen({ locale, content }: OpenKitchenProps) {
         <section
           id="top"
           aria-labelledby="hero-heading"
-          className="px-gutter pb-section pt-32 lg:flex lg:min-h-dvh lg:items-center lg:pt-36"
+          className="px-gutter pb-section pt-28 lg:flex lg:min-h-dvh lg:items-center"
         >
           <div className="max-w-page mx-auto grid w-full gap-14 lg:grid-cols-12 lg:items-center lg:gap-10">
             <div className="flex flex-col gap-8 lg:col-span-7">
@@ -440,16 +446,20 @@ export async function OpenKitchen({ locale, content }: OpenKitchenProps) {
           </div>
         </section>
 
-        {/* --- Who STAGER is --- */}
+        {/* --- Who STAGER is: a statement, straight after the promise. A short
+            intro is set large; a long one as reading text, never a void. --- */}
         {section.intro ? (
-          <section id="about" aria-labelledby="about-title" className="px-gutter py-section">
-            <div className="max-w-page mx-auto grid gap-8 lg:grid-cols-12 lg:gap-10">
-              <h2 id="about-title" className="text-title font-heading lg:col-span-3 lg:pt-2">
+          <section id="about" aria-labelledby="about-title" className="px-gutter pb-section">
+            <div className="max-w-page border-line mx-auto grid gap-6 border-t pt-10 lg:grid-cols-12 lg:gap-10 lg:pt-14">
+              <h2
+                id="about-title"
+                className="text-body-lg text-ink-muted font-medium lg:col-span-3 lg:pt-3"
+              >
                 {section.intro.heading || t('nav.about')}
               </h2>
               <div className="flex flex-col gap-8 lg:col-span-9">
                 {section.intro.subheading ? (
-                  <p data-ok-lines className="text-headline font-heading text-pretty">
+                  <p data-ok-lines className="ok-statement text-pretty">
                     {section.intro.subheading}
                   </p>
                 ) : null}
@@ -459,11 +469,15 @@ export async function OpenKitchen({ locale, content }: OpenKitchenProps) {
                     hint={t('preview.pendingHint')}
                     className="max-w-xl"
                   />
+                ) : introIsStatement ? (
+                  <div data-ok-lines>
+                    <RichText html={section.intro.body} className="ok-statement text-pretty" />
+                  </div>
                 ) : (
                   <div data-reveal>
                     <RichText
                       html={section.intro.body}
-                      className="text-lead text-ink-muted max-w-4xl text-pretty"
+                      className="text-title-lg max-w-4xl text-pretty"
                     />
                   </div>
                 )}
@@ -483,10 +497,15 @@ export async function OpenKitchen({ locale, content }: OpenKitchenProps) {
           </section>
         ) : null}
 
-        {/* --- Services: explore them where they stand --- */}
+        {/* --- Services: the journey from an idea to a working business, one
+            stage after another along a line the page draws as it is read --- */}
         {showServices ? (
-          <section id="services" aria-labelledby="services-title" className="px-gutter py-section">
-            <div className="max-w-page mx-auto flex flex-col gap-12">
+          <section
+            id="services"
+            aria-labelledby="services-title"
+            className="px-gutter py-section bg-(--ok-band)"
+          >
+            <div className="max-w-page mx-auto flex flex-col gap-12 lg:gap-16">
               <div data-reveal>
                 <SectionHeader
                   id="services-title"
@@ -494,69 +513,49 @@ export async function OpenKitchen({ locale, content }: OpenKitchenProps) {
                   description={section.services?.subheading}
                 />
               </div>
-              <div data-reveal>
-                <ServiceExplorer
-                  items={services.items.map((service) => {
-                    const related = coursesByService.get(service.id);
-                    return {
-                      id: service.id,
-                      tab: (
-                        <>
-                          <span className="bg-surface-muted text-ink text-title-sm grid size-12 shrink-0 place-items-center rounded-full">
-                            {hasServiceIcon(service.icon) ? (
-                              <ServiceIcon name={service.icon} weight="regular" />
-                            ) : null}
-                          </span>
-                          <span className="text-title font-heading text-balance">
-                            {service.title}
-                          </span>
-                        </>
-                      ),
-                      panel: (
-                        <div className="flex flex-col gap-6">
-                          <div
-                            data-panel-part
-                            className="relative aspect-16/10 overflow-hidden rounded-lg"
-                          >
-                            {service.cover ? (
-                              <MediaFrame
-                                media={service.cover}
-                                ratio="fill"
-                                sizes="(min-width: 1024px) 50vw, 100vw"
-                                missingLabel={t('preview.photoSection')}
-                                className="absolute inset-0 size-full"
-                              />
-                            ) : (
-                              <div className="ok-tile text-primary absolute inset-0 grid place-items-center">
-                                <ServiceIcon
-                                  name={service.icon}
-                                  weight="thin"
-                                  className="size-1/3"
-                                />
-                              </div>
-                            )}
-                          </div>
-                          {service.shortDescription ? (
-                            <p data-panel-part className="text-lead text-pretty">
-                              {service.shortDescription}
-                            </p>
-                          ) : null}
-                          {related ? (
-                            <a
-                              data-panel-part
-                              href="#academy"
-                              className="text-body text-primary inline-flex min-h-11 items-center gap-2 self-start font-medium hover:underline hover:underline-offset-4"
-                            >
-                              {t('academy.related', { course: related.title })}
-                              <ArrowRightIcon aria-hidden />
-                            </a>
-                          ) : null}
-                        </div>
-                      ),
-                    };
-                  })}
-                />
-              </div>
+              <ol
+                data-journey
+                className="ok-journey"
+                style={{ '--steps': services.items.length } as CSSProperties}
+              >
+                {services.items.map((service) => {
+                  const related = coursesByService.get(service.id);
+                  return (
+                    <li key={service.id} data-journey-step data-reveal className="ok-step">
+                      <span aria-hidden className="ok-step-node">
+                        {hasServiceIcon(service.icon) ? (
+                          <ServiceIcon name={service.icon} weight="regular" />
+                        ) : null}
+                      </span>
+                      <div className="ok-step-card">
+                        <h3 className="text-title-sm xl:text-title font-heading text-balance">
+                          {service.title}
+                        </h3>
+                        {service.shortDescription ? (
+                          <p className="text-body text-ink-muted text-pretty">
+                            {service.shortDescription}
+                          </p>
+                        ) : null}
+                        {service.cover ? (
+                          <MediaFrame
+                            media={service.cover}
+                            ratio="3/2"
+                            sizes="(min-width: 1024px) 16rem, 80vw"
+                            missingLabel={t('preview.photoSection')}
+                            className="mt-1 rounded-(--ok-radius-thumb)"
+                          />
+                        ) : null}
+                        {related ? (
+                          <a href="#academy" className="ok-step-course">
+                            <GraduationCapIcon aria-hidden className="mt-0.5 shrink-0" />
+                            <span>{t('academy.related', { course: related.title })}</span>
+                          </a>
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
             </div>
           </section>
         ) : null}
@@ -597,7 +596,7 @@ export async function OpenKitchen({ locale, content }: OpenKitchenProps) {
                       className="w-(--ok-rail-card) shrink-0 snap-start"
                     >
                       <article className="group flex flex-col gap-5">
-                        <div className="relative aspect-4/3 overflow-hidden rounded-lg">
+                        <div className="ease-brand group-hover:shadow-card relative aspect-4/3 overflow-hidden rounded-lg transition duration-500 group-hover:-translate-y-1">
                           {project.cover ? (
                             <MediaFrame
                               media={project.cover}
@@ -776,6 +775,8 @@ export async function OpenKitchen({ locale, content }: OpenKitchenProps) {
                     ]),
                     playLabel: t('videos.playTitle', { title: video.title }),
                     youtubeId: youtubeId(video.youtubeUrl),
+                    youtubeUrl: video.youtubeUrl,
+                    youtubeLabel: t('videos.watchOnYouTube', { title: video.title }),
                     poster: (
                       <VideoPoster
                         youtubeUrl={video.youtubeUrl}

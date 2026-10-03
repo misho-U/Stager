@@ -1,6 +1,7 @@
 'use client';
 
 import { InfoIcon } from '@phosphor-icons/react/dist/csr/Info';
+import { YoutubeLogoIcon } from '@phosphor-icons/react/dist/csr/YoutubeLogo';
 import Image from 'next/image';
 import type { ReactNode } from 'react';
 
@@ -68,6 +69,49 @@ export function VideoPoster({
         placeholder
       )}
     </div>
+  );
+}
+
+/**
+ * The title, and whatever else a design writes, on a video's frame before it
+ * plays. It gives way to the picture when a mouse rests on the frame (the
+ * frame carries `data-video-card`; see `.video-caption` in globals.css) and
+ * never takes a click: the Play under it does. The design draws the scrim.
+ */
+export function VideoCaption({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={cn('video-caption pointer-events-none absolute inset-x-0 bottom-0', className)}>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Opens the video on YouTube, in a new tab, for whoever would rather watch it
+ * there. Only for an entry with a link; the design places and colours it.
+ */
+export function WatchOnYouTube({
+  youtubeUrl,
+  label,
+  className,
+}: {
+  youtubeUrl: string | null;
+  /** "Watch on YouTube: <title>", its accessible name. */
+  label: string;
+  className?: string;
+}) {
+  if (!youtubeUrl || !youtubeId(youtubeUrl)) return null;
+  return (
+    <a
+      href={youtubeUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={label}
+      className={className}
+    >
+      <YoutubeLogoIcon aria-hidden weight="fill" size="1.25em" />
+      YouTube
+    </a>
   );
 }
 

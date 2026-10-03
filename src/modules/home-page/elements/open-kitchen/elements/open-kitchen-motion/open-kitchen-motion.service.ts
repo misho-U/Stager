@@ -91,6 +91,34 @@ export function useOpenKitchenMotion(scope: RefObject<HTMLElement | null>) {
       });
     }
 
+    // --- The services' journey: the line fills from stage to stage as the
+    //     section is read, and each stage it reaches is marked. ---
+    const journey = root.querySelector<HTMLElement>('[data-journey]');
+    const steps = journey ? [...journey.querySelectorAll<HTMLElement>('[data-journey-step]')] : [];
+    if (journey && steps.length > 1) {
+      const span = steps.length - 1;
+      const draw = (progress: number) => {
+        const at = progress * span;
+        steps.forEach((step, index) => {
+          step.style.setProperty('--fill', String(gsap.utils.clamp(0, 1, at - index)));
+          step.toggleAttribute('data-reached', at >= index - 0.001);
+        });
+      };
+      const trigger = ScrollTrigger.create({
+        trigger: journey,
+        ...OK_MOTION.journey,
+        onUpdate: (self) => draw(self.progress),
+        onRefresh: (self) => draw(self.progress),
+      });
+      cleanups.push(() => {
+        trigger.kill();
+        for (const step of steps) {
+          step.style.removeProperty('--fill');
+          step.removeAttribute('data-reached');
+        }
+      });
+    }
+
     // --- The footer's wordmark rises letter by letter as the page ends. ---
     const mark = root.querySelector<HTMLElement>('[data-ok-footer-mark]');
     if (mark) {

@@ -135,6 +135,7 @@
     "latest": "ახალი ვიდეო",
     "nowPlaying": "ახლა ჩართულია",
     "allOnYouTube": "ყველა ვიდეო YouTube-ზე",
+    "watchOnYouTube": "YouTube-ზე ნახვა: {title}",
     "unavailable": "ეს ნიმუშია. ვიდეო აქ ჩაირთვება, როცა მისი YouTube ბმული ადმინ პანელში დაემატება.",
     "close": "ვიდეოს დახურვა",
     "list": "ეპიზოდები"

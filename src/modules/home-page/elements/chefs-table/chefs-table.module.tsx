@@ -3,6 +3,7 @@ import { ArrowUpRightIcon } from '@phosphor-icons/react/dist/ssr/ArrowUpRight';
 import { ChefHatIcon } from '@phosphor-icons/react/dist/ssr/ChefHat';
 import { ClockIcon } from '@phosphor-icons/react/dist/ssr/Clock';
 import { GlobeSimpleIcon } from '@phosphor-icons/react/dist/ssr/GlobeSimple';
+import { GraduationCapIcon } from '@phosphor-icons/react/dist/ssr/GraduationCap';
 import { MapPinIcon } from '@phosphor-icons/react/dist/ssr/MapPin';
 import { MicrophoneIcon } from '@phosphor-icons/react/dist/ssr/Microphone';
 import { PlayIcon } from '@phosphor-icons/react/dist/ssr/Play';
@@ -34,7 +35,7 @@ import { hasServiceIcon, ServiceIcon } from '@/shared/components/service-icon';
 import { SocialLinks } from '@/shared/components/social-links';
 import { Wordmark } from '@/shared/components/wordmark';
 import { cn } from '@/shared/lib/cn';
-import { isBlankHtml, joinMeta } from '@/shared/lib/content';
+import { isBlankHtml, joinMeta, plainTextLength } from '@/shared/lib/content';
 import { youtubeId } from '@/shared/lib/youtube';
 import type { ListResponse } from '@/shared/types/api';
 import type { DbLocale } from '@/shared/types/enums';
@@ -46,7 +47,7 @@ import type { RegistrationCourse } from '@/widgets/course-registration/course-re
 import { INQUIRY_ANCHOR } from '@/widgets/inquiry-form/inquiry-form.constants';
 import { InquiryForm } from '@/widgets/inquiry-form/inquiry-form.module';
 import { LanguageSwitcher } from '@/widgets/language-switcher/language-switcher.module';
-import { VideoPoster } from '@/widgets/video-player/video-player.module';
+import { VideoCaption, VideoPoster, WatchOnYouTube } from '@/widgets/video-player/video-player.module';
 
 type ChefsTableProps = {
   locale: DbLocale;
@@ -73,6 +74,9 @@ const CHIP =
   'text-body-sm bg-surface-muted text-ink-muted inline-flex min-h-8 items-center gap-1.5 rounded-full px-3';
 const PLAY_DISC =
   'bg-primary text-on-primary ease-brand flex items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110';
+
+/** Up to this many characters, the intro is set as one large statement. */
+const INTRO_STATEMENT_MAX = 220;
 
 const KIND_ICONS: Record<VideoKind, typeof VideoCameraIcon> = {
   episode: VideoCameraIcon,
@@ -201,6 +205,8 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
   const nextCourse = courses.items.find((course) => course.seatsLeft !== 0) ?? courses.items[0];
   const [newest, ...olderVideos] = videos.items;
 
+  // A short intro reads as one statement, set large; a long one as text.
+  const introIsStatement = plainTextLength(section.intro?.body) <= INTRO_STATEMENT_MAX;
   const coursesByService = relatedCourses(services.items, courses.items);
   const categories = [...new Set(courses.items.map((course) => course.category))];
   const tabs = [
@@ -360,31 +366,6 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
           </div>
         </section>
 
-        {/* --- The ticker: what we do, running past (decoration; the services follow) --- */}
-        {showServices ? (
-          <div aria-hidden data-decorative className="border-line overflow-hidden border-y py-6 sm:py-8">
-            <div data-ticker-track className="flex w-max items-center">
-              {[0, 1].map((copy) => (
-                <div key={copy} className="flex shrink-0 items-center gap-10 pr-10">
-                  {services.items.map((service, index) => (
-                    <span key={service.id} className="flex items-center gap-10">
-                      <span
-                        className={cn(
-                          'text-headline font-hero stretch-hero whitespace-nowrap',
-                          index % 2 === 1 && 'ct-outline',
-                        )}
-                      >
-                        {service.title}
-                      </span>
-                      <ServiceIcon name={service.icon} className="text-accent text-title" />
-                    </span>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
         {/* --- Who STAGER is, lighting up as it is read --- */}
         {section.intro ? (
           <section id="about" aria-labelledby="about-title" className="px-gutter py-section">
@@ -404,7 +385,13 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                   />
                 ) : (
                   <div data-read-along>
-                    <RichText html={section.intro.body} className="text-title-lg text-pretty" />
+                    <RichText
+                      html={section.intro.body}
+                      className={cn(
+                        'text-pretty',
+                        introIsStatement ? 'ct-statement' : 'text-title-lg',
+                      )}
+                    />
                   </div>
                 )}
                 {section.intro.media ? (
@@ -423,10 +410,11 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
           </section>
         ) : null}
 
-        {/* --- Services: one card over the next --- */}
+        {/* --- Services: one card over the next, under an index of them all
+            that stays in view, marks the one in front and jumps to any --- */}
         {showServices ? (
           <section id="services" aria-labelledby="services-title" className="px-gutter py-section">
-            <div className="max-w-page mx-auto flex flex-col gap-12">
+            <div data-stack-section className="max-w-page mx-auto flex flex-col gap-10">
               <div data-reveal>
                 <SectionHeader
                   id="services-title"
@@ -434,30 +422,48 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                   description={section.services?.subheading}
                 />
               </div>
+              <nav aria-label={servicesTitle} data-stack-index className="ct-index">
+                <ol className="ct-index-list">
+                  {services.items.map((service) => (
+                    <li key={service.id}>
+                      <a href={`#service-${service.slug}`} data-index-link className="ct-index-link">
+                        {hasServiceIcon(service.icon) ? (
+                          <ServiceIcon name={service.icon} className="shrink-0" />
+                        ) : null}
+                        <span className="whitespace-nowrap">{service.title}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ol>
+              </nav>
               <ol data-stack className="flex flex-col gap-6">
                 {services.items.map((service, index) => {
                   const related = coursesByService.get(service.id);
+                  // The card's second half: the service's photo; failing that,
+                  // the Academy course on its subject; failing both, its mark.
+                  const stub = !service.cover && related ? related : null;
                   return (
                     <li
                       key={service.id}
+                      id={`service-${service.slug}`}
                       data-stack-card
                       style={{ '--stack-index': index } as CSSProperties}
                     >
                       <article
                         data-stack-face
-                        className="ct-spot bg-surface-raised grid gap-8 overflow-hidden rounded-lg p-6 sm:p-10 lg:grid-cols-12 lg:gap-10 lg:p-14"
+                        className="ct-spot bg-surface-raised grid gap-8 overflow-hidden rounded-lg p-6 sm:p-10 lg:grid-cols-12 lg:gap-12 lg:p-14"
                       >
-                        <div className="flex flex-col gap-6 lg:col-span-6">
+                        <div className="flex flex-col gap-5 lg:col-span-7">
                           {hasServiceIcon(service.icon) ? (
-                            <ServiceIcon name={service.icon} className="text-accent text-headline" />
+                            <ServiceIcon name={service.icon} className="text-accent text-title-lg" />
                           ) : null}
                           <h3 className={H2}>{service.title}</h3>
                           {service.shortDescription ? (
-                            <p className="text-lead text-ink-muted text-pretty">
+                            <p className="text-lead text-ink-muted max-w-2xl text-pretty">
                               {service.shortDescription}
                             </p>
                           ) : null}
-                          {related ? (
+                          {related && !stub ? (
                             <a
                               href="#academy"
                               className="text-body text-accent mt-auto inline-flex min-h-11 items-center self-start font-medium text-pretty hover:underline hover:underline-offset-4"
@@ -469,28 +475,59 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                             </a>
                           ) : null}
                         </div>
-                        <div
-                          className={cn(
-                            'relative min-h-60 overflow-hidden rounded-lg lg:col-span-6',
-                            // Without a photo the tile only repeats the icon:
-                            // a phone, short of room, goes without it.
-                            !service.cover && 'max-lg:hidden',
-                          )}
-                        >
+                        <div className="lg:col-span-5">
                           {service.cover ? (
-                            <MediaFrame
-                              media={service.cover}
-                              ratio="fill"
-                              sizes="(min-width: 1024px) 40vw, 100vw"
-                              missingLabel={t('preview.photoSection')}
-                              className="absolute inset-0 size-full"
-                            />
+                            <div className="relative aspect-4/3 overflow-hidden rounded-lg lg:aspect-auto lg:h-full">
+                              <MediaFrame
+                                media={service.cover}
+                                ratio="fill"
+                                sizes="(min-width: 1024px) 34vw, 100vw"
+                                missingLabel={t('preview.photoSection')}
+                                className="absolute inset-0 size-full"
+                              />
+                            </div>
+                          ) : stub ? (
+                            <a
+                              href="#academy"
+                              aria-label={t('academy.related', { course: stub.title })}
+                              className="ct-course-stub"
+                            >
+                              <span className="text-body-sm text-accent flex items-center gap-2 font-medium">
+                                <GraduationCapIcon aria-hidden size="1.25em" />
+                                {t('academy.title')}
+                              </span>
+                              <span className="text-title font-heading stretch-heading text-balance">
+                                {stub.title}
+                              </span>
+                              <span className="text-body-sm text-ink-muted">
+                                {joinMeta([
+                                  date(stub.startsAt, { day: 'numeric', month: 'long' }),
+                                  stub.location ?? t(`academy.formats.${stub.format}`),
+                                ])}
+                              </span>
+                              <span className="border-line-strong mt-auto flex items-end justify-between gap-4 border-t border-dashed pt-5">
+                                <span className="flex flex-col">
+                                  <span className="text-title-sm font-heading tabular-nums">
+                                    {price(stub.priceGel)}
+                                  </span>
+                                  <span className="text-body-sm text-ink-muted">
+                                    {seats(stub.seatsLeft)}
+                                  </span>
+                                </span>
+                                <span className="ct-stub-arrow">
+                                  <ArrowRightIcon aria-hidden />
+                                </span>
+                              </span>
+                            </a>
                           ) : (
-                            <div className="ct-poster absolute inset-0 grid place-items-center">
+                            <div
+                              aria-hidden
+                              className="ct-poster grid aspect-4/3 place-items-center rounded-lg max-lg:hidden lg:aspect-auto lg:h-full"
+                            >
                               <ServiceIcon
                                 name={service.icon}
                                 weight="thin"
-                                className="text-accent size-1/3"
+                                className="text-accent size-1/4"
                               />
                             </div>
                           )}
@@ -714,12 +751,14 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                 />
               </div>
 
-              <article
-                data-reveal
-                data-video-card
-                className="grid gap-6 lg:grid-cols-12 lg:items-end lg:gap-10"
-              >
-                <div className="ct-spot relative aspect-video overflow-hidden rounded-lg lg:col-span-8">
+              {/* The newest, large: its title on the frame on a phone, where
+                  room is short, and beside it, from the frame's top, on a
+                  wide screen. */}
+              <article data-reveal className="grid gap-6 lg:grid-cols-12 lg:items-start lg:gap-10">
+                <div
+                  data-video-card
+                  className="ct-spot relative aspect-video overflow-hidden rounded-lg lg:col-span-8"
+                >
                   <div data-poster className="absolute inset-0">
                     <VideoPoster
                       youtubeUrl={newest.youtubeUrl}
@@ -727,18 +766,31 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                       placeholder={<PosterPlaceholder kind={newest.kind} />}
                     />
                   </div>
+                  <VideoCaption className="ct-caption lg:hidden">
+                    <p className="text-caption sm:text-body-sm ct-caption-meta">
+                      {videoMeta(newest)}
+                    </p>
+                    <p className="text-title-sm sm:text-title font-heading stretch-heading line-clamp-2 text-balance">
+                      {newest.title}
+                    </p>
+                  </VideoCaption>
                   <PlayButton
                     videoId={newest.id}
                     label={t('videos.playTitle', { title: newest.title })}
                     growFrom="[data-poster]"
-                    className="group absolute inset-0 flex items-center justify-center"
+                    className="group absolute inset-0 flex items-center justify-center max-lg:pb-(--ct-play-lift)"
                   >
-                    <span className={`${PLAY_DISC} size-(--ct-play)`}>
-                      <PlayIcon aria-hidden weight="fill" size="1.75rem" />
+                    <span className={`${PLAY_DISC} size-(--ct-play-sm) sm:size-(--ct-play)`}>
+                      <PlayIcon aria-hidden weight="fill" size="1.5rem" />
                     </span>
                   </PlayButton>
+                  <WatchOnYouTube
+                    youtubeUrl={newest.youtubeUrl}
+                    label={t('videos.watchOnYouTube', { title: newest.title })}
+                    className="ct-youtube absolute top-3 right-3 sm:top-4 sm:right-4"
+                  />
                 </div>
-                <div className="flex flex-col gap-3 lg:col-span-4">
+                <div className="flex flex-col gap-4 max-lg:sr-only lg:col-span-4">
                   <p className="text-body-sm text-ink-muted">
                     {joinMeta([videoMeta(newest), longDate(newest.publishedAt)])}
                   </p>
@@ -778,12 +830,17 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                               <PlayIcon aria-hidden weight="fill" size="1.25rem" />
                             </span>
                           </PlayButton>
+                          <span className="ct-tag absolute top-3 left-3">{videoMeta(video)}</span>
                         </div>
-                        <div className="flex flex-col gap-2">
-                          <p className="text-body-sm text-ink-muted">{videoMeta(video)}</p>
+                        <div className="flex items-start justify-between gap-3">
                           <h3 className="text-title-sm font-heading stretch-heading text-balance">
                             {video.title}
                           </h3>
+                          <WatchOnYouTube
+                            youtubeUrl={video.youtubeUrl}
+                            label={t('videos.watchOnYouTube', { title: video.title })}
+                            className="ct-youtube-quiet shrink-0"
+                          />
                         </div>
                       </article>
                     </li>
@@ -964,6 +1021,7 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
           id: video.id,
           title: video.title,
           meta: joinMeta([videoMeta(video), longDate(video.publishedAt)]),
+          summary: video.summary,
           youtubeId: youtubeId(video.youtubeUrl),
         }))}
         labels={{ close: t('videos.close'), unavailable: t('videos.unavailable') }}
