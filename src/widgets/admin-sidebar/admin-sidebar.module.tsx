@@ -41,7 +41,7 @@ export function AdminSidebar({ email, name, role }: AdminSidebarProps) {
         <AdminThemeSwitch />
       </div>
 
-      <div className="flex flex-1 flex-col gap-5 lg:gap-4">
+      <div className="flex flex-1 flex-col gap-5 lg:gap-3">
         {ADMIN_NAV_GROUPS.map((group) => (
           <div key={group} className="flex flex-col gap-0.5 lg:gap-0">
             <p className="px-2 pb-1 text-caption font-medium tracking-wider text-ink-subtle uppercase lg:pb-0.5">
@@ -53,7 +53,9 @@ export function AdminSidebar({ email, name, role }: AdminSidebarProps) {
                 href={item.href}
                 aria-current={isActive(item.href) ? 'page' : undefined}
                 className={cn(
-                  'rounded-md px-2 py-1.5 text-body-sm transition-colors lg:py-1',
+                  // 3px on wide screens: eleven rows still fit a 1366×600
+                  // window, and each stays taller than the 24px minimum target.
+                  'rounded-md px-2 py-1.5 text-body-sm transition-colors lg:py-0.75',
                   isActive(item.href)
                     ? 'bg-primary text-on-primary'
                     : 'text-ink-muted hover:bg-surface-muted hover:text-ink',

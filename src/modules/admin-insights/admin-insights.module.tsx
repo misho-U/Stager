@@ -93,9 +93,16 @@ export function AdminInsightsModule() {
         title={t('insights.title')}
         description={t('insights.description')}
         actions={
-          <Link href="/admin/insights/new">
-            <Button>{t('insights.new')}</Button>
-          </Link>
+          <>
+            {/* Article categories live here, not in the sidebar: with course
+                categories as well, a bare "Categories" there was ambiguous. */}
+            <Link href="/admin/insights/categories">
+              <Button variant="secondary">{t('insights.categoriesLink')}</Button>
+            </Link>
+            <Link href="/admin/insights/new">
+              <Button>{t('insights.new')}</Button>
+            </Link>
+          </>
         }
       />
 

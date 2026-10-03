@@ -1,14 +1,16 @@
+import type { PublicCourse } from '@/entity/course/model/course.model';
 import type { PublicInsightListItem } from '@/entity/insight/model/insight.model';
 import {
   DEFAULT_HOME_VARIANT,
   HOME_VARIANTS,
   type HomeVariant,
 } from '@/modules/home-page/home-page.constants';
-import { sampleCourses, sampleVideos } from '@/modules/home-page/home-page.samples';
+import { orSamples, sampleCourses, sampleVideos } from '@/modules/home-page/home-page.samples';
 import type { PublicPage } from '@/entity/page/model/page.model';
 import type { PublicProjectListItem } from '@/entity/project/model/project.model';
 import type { PublicService } from '@/entity/service/model/service.model';
 import type { PublicLayoutData } from '@/entity/site-setting/model/site-setting.model';
+import type { PublicVideo } from '@/entity/video/model/video.model';
 import type { ListResponse } from '@/shared/types/api';
 import type { DbLocale } from '@/shared/types/enums';
 import { collectionTag, detailTag, LAYOUT_TAG, PUBLIC_REVALIDATE_SECONDS } from '@pkg/cache/tags';
@@ -42,7 +44,7 @@ async function read<T>(label: string, request: Promise<T>, fallback: T): Promise
 }
 
 export async function loadHomePageData(locale: DbLocale) {
-  const [layout, page, projects, services, insights] = await Promise.all([
+  const [layout, page, projects, services, insights, courses, videos] = await Promise.all([
     read<PublicLayoutData | null>(
       'layout',
       serverFetch<PublicLayoutData>(`/api/public/layout?locale=${locale}`, {
@@ -93,6 +95,27 @@ export async function loadHomePageData(locale: DbLocale) {
       ),
       { items: [], total: 0 },
     ),
+
+    // A course leaves this list once its start date has passed. The API
+    // decides that per request, so a cached copy can show one for up to
+    // PUBLIC_REVALIDATE_SECONDS after Tbilisi midnight.
+    read<ListResponse<PublicCourse>>(
+      'courses',
+      serverFetch<ListResponse<PublicCourse>>(`/api/public/courses?locale=${locale}`, {
+        tags: [collectionTag('course')],
+        revalidate: PUBLIC_REVALIDATE_SECONDS,
+      }),
+      { items: [], total: 0 },
+    ),
+
+    read<ListResponse<PublicVideo>>(
+      'videos',
+      serverFetch<ListResponse<PublicVideo>>(`/api/public/videos?locale=${locale}&limit=6`, {
+        tags: [collectionTag('video')],
+        revalidate: PUBLIC_REVALIDATE_SECONDS,
+      }),
+      { items: [], total: 0 },
+    ),
   ]);
 
   return {
@@ -101,15 +124,18 @@ export async function loadHomePageData(locale: DbLocale) {
     projects: projects.data,
     services: services.data,
     insights: insights.data,
-    // TEMPORARY: the dashboard has no courses or videos yet (round-4 design
-    // comparison). `sample` puts a "Sample" badge on both sections; it goes
-    // when these become reads like the ones above.
-    courses: { items: sampleCourses(locale), sample: true },
-    videos: { items: sampleVideos(locale), sample: true },
+    courses: orSamples(courses, () => sampleCourses(locale, services.data.items)),
+    videos: orSamples(videos, () => sampleVideos(locale)),
     /** True when any read failed, so the page can say so instead of
      *  rendering placeholder copy that looks like real content. */
     readFailed:
-      layout.failed || page.failed || projects.failed || services.failed || insights.failed,
+      layout.failed ||
+      page.failed ||
+      projects.failed ||
+      services.failed ||
+      insights.failed ||
+      courses.failed ||
+      videos.failed,
   };
 }
 

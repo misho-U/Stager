@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 
 /**
  * TEMPORARY — the home page designs under comparison (round 4, `?v=1`, `?v=2`).
@@ -178,6 +178,13 @@ async function contrastFindings(page: Page): Promise<Finding[]> {
   });
 }
 
+/** Whether the dashboard holds entries of its own there, in which case no samples show. */
+async function dashboardHas(request: APIRequestContext, list: 'courses' | 'videos') {
+  const response = await request.get(`/api/public/${list}?locale=EN`);
+  expect(response.ok()).toBeTruthy();
+  return ((await response.json()) as { items: unknown[] }).items.length > 0;
+}
+
 async function openVariant(page: Page, locale: string, variant: string) {
   // The settled page: sections that rise into view as they are scrolled to
   // would otherwise still be invisible below the fold, and the contrast scan
@@ -338,10 +345,20 @@ for (const variant of VARIANTS) {
  */
 for (const variant of VARIANTS) {
   test.describe(`design ${variant}: the Academy and the videos`, () => {
-    test('are marked as samples while the dashboard has none', async ({ page }) => {
+    test('are marked as samples while the dashboard has none', async ({ page, request }) => {
+      const [hasCourses, hasVideos] = await Promise.all([
+        dashboardHas(request, 'courses'),
+        dashboardHas(request, 'videos'),
+      ]);
       await openVariant(page, 'en', variant);
-      await expect(page.locator('#academy [data-testid="sample-badge"]').first()).toBeVisible();
-      await expect(page.locator('#videos [data-testid="sample-badge"]').first()).toBeVisible();
+      for (const [section, real] of [
+        ['#academy', hasCourses],
+        ['#videos', hasVideos],
+      ] as const) {
+        const badge = page.locator(`${section} [data-testid="sample-badge"]`);
+        if (real) await expect(badge).toHaveCount(0);
+        else await expect(badge.first()).toBeVisible();
+      }
     });
 
     test('Register opens the inquiry form, preset to the course', async ({ page }) => {
@@ -362,7 +379,14 @@ for (const variant of VARIANTS) {
       await expect(register).toBeFocused();
     });
 
-    test('a video without a link says it is a sample instead of playing', async ({ page }) => {
+    test('a video without a link says it is a sample instead of playing', async ({
+      page,
+      request,
+    }) => {
+      test.skip(
+        await dashboardHas(request, 'videos'),
+        'The dashboard has videos; no samples show.',
+      );
       await openVariant(page, 'en', variant);
       await page.locator('#videos button[aria-label^="Play"]:visible').first().click();
       await expect(
@@ -375,6 +399,10 @@ for (const variant of VARIANTS) {
 test.describe('design 1: exploring in place', () => {
   test('the Academy filter shows one category, and All brings the rest back', async ({ page }) => {
     await openVariant(page, 'en', '1');
+    test.skip(
+      (await page.locator('#academy [aria-pressed]').count()) < 2,
+      'No categories to filter by.',
+    );
     const rows = page.locator('[data-testid="course-list"] > li:visible');
     const total = await rows.count();
     const chip = page.locator('#academy [aria-pressed]').nth(1);
@@ -388,7 +416,9 @@ test.describe('design 1: exploring in place', () => {
 
   test('choosing an episode writes its title on the player', async ({ page }) => {
     await openVariant(page, 'en', '1');
-    const episode = page.locator('#videos ol button').nth(2);
+    const episodes = page.locator('#videos ol button');
+    test.skip((await episodes.count()) < 3, 'Needs three videos or more.');
+    const episode = episodes.nth(2);
     const title = (await episode.locator('[data-episode-title]').textContent())?.trim() ?? '';
     await episode.click();
     await expect(episode).toHaveAttribute('aria-current', 'true');
@@ -413,6 +443,10 @@ test.describe('design 1: exploring in place', () => {
 test.describe('design 2: the tickets, the screening room and the menu', () => {
   test('the Academy tabs show one category, and All brings the rest back', async ({ page }) => {
     await openVariant(page, 'en', '2');
+    test.skip(
+      (await page.locator('#academy [aria-pressed]').count()) < 2,
+      'No categories to filter by.',
+    );
     const tickets = page.locator('[data-testid="course-list"] > li:visible');
     const total = await tickets.count();
     const tab = page.locator('#academy [aria-pressed]').nth(1);
@@ -426,7 +460,9 @@ test.describe('design 2: the tickets, the screening room and the menu', () => {
 
   test('a video opens full screen, and Escape returns to its card', async ({ page }) => {
     await openVariant(page, 'en', '2');
-    const card = page.locator('#videos ul [data-video-card]').first();
+    const cards = page.locator('#videos ul [data-video-card]');
+    test.skip((await cards.count()) === 0, 'Needs two videos or more.');
+    const card = cards.first();
     const title = (await card.locator('h3').textContent())?.trim() ?? '';
     const play = card.locator('[data-play]');
     await play.click();
@@ -461,7 +497,10 @@ test.describe('design 2: the tickets, the screening room and the menu', () => {
   });
 
   test('the newest video is described from the top of its frame', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'chromium', 'the description sits beside the frame on a desktop');
+    test.skip(
+      testInfo.project.name !== 'chromium',
+      'the description sits beside the frame on a desktop',
+    );
     await openVariant(page, 'en', '2');
     const frame = page.locator('#videos [data-video-card]').first();
     const heading = page.locator('#videos article').first().locator('h3');

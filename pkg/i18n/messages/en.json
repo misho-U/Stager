@@ -95,15 +95,9 @@
     "intro": "Courses for chefs, kitchen teams and the people who run them.",
     "filterLabel": "Show courses",
     "all": "All",
-    "categories": {
-      "kitchen": "Kitchen",
-      "management": "Management",
-      "food-safety": "Food safety",
-      "hospitality": "Hospitality"
-    },
     "formats": {
-      "in-person": "In person",
-      "online": "Online"
+      "IN_PERSON": "In person",
+      "ONLINE": "Online"
     },
     "seatsLeft": "{count, plural, one {# seat left} other {# seats left}}",
     "full": "Fully booked",
@@ -111,13 +105,16 @@
     "register": "Register",
     "waitlist": "Waitlist",
     "starts": "Starts {date}",
+    "dateTba": "Date to be announced",
     "next": "Next course",
     "count": "{count, plural, one {# course} other {# courses}}",
     "registerTitle": "Register for a course",
     "waitlistTitle": "Join the waiting list",
     "registerHint": "Leave your details and we will confirm your place.",
     "registerMessage": "I would like to register for \"{course}\", starting {date}.",
+    "registerMessageUndated": "I would like to register for \"{course}\".",
     "waitlistMessage": "I would like to join the waiting list for \"{course}\", starting {date}.",
+    "waitlistMessageUndated": "I would like to join the waiting list for \"{course}\".",
     "close": "Close",
     "related": "At the Academy: {course}"
   },
@@ -125,9 +122,9 @@
     "title": "Videos",
     "intro": "Episodes, conversations and masterclasses from our kitchens and projects.",
     "kinds": {
-      "episode": "Episode",
-      "podcast": "Podcast",
-      "masterclass": "Masterclass"
+      "EPISODE": "Episode",
+      "PODCAST": "Podcast",
+      "MASTERCLASS": "Masterclass"
     },
     "play": "Play",
     "playTitle": "Play: {title}",

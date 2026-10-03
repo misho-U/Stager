@@ -1,15 +1,16 @@
 import type { PublicCourse } from '@/entity/course/model/course.model';
+import type { PublicService } from '@/entity/service/model/service.model';
 import type { PublicVideo } from '@/entity/video/model/video.model';
+import { todayInTbilisi } from '@/shared/lib/calendar-date';
 import type { DbLocale } from '@/shared/types/enums';
 
 /**
- * TEMPORARY: sample Academy courses and videos for the round-4 design
- * comparison.
+ * TEMPORARY: sample Academy courses and videos for the design comparison.
  *
- * The dashboard cannot hold courses or videos yet, and both designs need some
- * to be judged. These entries are invented, so every section that shows them
- * says so on the page ("Sample"). They go the moment the dashboard supplies
- * real ones; never ship them to production as content.
+ * Both designs need some to be judged before the dashboard holds real ones.
+ * These entries are invented, so every section that shows them says so on the
+ * page ("Sample"), and the first real entry in the dashboard replaces them
+ * (`orSamples`, home-page.service.ts). Never ship them to production as content.
  *
  * Dates are counted from today, so the timetable never shows a course that
  * has already started. No video has a link: a sample cannot point at a real
@@ -21,17 +22,64 @@ type Localised<T> = Record<DbLocale, T>;
 type CourseText = Pick<PublicCourse, 'title' | 'summary' | 'duration' | 'location'>;
 type VideoText = Pick<PublicVideo, 'title' | 'summary'>;
 
+/** The Academy's sample filters; real ones are the course categories in the dashboard. */
+type SampleCategory = 'kitchen' | 'management' | 'food-safety' | 'hospitality';
+
+const CATEGORY_NAMES: Localised<Record<SampleCategory, string>> = {
+  EN: {
+    kitchen: 'Kitchen',
+    management: 'Management',
+    'food-safety': 'Food safety',
+    hospitality: 'Hospitality',
+  },
+  KA: {
+    kitchen: 'სამზარეულო',
+    management: 'მენეჯმენტი',
+    'food-safety': 'სურსათის უვნებლობა',
+    hospitality: 'სტუმარმასპინძლობა',
+  },
+};
+
+/**
+ * Which sample subject teaches what a service does, by the service's icon key
+ * (the one stable key a service has besides its slug). A real course names its
+ * service in the dashboard instead.
+ */
+const CATEGORY_BY_SERVICE_ICON: Partial<Record<string, SampleCategory>> = {
+  concept: 'management',
+  menu: 'management',
+  kitchen: 'kitchen',
+  training: 'hospitality',
+  haccp: 'food-safety',
+};
+
+/** A section's entries, and whether they are invented ones shown in their place. */
+export type SectionItems<T> = { items: T[]; sample: boolean };
+
+/**
+ * The Academy and the videos show samples, marked "Sample" on the page, while
+ * the dashboard holds none of their own; the first real entry replaces them
+ * all. A FAILED read shows nothing instead: invented entries standing in for
+ * content that did not load would hide the outage.
+ */
+export function orSamples<T>(
+  read: { data: { items: T[] }; failed: boolean },
+  samples: () => T[],
+): SectionItems<T> {
+  if (read.failed || read.data.items.length > 0) return { items: read.data.items, sample: false };
+  return { items: samples(), sample: true };
+}
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** `days` from today at 10:00 in Tbilisi (06:00 UTC). Negative for the past. */
-function fromToday(days: number): string {
-  const date = new Date();
-  date.setUTCHours(6, 0, 0, 0);
-  return new Date(date.getTime() + days * DAY_MS).toISOString();
+/** The calendar day `days` from today in Tbilisi ("2026-11-15"), negative for the past. */
+function dayFromToday(days: number): string {
+  return todayInTbilisi(new Date(Date.now() + days * DAY_MS));
 }
 
 const COURSES: ReadonlyArray<
-  Omit<PublicCourse, keyof CourseText | 'startsAt' | 'cover'> & {
+  Omit<PublicCourse, keyof CourseText | 'startsAt' | 'cover' | 'category' | 'serviceId'> & {
+    category: SampleCategory;
     inDays: number;
     text: Localised<CourseText>;
   }
@@ -40,7 +88,7 @@ const COURSES: ReadonlyArray<
     id: 'sample-course-haccp',
     slug: 'haccp-for-kitchen-teams',
     category: 'food-safety',
-    format: 'in-person',
+    format: 'IN_PERSON',
     inDays: 9,
     seatsTotal: 16,
     seatsLeft: 4,
@@ -66,7 +114,7 @@ const COURSES: ReadonlyArray<
     id: 'sample-course-menu',
     slug: 'menu-engineering-and-food-cost',
     category: 'management',
-    format: 'in-person',
+    format: 'IN_PERSON',
     inDays: 29,
     seatsTotal: 14,
     seatsLeft: 9,
@@ -92,7 +140,7 @@ const COURSES: ReadonlyArray<
     id: 'sample-course-leadership',
     slug: 'kitchen-leadership-for-head-chefs',
     category: 'kitchen',
-    format: 'in-person',
+    format: 'IN_PERSON',
     inDays: 20,
     seatsTotal: 12,
     seatsLeft: 3,
@@ -118,7 +166,7 @@ const COURSES: ReadonlyArray<
     id: 'sample-course-opening',
     slug: 'opening-a-restaurant-step-by-step',
     category: 'management',
-    format: 'online',
+    format: 'ONLINE',
     inDays: 12,
     seatsTotal: 40,
     seatsLeft: 22,
@@ -144,7 +192,7 @@ const COURSES: ReadonlyArray<
     id: 'sample-course-service',
     slug: 'service-standards-for-front-of-house',
     category: 'hospitality',
-    format: 'in-person',
+    format: 'IN_PERSON',
     inDays: 41,
     seatsTotal: 18,
     seatsLeft: 11,
@@ -170,7 +218,7 @@ const COURSES: ReadonlyArray<
     id: 'sample-course-pastry',
     slug: 'pastry-fundamentals',
     category: 'kitchen',
-    format: 'in-person',
+    format: 'IN_PERSON',
     inDays: 54,
     seatsTotal: 10,
     seatsLeft: 0,
@@ -202,7 +250,7 @@ const VIDEOS: ReadonlyArray<
   {
     id: 'sample-video-kitchen-plan',
     slug: 'planning-a-kitchen',
-    kind: 'episode',
+    kind: 'EPISODE',
     daysAgo: 6,
     durationMinutes: 14,
     text: {
@@ -221,7 +269,7 @@ const VIDEOS: ReadonlyArray<
   {
     id: 'sample-video-food-cost',
     slug: 'food-cost',
-    kind: 'podcast',
+    kind: 'PODCAST',
     daysAgo: 20,
     durationMinutes: 48,
     text: {
@@ -238,7 +286,7 @@ const VIDEOS: ReadonlyArray<
   {
     id: 'sample-video-sauces',
     slug: 'five-sauces',
-    kind: 'masterclass',
+    kind: 'MASTERCLASS',
     daysAgo: 34,
     durationMinutes: 21,
     text: {
@@ -255,7 +303,7 @@ const VIDEOS: ReadonlyArray<
   {
     id: 'sample-video-cafe',
     slug: 'opening-a-cafe',
-    kind: 'episode',
+    kind: 'EPISODE',
     daysAgo: 48,
     durationMinutes: 9,
     text: {
@@ -272,7 +320,7 @@ const VIDEOS: ReadonlyArray<
   {
     id: 'sample-video-hotel',
     slug: 'hotel-food-and-beverage',
-    kind: 'podcast',
+    kind: 'PODCAST',
     daysAgo: 75,
     durationMinutes: 56,
     text: {
@@ -290,23 +338,39 @@ const VIDEOS: ReadonlyArray<
   },
 ];
 
-export function sampleCourses(locale: DbLocale): PublicCourse[] {
-  // Soonest first, as the API will list them.
-  return [...COURSES]
-    .sort((a, b) => a.inDays - b.inDays)
-    .map(({ inDays, text, ...course }) => ({
+export function sampleCourses(
+  locale: DbLocale,
+  services: ReadonlyArray<Pick<PublicService, 'id' | 'icon'>>,
+): PublicCourse[] {
+  // Soonest first, as the API lists them.
+  const courses = [...COURSES].sort((a, b) => a.inDays - b.inDays);
+
+  // Each service points at the next sample course on its subject. Two services
+  // on one subject take different courses; one left without names none.
+  const serviceByCourse = new Map<string, string>();
+  for (const service of services) {
+    const subject = service.icon ? CATEGORY_BY_SERVICE_ICON[service.icon] : undefined;
+    const course = courses.find(
+      (item) => item.category === subject && !serviceByCourse.has(item.id),
+    );
+    if (course) serviceByCourse.set(course.id, service.id);
+  }
+
+  return courses.map(({ inDays, text, category, ...course }) => ({
     ...course,
-      ...text[locale],
-      startsAt: fromToday(inDays),
-      cover: null,
-    }));
+    ...text[locale],
+    category: { slug: category, name: CATEGORY_NAMES[locale][category] },
+    serviceId: serviceByCourse.get(course.id) ?? null,
+    startsAt: dayFromToday(inDays),
+    cover: null,
+  }));
 }
 
 export function sampleVideos(locale: DbLocale): PublicVideo[] {
   return VIDEOS.map(({ daysAgo, text, ...video }) => ({
     ...video,
     ...text[locale],
-    publishedAt: fromToday(-daysAgo),
+    publishedAt: dayFromToday(-daysAgo),
     youtubeUrl: null,
   }));
 }

@@ -7,8 +7,9 @@ export type AdminNavItem = {
     | 'projects'
     | 'insights'
     | 'services'
+    | 'courses'
+    | 'videos'
     | 'team'
-    | 'categories'
     | 'media'
     | 'pages'
     | 'socialLinks'
@@ -23,13 +24,18 @@ export type AdminNavItem = {
  *
  * Ordered by how often each screen is touched, not alphabetically: projects and
  * insights are the day-to-day work, settings is a once-a-quarter visit.
+ *
+ * Categories are reached from the screen they sort (Insights, Courses), not
+ * from here: with two kinds, a bare "Categories" would be ambiguous, and every
+ * row counts against a sidebar sized to fit a laptop screen.
  */
 export const ADMIN_NAV: AdminNavItem[] = [
   { href: '/admin/projects', labelKey: 'projects', group: 'content' },
   { href: '/admin/insights', labelKey: 'insights', group: 'content' },
   { href: '/admin/services', labelKey: 'services', group: 'content' },
+  { href: '/admin/courses', labelKey: 'courses', group: 'content' },
+  { href: '/admin/videos', labelKey: 'videos', group: 'content' },
   { href: '/admin/team', labelKey: 'team', group: 'content' },
-  { href: '/admin/categories', labelKey: 'categories', group: 'content' },
   { href: '/admin/media', labelKey: 'media', group: 'content' },
 
   { href: '/admin/pages', labelKey: 'pages', group: 'site' },

@@ -8,6 +8,7 @@ import {
   mediaIdSchema,
   optionalEmailInput,
   optionalUrlInput,
+  partialUpdate,
   slugSchema,
 } from '@/shared/types/api';
 import { contentStatusSchema } from '@/shared/types/enums';
@@ -75,5 +76,5 @@ export type TeamMemberInput = z.output<typeof teamMemberInputSchema>;
 /** Raw form values, before defaults are applied. See the useForm generics. */
 export type TeamMemberFormValues = z.input<typeof teamMemberInputSchema>;
 
-export const teamMemberUpdateInputSchema = teamMemberInputSchema.partial();
+export const teamMemberUpdateInputSchema = partialUpdate(teamMemberInputSchema);
 export type TeamMemberUpdateInput = z.output<typeof teamMemberUpdateInputSchema>;

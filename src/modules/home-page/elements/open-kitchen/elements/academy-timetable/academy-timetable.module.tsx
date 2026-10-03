@@ -26,24 +26,27 @@ export function AcademyTimetable({ chips, filterLabel, rows }: AcademyTimetableP
 
   return (
     <div className="flex flex-col gap-8">
-      <div
-        role="group"
-        aria-label={filterLabel}
-        className="ok-chips -mx-6 flex gap-2 overflow-x-auto px-6 sm:mx-0 sm:flex-wrap sm:px-0"
-      >
-        {chips.map((chip) => (
-          <button
-            key={chip.id}
-            type="button"
-            aria-pressed={filter === chip.id}
-            onClick={() => choose(chip.id)}
-            className="text-body-sm border-line-input hover:border-ink aria-pressed:bg-ink aria-pressed:border-ink aria-pressed:text-surface-raised inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 font-medium whitespace-nowrap transition-colors"
-          >
-            {chip.label}
-            <span className="tabular-nums opacity-70">{chip.count}</span>
-          </button>
-        ))}
-      </div>
+      {/* "All" alone filters nothing: no categories, no filter. */}
+      {chips.length > 1 ? (
+        <div
+          role="group"
+          aria-label={filterLabel}
+          className="ok-chips -mx-6 flex gap-2 overflow-x-auto px-6 sm:mx-0 sm:flex-wrap sm:px-0"
+        >
+          {chips.map((chip) => (
+            <button
+              key={chip.id}
+              type="button"
+              aria-pressed={filter === chip.id}
+              onClick={() => choose(chip.id)}
+              className="text-body-sm border-line-input hover:border-ink aria-pressed:bg-ink aria-pressed:border-ink aria-pressed:text-surface-raised inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 font-medium whitespace-nowrap transition-colors"
+            >
+              {chip.label}
+              <span className="tabular-nums opacity-70">{chip.count}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       {/* Ruled like a timetable: a line above the list and under every course. */}
       <ul

@@ -27,24 +27,27 @@ export function TicketGrid({ tabs, filterLabel, tickets }: TicketGridProps) {
 
   return (
     <div className="flex flex-col gap-8">
-      <div
-        role="group"
-        aria-label={filterLabel}
-        className="bg-surface-raised -mx-1 flex gap-1 self-start overflow-x-auto rounded-full p-1 [scrollbar-width:none] max-sm:max-w-full"
-      >
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            aria-pressed={filter === tab.id}
-            onClick={() => choose(tab.id)}
-            className="text-body-sm text-ink-muted hover:text-ink aria-pressed:bg-primary aria-pressed:text-on-primary inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full px-4 font-medium whitespace-nowrap transition-colors"
-          >
-            {tab.label}
-            <span className="tabular-nums opacity-70">{tab.count}</span>
-          </button>
-        ))}
-      </div>
+      {/* "All" alone filters nothing: no categories, no filter. */}
+      {tabs.length > 1 ? (
+        <div
+          role="group"
+          aria-label={filterLabel}
+          className="bg-surface-raised -mx-1 flex [scrollbar-width:none] gap-1 self-start overflow-x-auto rounded-full p-1 max-sm:max-w-full"
+        >
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              aria-pressed={filter === tab.id}
+              onClick={() => choose(tab.id)}
+              className="text-body-sm text-ink-muted hover:text-ink aria-pressed:bg-primary aria-pressed:text-on-primary inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full px-4 font-medium whitespace-nowrap transition-colors"
+            >
+              {tab.label}
+              <span className="tabular-nums opacity-70">{tab.count}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       <ul ref={list} data-testid="course-list" className="relative grid gap-5 lg:grid-cols-2">
         {tickets.map((ticket) => (

@@ -12,6 +12,7 @@ export type ValidationKey =
   | 'url'
   | 'slug'
   | 'youtube'
+  | 'seatsLeftOverTotal'
   | 'invalid';
 
 export type ValidationMessage = { key: ValidationKey; values?: Record<string, number> };
@@ -45,7 +46,7 @@ function patternSource(pattern: RegExp | string | undefined): string | undefined
 }
 
 /** Refinements that name their own message, through `params: { key }`. */
-const CUSTOM_KEYS: ReadonlySet<string> = new Set<ValidationKey>(['youtube']);
+const CUSTOM_KEYS: ReadonlySet<string> = new Set<ValidationKey>(['youtube', 'seatsLeftOverTotal']);
 
 /**
  * Which plain-language message fits a validation problem.

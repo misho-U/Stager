@@ -11,13 +11,19 @@ import { VideoCameraIcon } from '@phosphor-icons/react/dist/ssr/VideoCamera';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import type { CSSProperties, ReactNode } from 'react';
 
-import { FEW_SEATS, type PublicCourse, relatedCourses } from '@/entity/course/model/course.model';
+import {
+  courseCategories,
+  courseCategoryKey,
+  FEW_SEATS,
+  type PublicCourse,
+  relatedCourses,
+} from '@/entity/course/model/course.model';
 import type { PublicInsightListItem } from '@/entity/insight/model/insight.model';
 import { homeSections, type PublicPage } from '@/entity/page/model/page.model';
 import type { PublicProjectListItem } from '@/entity/project/model/project.model';
 import type { PublicService } from '@/entity/service/model/service.model';
 import type { PublicLayoutData } from '@/entity/site-setting/model/site-setting.model';
-import type { PublicVideo, VideoKind } from '@/entity/video/model/video.model';
+import type { PublicVideo } from '@/entity/video/model/video.model';
 import { ChefsTableMotion } from '@/modules/home-page/elements/chefs-table/elements/chefs-table-motion/chefs-table-motion.module';
 import { CtHeader } from '@/modules/home-page/elements/chefs-table/elements/ct-header/ct-header.module';
 import {
@@ -35,10 +41,11 @@ import { hasServiceIcon, ServiceIcon } from '@/shared/components/service-icon';
 import { SocialLinks } from '@/shared/components/social-links';
 import { Wordmark } from '@/shared/components/wordmark';
 import { cn } from '@/shared/lib/cn';
+import { ALL } from '@/shared/lib/motion/use-flip-filter';
 import { isBlankHtml, joinMeta, plainTextLength } from '@/shared/lib/content';
 import { youtubeId } from '@/shared/lib/youtube';
 import type { ListResponse } from '@/shared/types/api';
-import type { DbLocale } from '@/shared/types/enums';
+import type { DbLocale, VideoKind } from '@/shared/types/enums';
 import {
   RegisterButton,
   RegistrationDialog,
@@ -79,9 +86,9 @@ const PLAY_DISC =
 const INTRO_STATEMENT_MAX = 220;
 
 const KIND_ICONS: Record<VideoKind, typeof VideoCameraIcon> = {
-  episode: VideoCameraIcon,
-  podcast: MicrophoneIcon,
-  masterclass: ChefHatIcon,
+  EPISODE: VideoCameraIcon,
+  PODCAST: MicrophoneIcon,
+  MASTERCLASS: ChefHatIcon,
 };
 
 /** A section's heading, its line of description, and its actions at the right end. */
@@ -115,8 +122,8 @@ function SectionHeader({
 }
 
 /** The poster of a video without a picture yet: lit teal, its kind drawn large and faint. */
-function PosterPlaceholder({ kind }: { kind: VideoKind }) {
-  const Icon = KIND_ICONS[kind];
+function PosterPlaceholder({ kind }: { kind: VideoKind | null }) {
+  const Icon = kind ? KIND_ICONS[kind] : VideoCameraIcon;
   return (
     <div aria-hidden data-decorative className="ct-poster absolute inset-0 overflow-hidden">
       <Icon
@@ -130,7 +137,7 @@ function PosterPlaceholder({ kind }: { kind: VideoKind }) {
 
 /** Where a course happens: a pin for a place, a globe for online. */
 function CoursePlaceIcon({ course }: { course: PublicCourse }) {
-  return course.format === 'online' ? <GlobeSimpleIcon aria-hidden /> : <MapPinIcon aria-hidden />;
+  return course.format === 'ONLINE' ? <GlobeSimpleIcon aria-hidden /> : <MapPinIcon aria-hidden />;
 }
 
 /**
@@ -193,11 +200,11 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
   const minutes = (count: number | null) =>
     count === null ? null : t('videos.minutes', { count });
   const videoMeta = (video: PublicVideo) =>
-    joinMeta([t(`videos.kinds.${video.kind}`), minutes(video.durationMinutes)]);
+    joinMeta([video.kind ? t(`videos.kinds.${video.kind}`) : null, minutes(video.durationMinutes)]);
   const registration = (course: PublicCourse): RegistrationCourse => ({
     id: course.id,
     title: course.title,
-    date: longDate(course.startsAt),
+    date: course.startsAt ? longDate(course.startsAt) : null,
     full: course.seatsLeft === 0,
   });
 
@@ -208,13 +215,12 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
   // A short intro reads as one statement, set large; a long one as text.
   const introIsStatement = plainTextLength(section.intro?.body) <= INTRO_STATEMENT_MAX;
   const coursesByService = relatedCourses(services.items, courses.items);
-  const categories = [...new Set(courses.items.map((course) => course.category))];
   const tabs = [
-    { id: 'all', label: t('academy.all'), count: courses.items.length },
-    ...categories.map((category) => ({
-      id: category,
-      label: t(`academy.categories.${category}`),
-      count: courses.items.filter((course) => course.category === category).length,
+    { id: ALL, label: t('academy.all'), count: courses.items.length },
+    ...courseCategories(courses.items).map(({ key, name, count }) => ({
+      id: key,
+      label: name,
+      count,
     })),
   ];
 
@@ -241,7 +247,9 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                 {nextCourse.title}
               </span>
               <span className="text-body-sm text-ink-muted">
-                {t('academy.starts', { date: longDate(nextCourse.startsAt) })}
+                {nextCourse.startsAt
+                  ? t('academy.starts', { date: longDate(nextCourse.startsAt) })
+                  : t('academy.dateTba')}
               </span>
             </a>
           ) : null
@@ -501,7 +509,9 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                               </span>
                               <span className="text-body-sm text-ink-muted">
                                 {joinMeta([
-                                  date(stub.startsAt, { day: 'numeric', month: 'long' }),
+                                  stub.startsAt
+                                    ? date(stub.startsAt, { day: 'numeric', month: 'long' })
+                                    : t('academy.dateTba'),
                                   stub.location ?? t(`academy.formats.${stub.format}`),
                                 ])}
                               </span>
@@ -653,13 +663,13 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                       course.seatsLeft <= FEW_SEATS;
                     return {
                       id: course.id,
-                      category: course.category,
+                      category: courseCategoryKey(course),
                       node: (
                         <article className="ct-ticket ct-spot bg-surface-raised flex h-full flex-col overflow-hidden rounded-lg sm:flex-row">
                           <div className="flex flex-1 flex-col gap-4 p-6 sm:p-8">
                             <p className="text-body-sm text-accent font-medium">
                               {joinMeta([
-                                t(`academy.categories.${course.category}`),
+                                course.category?.name,
                                 t(`academy.formats.${course.format}`),
                               ])}
                             </p>
@@ -690,17 +700,21 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                           </div>
                           {/* The stub: torn off along the dashed line. */}
                           <div className="ct-tear -order-1 flex items-center justify-between gap-4 p-6 sm:order-none sm:w-(--ct-ticket-stub) sm:flex-col sm:items-start">
-                            <p className="flex flex-col">
-                              <span className="text-headline font-hero stretch-hero leading-none tabular-nums">
-                                {date(course.startsAt, { day: 'numeric' })}
-                              </span>
-                              <span className="text-body-sm mt-1 font-semibold">
-                                {date(course.startsAt, { month: 'long' })}
-                              </span>
-                              <span className="text-caption text-ink-muted">
-                                {date(course.startsAt, { weekday: 'long' })}
-                              </span>
-                            </p>
+                            {course.startsAt ? (
+                              <p className="flex flex-col">
+                                <span className="text-headline font-hero stretch-hero leading-none tabular-nums">
+                                  {date(course.startsAt, { day: 'numeric' })}
+                                </span>
+                                <span className="text-body-sm mt-1 font-semibold">
+                                  {date(course.startsAt, { month: 'long' })}
+                                </span>
+                                <span className="text-caption text-ink-muted">
+                                  {date(course.startsAt, { weekday: 'long' })}
+                                </span>
+                              </p>
+                            ) : (
+                              <p className="text-body-sm font-semibold">{t('academy.dateTba')}</p>
+                            )}
                             <div className="flex flex-col items-end sm:items-start">
                               <p className="text-title-sm font-heading tabular-nums">
                                 {price(course.priceGel)}

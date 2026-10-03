@@ -72,7 +72,9 @@ export function RegistrationDialog({ locale }: { locale: DbLocale }) {
               <h2 id="registration-title" className="text-title font-heading text-balance">
                 {course.title}
               </h2>
-              <p className="text-body text-ink-muted">{t('starts', { date: course.date })}</p>
+              <p className="text-body text-ink-muted">
+                {course.date ? t('starts', { date: course.date }) : t('dateTba')}
+              </p>
             </div>
             <button
               type="button"
@@ -91,10 +93,14 @@ export function RegistrationDialog({ locale }: { locale: DbLocale }) {
             submitLabel={course.full ? t('waitlist') : t('register')}
             defaults={{
               interest: 'TRAINING',
-              message: t(course.full ? 'waitlistMessage' : 'registerMessage', {
-                course: course.title,
-                date: course.date,
-              }),
+              message: course.date
+                ? t(course.full ? 'waitlistMessage' : 'registerMessage', {
+                    course: course.title,
+                    date: course.date,
+                  })
+                : t(course.full ? 'waitlistMessageUndated' : 'registerMessageUndated', {
+                    course: course.title,
+                  }),
             }}
           />
         </div>

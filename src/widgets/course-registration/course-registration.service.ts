@@ -9,8 +9,8 @@ import { getSmoothScroll } from '@/widgets/smooth-scroll/smooth-scroll.service';
 export type RegistrationCourse = {
   id: string;
   title: string;
-  /** Already formatted for the page's language ("14 October"). */
-  date: string;
+  /** Already formatted for the page's language ("14 October"); null while not set. */
+  date: string | null;
   /** No seats left: the visitor joins the waiting list instead. */
   full: boolean;
 };

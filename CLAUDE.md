@@ -66,6 +66,10 @@ Do not add a library outside this list without raising it first.
   without; report optional misconfiguration in `pnpm setup:check` instead.
 - Where a zod schema uses `.default()`, react-hook-form needs both types:
   `useForm<z.input<S>, unknown, z.output<S>>`.
+- **Update schemas are `partialUpdate(schema)`, never `.partial()`.** zod 4
+  applies defaults inside `.partial()`, so a one-field PATCH reset the rest:
+  hiding a social link reordered it. Optional dropdowns and links read "" as
+  none through `optionalChoice()` / `optionalYoutubeUrlInput()`.
 - **An optional number input uses `setValueAs: toOptionalNumber`**
   (`shared/lib/form-values.ts`). react-hook-form also runs `setValueAs` on the
   stored value, and `Number(null)` is 0 — which blocked saving a project with

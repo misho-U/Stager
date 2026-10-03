@@ -6,10 +6,11 @@ import {
   isoDateTime,
   listResponseSchema,
   mediaIdSchema,
+  optionalYoutubeUrlInput,
+  partialUpdate,
   seoFieldsSchema,
   seoInputSchema,
   slugSchema,
-  youtubeUrlSchema,
 } from '@/shared/types/api';
 import { contentStatusSchema } from '@/shared/types/enums';
 
@@ -94,7 +95,7 @@ export const projectTranslationInputSchema = seoInputSchema.extend({
 export const projectInputSchema = z.object({
   slug: slugSchema,
   coverMediaId: mediaIdSchema,
-  youtubeUrl: youtubeUrlSchema.nullish(),
+  youtubeUrl: optionalYoutubeUrlInput(),
   client: z.string().trim().max(160).nullish(),
   location: z.string().trim().max(160).nullish(),
   year: z.number().int().min(1900).max(2200).nullish(),
@@ -119,6 +120,6 @@ export type ProjectInput = z.output<typeof projectInputSchema>;
 export type ProjectFormValues = z.input<typeof projectInputSchema>;
 
 /** PATCH accepts any subset; the route merges it onto the stored record. */
-export const projectUpdateInputSchema = projectInputSchema.partial();
+export const projectUpdateInputSchema = partialUpdate(projectInputSchema);
 
 export type ProjectUpdateInput = z.output<typeof projectUpdateInputSchema>;

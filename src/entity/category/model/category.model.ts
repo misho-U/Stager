@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
-import { bothLocales, isoDateTime, listResponseSchema, slugSchema } from '@/shared/types/api';
+import {
+  bothLocales,
+  isoDateTime,
+  listResponseSchema,
+  partialUpdate,
+  slugSchema,
+} from '@/shared/types/api';
 
 export const adminCategorySchema = z.object({
   id: z.string(),
@@ -39,5 +45,5 @@ export type CategoryInput = z.output<typeof categoryInputSchema>;
 /** Raw form values, before defaults are applied. See the useForm generics. */
 export type CategoryFormValues = z.input<typeof categoryInputSchema>;
 
-export const categoryUpdateInputSchema = categoryInputSchema.partial();
+export const categoryUpdateInputSchema = partialUpdate(categoryInputSchema);
 export type CategoryUpdateInput = z.output<typeof categoryUpdateInputSchema>;

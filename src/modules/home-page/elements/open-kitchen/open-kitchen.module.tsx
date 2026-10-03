@@ -11,13 +11,19 @@ import { VideoCameraIcon } from '@phosphor-icons/react/dist/ssr/VideoCamera';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import type { CSSProperties, ReactNode } from 'react';
 
-import { FEW_SEATS, type PublicCourse, relatedCourses } from '@/entity/course/model/course.model';
+import {
+  courseCategories,
+  courseCategoryKey,
+  FEW_SEATS,
+  type PublicCourse,
+  relatedCourses,
+} from '@/entity/course/model/course.model';
 import type { PublicInsightListItem } from '@/entity/insight/model/insight.model';
 import { homeSections, type PublicPage } from '@/entity/page/model/page.model';
 import type { PublicProjectListItem } from '@/entity/project/model/project.model';
 import type { PublicService } from '@/entity/service/model/service.model';
 import type { PublicLayoutData } from '@/entity/site-setting/model/site-setting.model';
-import type { PublicVideo, VideoKind } from '@/entity/video/model/video.model';
+import type { PublicVideo } from '@/entity/video/model/video.model';
 import { AcademyTimetable } from '@/modules/home-page/elements/open-kitchen/elements/academy-timetable/academy-timetable.module';
 import { LiveBoard } from '@/modules/home-page/elements/open-kitchen/elements/live-board/live-board.module';
 import { OkHeader } from '@/modules/home-page/elements/open-kitchen/elements/ok-header/ok-header.module';
@@ -37,10 +43,11 @@ import { hasServiceIcon, ServiceIcon } from '@/shared/components/service-icon';
 import { SocialLinks } from '@/shared/components/social-links';
 import { Wordmark } from '@/shared/components/wordmark';
 import { cn } from '@/shared/lib/cn';
+import { ALL } from '@/shared/lib/motion/use-flip-filter';
 import { isBlankHtml, joinMeta, plainTextLength } from '@/shared/lib/content';
 import { youtubeId } from '@/shared/lib/youtube';
 import type { ListResponse } from '@/shared/types/api';
-import type { DbLocale } from '@/shared/types/enums';
+import type { DbLocale, VideoKind } from '@/shared/types/enums';
 import {
   RegisterButton,
   RegistrationDialog,
@@ -82,14 +89,14 @@ const INTRO_STATEMENT_MAX = 220;
 const TILE_TONES = ['light', 'sage', 'deep'] as const;
 
 const KIND_ICONS: Record<VideoKind, typeof VideoCameraIcon> = {
-  episode: VideoCameraIcon,
-  podcast: MicrophoneIcon,
-  masterclass: ChefHatIcon,
+  EPISODE: VideoCameraIcon,
+  PODCAST: MicrophoneIcon,
+  MASTERCLASS: ChefHatIcon,
 };
 
 /** Where a course happens: a pin for a place, a globe for online. */
 function CoursePlaceIcon({ course }: { course: PublicCourse }) {
-  return course.format === 'online' ? <GlobeSimpleIcon aria-hidden /> : <MapPinIcon aria-hidden />;
+  return course.format === 'ONLINE' ? <GlobeSimpleIcon aria-hidden /> : <MapPinIcon aria-hidden />;
 }
 
 /** A section's heading, its line of description, and its actions at the right end. */
@@ -123,8 +130,8 @@ function SectionHeader({
 }
 
 /** The poster of a video without a picture yet: teal, the kind of programme drawn large and faint. */
-function PosterPlaceholder({ kind }: { kind: VideoKind }) {
-  const Icon = KIND_ICONS[kind];
+function PosterPlaceholder({ kind }: { kind: VideoKind | null }) {
+  const Icon = kind ? KIND_ICONS[kind] : VideoCameraIcon;
   return (
     <div aria-hidden data-decorative className="ok-poster absolute inset-0 overflow-hidden">
       <Icon
@@ -197,7 +204,7 @@ export async function OpenKitchen({ locale, content }: OpenKitchenProps) {
   const registration = (course: PublicCourse): RegistrationCourse => ({
     id: course.id,
     title: course.title,
-    date: longDate(course.startsAt),
+    date: course.startsAt ? longDate(course.startsAt) : null,
     full: course.seatsLeft === 0,
   });
 
@@ -221,19 +228,23 @@ export async function OpenKitchen({ locale, content }: OpenKitchenProps) {
                 <p className="text-body-sm text-ink-muted font-medium">{t('academy.next')}</p>
                 {courses.sample ? sampleBadge : null}
               </div>
-              <div className="flex items-end gap-4">
-                <p className="text-display font-hero leading-none tabular-nums">
-                  {date(nextCourse.startsAt, { day: 'numeric' })}
-                </p>
-                <p className="flex flex-col pb-1">
-                  <span className="text-title-sm font-heading">
-                    {date(nextCourse.startsAt, { month: 'long' })}
-                  </span>
-                  <span className="text-body-sm text-ink-muted">
-                    {date(nextCourse.startsAt, { weekday: 'long' })}
-                  </span>
-                </p>
-              </div>
+              {nextCourse.startsAt ? (
+                <div className="flex items-end gap-4">
+                  <p className="text-display font-hero leading-none tabular-nums">
+                    {date(nextCourse.startsAt, { day: 'numeric' })}
+                  </p>
+                  <p className="flex flex-col pb-1">
+                    <span className="text-title-sm font-heading">
+                      {date(nextCourse.startsAt, { month: 'long' })}
+                    </span>
+                    <span className="text-body-sm text-ink-muted">
+                      {date(nextCourse.startsAt, { weekday: 'long' })}
+                    </span>
+                  </p>
+                </div>
+              ) : (
+                <p className="text-title font-heading">{t('academy.dateTba')}</p>
+              )}
               <div className="flex flex-col gap-2">
                 <h3 className="text-title font-heading text-balance">{nextCourse.title}</h3>
                 <p className="text-body-sm text-ink-muted line-clamp-3 text-pretty">
@@ -296,7 +307,7 @@ export async function OpenKitchen({ locale, content }: OpenKitchenProps) {
                 <h3 className="text-title font-heading text-balance">{newestVideo.title}</h3>
                 <p className="text-body-sm text-ink-muted mt-auto">
                   {joinMeta([
-                    t(`videos.kinds.${newestVideo.kind}`),
+                    newestVideo.kind ? t(`videos.kinds.${newestVideo.kind}`) : null,
                     minutes(newestVideo.durationMinutes),
                   ])}
                 </p>
@@ -357,13 +368,12 @@ export async function OpenKitchen({ locale, content }: OpenKitchenProps) {
 
   // --- The course each service points at, and the Academy's filter ---
   const coursesByService = relatedCourses(services.items, courses.items);
-  const categories = [...new Set(courses.items.map((course) => course.category))];
   const chips = [
-    { id: 'all', label: t('academy.all'), count: courses.items.length },
-    ...categories.map((category) => ({
-      id: category,
-      label: t(`academy.categories.${category}`),
-      count: courses.items.filter((course) => course.category === category).length,
+    { id: ALL, label: t('academy.all'), count: courses.items.length },
+    ...courseCategories(courses.items).map(({ key, name, count }) => ({
+      id: key,
+      label: name,
+      count,
     })),
   ];
 
@@ -669,20 +679,28 @@ export async function OpenKitchen({ locale, content }: OpenKitchenProps) {
                       course.seatsLeft <= FEW_SEATS;
                     return {
                       id: course.id,
-                      category: course.category,
+                      category: courseCategoryKey(course),
                       node: (
                         <article className="hover:bg-surface-raised/60 grid grid-cols-(--ok-row) items-start gap-x-5 gap-y-4 px-1 py-6 transition-colors sm:px-4 md:grid-cols-(--ok-row-md) lg:grid-cols-(--ok-row-lg) lg:items-center lg:gap-x-8">
                           {/* One line above the course on a phone; a column of its own from md. */}
                           <p className="flex items-baseline gap-2 md:flex-col md:items-start md:gap-0">
-                            <span className="text-headline font-hero leading-none tabular-nums">
-                              {date(course.startsAt, { day: 'numeric' })}
-                            </span>
-                            <span className="text-body-sm font-semibold md:mt-1">
-                              {date(course.startsAt, { month: 'short' })}
-                            </span>
-                            <span className="text-caption text-ink-muted">
-                              {date(course.startsAt, { weekday: 'short' })}
-                            </span>
+                            {course.startsAt ? (
+                              <>
+                                <span className="text-headline font-hero leading-none tabular-nums">
+                                  {date(course.startsAt, { day: 'numeric' })}
+                                </span>
+                                <span className="text-body-sm font-semibold md:mt-1">
+                                  {date(course.startsAt, { month: 'short' })}
+                                </span>
+                                <span className="text-caption text-ink-muted">
+                                  {date(course.startsAt, { weekday: 'short' })}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-body-sm font-semibold">
+                                {t('academy.dateTba')}
+                              </span>
+                            )}
                           </p>
                           <div className="flex min-w-0 flex-col gap-3">
                             <h3 className="text-title-sm font-heading text-balance">
@@ -692,7 +710,9 @@ export async function OpenKitchen({ locale, content }: OpenKitchenProps) {
                               {course.summary}
                             </p>
                             <ul className="flex flex-wrap gap-2">
-                              <li className={CHIP}>{t(`academy.categories.${course.category}`)}</li>
+                              {course.category ? (
+                                <li className={CHIP}>{course.category.name}</li>
+                              ) : null}
                               <li className={CHIP}>
                                 <ClockIcon aria-hidden />
                                 {course.duration}
@@ -769,7 +789,7 @@ export async function OpenKitchen({ locale, content }: OpenKitchenProps) {
                     title: video.title,
                     summary: video.summary,
                     meta: joinMeta([
-                      t(`videos.kinds.${video.kind}`),
+                      video.kind ? t(`videos.kinds.${video.kind}`) : null,
                       minutes(video.durationMinutes),
                       date(video.publishedAt, { day: 'numeric', month: 'long' }),
                     ]),

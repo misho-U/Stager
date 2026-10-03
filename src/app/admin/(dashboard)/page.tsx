@@ -10,6 +10,8 @@ type Stats = {
   projects: number;
   insights: number;
   services: number;
+  courses: number;
+  videos: number;
   teamMembers: number;
   newInquiries: number;
 };
@@ -18,6 +20,8 @@ const EMPTY_STATS: Stats = {
   projects: 0,
   insights: 0,
   services: 0,
+  courses: 0,
+  videos: 0,
   teamMembers: 0,
   newInquiries: 0,
 };
