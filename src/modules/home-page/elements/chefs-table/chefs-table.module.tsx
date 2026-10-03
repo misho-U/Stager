@@ -21,7 +21,7 @@ import {
 import type { PublicInsightListItem } from '@/entity/insight/model/insight.model';
 import { homeSections, type PublicPage } from '@/entity/page/model/page.model';
 import type { PublicProjectListItem } from '@/entity/project/model/project.model';
-import type { PublicService } from '@/entity/service/model/service.model';
+import type { PublicServiceListItem } from '@/entity/service/model/service.model';
 import type { PublicLayoutData } from '@/entity/site-setting/model/site-setting.model';
 import type { PublicVideo } from '@/entity/video/model/video.model';
 import { ChefsTableMotion } from '@/modules/home-page/elements/chefs-table/elements/chefs-table-motion/chefs-table-motion.module';
@@ -62,7 +62,7 @@ type ChefsTableProps = {
     layout: PublicLayoutData | null;
     page: PublicPage | null;
     projects: ListResponse<PublicProjectListItem>;
-    services: ListResponse<PublicService>;
+    services: ListResponse<PublicServiceListItem>;
     insights: ListResponse<PublicInsightListItem>;
     courses: { items: PublicCourse[]; sample: boolean };
     videos: { items: PublicVideo[]; sample: boolean };
@@ -310,7 +310,6 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                     <div data-poster className="absolute inset-0">
                       <VideoPoster
                         youtubeUrl={newest.youtubeUrl}
-                        sizes="(min-width: 1024px) 40vw, 100vw"
                         placeholder={<PosterPlaceholder kind={newest.kind} />}
                       />
                     </div>
@@ -339,7 +338,6 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                 <div data-poster className="absolute inset-0">
                   <VideoPoster
                     youtubeUrl={newest.youtubeUrl}
-                    sizes="100vw"
                     placeholder={<PosterPlaceholder kind={newest.kind} />}
                   />
                 </div>
@@ -776,7 +774,6 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                   <div data-poster className="absolute inset-0">
                     <VideoPoster
                       youtubeUrl={newest.youtubeUrl}
-                      sizes="(min-width: 1024px) 60vw, 100vw"
                       placeholder={<PosterPlaceholder kind={newest.kind} />}
                     />
                   </div>
@@ -830,7 +827,6 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                           <div data-poster className="absolute inset-0">
                             <VideoPoster
                               youtubeUrl={video.youtubeUrl}
-                              sizes="(min-width: 1024px) 22vw, (min-width: 640px) 45vw, 100vw"
                               placeholder={<PosterPlaceholder kind={video.kind} />}
                             />
                           </div>

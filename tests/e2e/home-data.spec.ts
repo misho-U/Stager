@@ -2,7 +2,12 @@ import { expect, test } from '@playwright/test';
 
 import { orSamples } from '@/modules/home-page/home-page.samples';
 
-import { DB_WRITES_ALLOWED, DB_WRITES_SKIP_REASON, disconnectTestPrisma, testPrisma } from './db-guard';
+import {
+  DB_WRITES_ALLOWED,
+  DB_WRITES_SKIP_REASON,
+  disconnectTestPrisma,
+  testPrisma,
+} from './db-guard';
 
 /**
  * The Academy and the videos read the dashboard. While a section has nothing
@@ -42,7 +47,10 @@ test.describe('samples stand in only for an empty section', () => {
 test.describe('a video added in the dashboard', () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(!DB_WRITES_ALLOWED, DB_WRITES_SKIP_REASON);
-    test.skip(testInfo.project.name !== 'chromium', 'Writes a shared row; runs once, under chromium.');
+    test.skip(
+      testInfo.project.name !== 'chromium',
+      'Writes a shared row; runs once, under chromium.',
+    );
   });
 
   test.afterAll(disconnectTestPrisma);
@@ -64,6 +72,7 @@ test.describe('a video added in the dashboard', () => {
         kind: 'EPISODE',
         publishedAt: new Date(),
         durationMinutes: 12,
+        youtubeUrl: 'https://www.youtube.com/watch?v=e2eE2Ee2E2e',
         translations: {
           create: [
             { locale: 'EN', title, summary: 'An entry made by an end-to-end test.' },
@@ -81,6 +90,12 @@ test.describe('a video added in the dashboard', () => {
         const section = page.locator('#videos');
         await expect(section).toContainText(title);
         await expect(section.locator('[data-testid="sample-badge"]')).toHaveCount(0);
+        // Its poster loads straight from YouTube, not through the image
+        // optimizer, which would resize any video id anyone asked for.
+        await expect(
+          section.locator('img[src="https://i.ytimg.com/vi/e2eE2Ee2E2e/hqdefault.jpg"]').first(),
+        ).toBeAttached();
+        await expect(section.locator('img[src*="/_next/image"][src*="ytimg"]')).toHaveCount(0);
       }
     } finally {
       await prisma.video.delete({ where: { id: video.id } });

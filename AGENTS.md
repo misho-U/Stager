@@ -377,9 +377,10 @@ and CLAUDE.md win wherever they disagree. The resolved conflicts:
   `tracking-[0.18em]`, `z-[60]`); translate each into a token, never inline.
   A z-index scale is tokens too.
 - **Images are CMS media only.** No generated, stock (picsum, Unsplash) or CDN
-  (Simple Icons) imagery: the CSP and `next/image` allow only Vercel Blob and
-  YouTube thumbnails, and invented photos of a real consultancy's work would
-  misrepresent it. An empty slot is an honest empty state.
+  (Simple Icons) imagery: the CSP allows only Vercel Blob and YouTube
+  thumbnails, `next/image` optimizes only this project's own store, and
+  invented photos of a real consultancy's work would misrepresent it. An empty
+  slot is an honest empty state.
 - **A skill "block" is a widget** (used on several pages, props only) **or a
   module `elements/` entry** (one page). No `blocks/` folder; data still flows
   through the module service.
@@ -564,16 +565,50 @@ pnpm typecheck         # tsc --noEmit
 pnpm db:migrate        # create + apply a migration (writes SQL to prisma/migrations)
 pnpm db:generate       # regenerate the Prisma client; run after db:migrate, which no longer does in Prisma 7
 pnpm db:migrate:deploy # apply committed migrations, no prompts and no resets: how the live database is updated
-pnpm db:seed           # idempotent seed
+pnpm db:seed           # creates what is missing; never overwrites dashboard edits
 pnpm db:studio         # browse the database
 pnpm test:e2e          # Playwright (loads .env.local; needs a seeded database)
 pnpm brand:tokens      # regenerate the brand hex copies (runs on install/dev/build anyway)
 ```
 
 All `db:*` scripts read `.env.local` through dotenv-cli — there is one env file,
-not two.
+not two. `db:migrate`, `db:push`, `db:seed` and `db:reset` refuse a database
+that is not on this machine (`scripts/db-guard.ts`): `.env.local` usually
+names the live one, and `migrate dev` can offer to reset it. `ALLOW_REMOTE_DB=1`
+overrides that, deliberately. `db:migrate:deploy` is not guarded; it is how the
+live database is updated.
 
 Before pushing: `pnpm lint && pnpm typecheck && pnpm build && pnpm test:e2e`.
+
+### Running on Vercel
+
+- **Region `fra1`** (`vercel.json`), next to the Frankfurt database. Vercel's
+  default is Washington, which put an ocean between every query and its data.
+- **Migrations run on production deploys.** The build command is
+  `pnpm run vercel-build` (`scripts/vercel-build.ts`): `prisma migrate deploy`
+  when `VERCEL_ENV=production`, then the build. Previews never migrate: they
+  share the live database, so a preview of a schema change needs its own.
+- **`/api/health`** answers 200 `{ ok: true }` when `SELECT 1` returns within
+  5 s, 503 otherwise, never cached. Point an uptime monitor at it.
+- **`/api/cron/daily`** (03:17 UTC, production only) retries inquiry emails
+  that failed (while email is set up), prunes audit entries older than a year
+  and rate-limit windows older than a day, and keeps a Free Supabase project
+  from pausing. Vercel calls it with `Authorization: Bearer $CRON_SECRET`;
+  without the variable it refuses everyone.
+- **Everything outward has a time limit:** the server's own API 10 s, mail
+  10 s, health 5 s, the page editor's transaction 15 s. A slow dependency
+  fails in seconds and is reported, instead of hanging until Vercel kills the
+  function.
+- **Lists carry no bodies.** The admin project, insight and service lists and
+  the public service list omit `body`; a detail endpoint has it. A Vercel
+  response over 4.5 MB fails outright, and bodies in two languages get there.
+- **Images:** the optimizer fetches only this store's `media/` files
+  (`storeHostFromToken`, `pkg/blob/store-host.ts`) and keeps each resized copy
+  31 days. YouTube posters skip it. The dashboard shrinks uploads in the
+  browser first (`prepareImage`): photos to WebP of at most 2560 px, PNGs only
+  when larger.
+- **`robots.txt`** lets search engines in only on production, and never into
+  `/admin` or `/api`; `sitemap.xml` lists each public page per language.
 
 ---
 
@@ -601,8 +636,7 @@ home page designs are under comparison on a preview build (round 4: `?v=1`
 light, `?v=2` dark). Both add a Culinary Academy section and a video section,
 filled from sample entries until the dashboard holds courses and videos
 (`home-page.samples.ts`, typed by `entity/course` and `entity/video`). Still
-open: which design, and the dashboard sections, database tables and public
-endpoints for courses and videos.
+open: which design.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

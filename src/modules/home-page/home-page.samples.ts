@@ -1,5 +1,5 @@
 import type { PublicCourse } from '@/entity/course/model/course.model';
-import type { PublicService } from '@/entity/service/model/service.model';
+import type { PublicServiceListItem } from '@/entity/service/model/service.model';
 import type { PublicVideo } from '@/entity/video/model/video.model';
 import { todayInTbilisi } from '@/shared/lib/calendar-date';
 import type { DbLocale } from '@/shared/types/enums';
@@ -340,7 +340,7 @@ const VIDEOS: ReadonlyArray<
 
 export function sampleCourses(
   locale: DbLocale,
-  services: ReadonlyArray<Pick<PublicService, 'id' | 'icon'>>,
+  services: ReadonlyArray<Pick<PublicServiceListItem, 'id' | 'icon'>>,
 ): PublicCourse[] {
   // Soonest first, as the API lists them.
   const courses = [...COURSES].sort((a, b) => a.inDays - b.inDays);

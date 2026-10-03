@@ -8,6 +8,7 @@ import {
 import type {
   AdminService,
   PublicService,
+  PublicServiceListItem,
   ServiceInput,
   ServiceUpdateInput,
 } from '@/entity/service/model/service.model';
@@ -83,12 +84,28 @@ function sanitized(translations: ServiceInput['translations']) {
   };
 }
 
+/**
+ * The list leaves the bodies out: they are the long part, in both languages,
+ * and a list of them all would in time pass Vercel's 4.5 MB response limit.
+ * Nothing on the list shows them; the edit form loads its record whole.
+ */
 export async function listAdminServices() {
   const rows = await prisma.service.findMany({
-    include: adminInclude,
+    include: {
+      ...adminInclude,
+      translations: { include: { ogMedia: mediaInclude }, omit: { body: true } },
+    },
     orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
   });
-  return { items: rows.map(toAdminService), total: rows.length };
+  return {
+    items: rows.map((row) =>
+      toAdminService({
+        ...row,
+        translations: row.translations.map((translation) => ({ ...translation, body: '' })),
+      }),
+    ),
+    total: rows.length,
+  };
 }
 
 export async function getAdminService(id: string) {
@@ -161,9 +178,14 @@ export async function listPublicServices(locale: DbLocale, limit: number, offset
   const where = { status: 'PUBLISHED' as const };
 
   const [rows, total] = await Promise.all([
+    // No bodies: the list shows a title and a short description; a body is
+    // for the service's own page (getPublicService).
     prisma.service.findMany({
       where,
-      include: { coverMedia: mediaInclude, translations: { where: { locale } } },
+      include: {
+        coverMedia: mediaInclude,
+        translations: { where: { locale }, omit: { body: true } },
+      },
       orderBy: { order: 'asc' },
       take: limit,
       skip: offset,
@@ -171,7 +193,7 @@ export async function listPublicServices(locale: DbLocale, limit: number, offset
     prisma.service.count({ where }),
   ]);
 
-  const items: PublicService[] = rows.map((row) => {
+  const items: PublicServiceListItem[] = rows.map((row) => {
     const translation = row.translations[0];
     return {
       id: row.id,
@@ -179,7 +201,6 @@ export async function listPublicServices(locale: DbLocale, limit: number, offset
       icon: row.icon,
       title: translation?.title ?? '',
       shortDescription: translation?.shortDescription ?? '',
-      body: translation?.body ?? '',
       cover: toMediaSummary(row.coverMedia, locale),
       metaTitle: translation?.metaTitle ?? null,
       metaDescription: translation?.metaDescription ?? null,

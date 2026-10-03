@@ -8,7 +8,7 @@ import {
 import { orSamples, sampleCourses, sampleVideos } from '@/modules/home-page/home-page.samples';
 import type { PublicPage } from '@/entity/page/model/page.model';
 import type { PublicProjectListItem } from '@/entity/project/model/project.model';
-import type { PublicService } from '@/entity/service/model/service.model';
+import type { PublicServiceListItem } from '@/entity/service/model/service.model';
 import type { PublicLayoutData } from '@/entity/site-setting/model/site-setting.model';
 import type { PublicVideo } from '@/entity/video/model/video.model';
 import type { ListResponse } from '@/shared/types/api';
@@ -75,12 +75,15 @@ export async function loadHomePageData(locale: DbLocale) {
       { items: [], total: 0 },
     ),
 
-    read<ListResponse<PublicService>>(
+    read<ListResponse<PublicServiceListItem>>(
       'services',
-      serverFetch<ListResponse<PublicService>>(`/api/public/services?locale=${locale}&limit=12`, {
-        tags: [collectionTag('service')],
-        revalidate: PUBLIC_REVALIDATE_SECONDS,
-      }),
+      serverFetch<ListResponse<PublicServiceListItem>>(
+        `/api/public/services?locale=${locale}&limit=12`,
+        {
+          tags: [collectionTag('service')],
+          revalidate: PUBLIC_REVALIDATE_SECONDS,
+        },
+      ),
       { items: [], total: 0 },
     ),
 

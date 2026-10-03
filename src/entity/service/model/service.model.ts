@@ -52,7 +52,12 @@ export const publicServiceSchema = z.object({
 
 export type PublicService = z.infer<typeof publicServiceSchema>;
 
-export const publicServiceListResponseSchema = listResponseSchema(publicServiceSchema);
+/** A service in a list: everything but the body, which only its own page shows. */
+export const publicServiceListItemSchema = publicServiceSchema.omit({ body: true });
+
+export type PublicServiceListItem = z.infer<typeof publicServiceListItemSchema>;
+
+export const publicServiceListResponseSchema = listResponseSchema(publicServiceListItemSchema);
 
 export const serviceTranslationInputSchema = seoInputSchema.extend({
   title: z.string().trim().min(1).max(200),

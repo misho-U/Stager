@@ -33,8 +33,6 @@ export function VideoEmbed({ id, title }: { id: string; title: string }) {
 
 type VideoPosterProps = {
   youtubeUrl: string | null;
-  /** Passed to next/image so the browser downloads the right width. */
-  sizes: string;
   priority?: boolean;
   /** The design's own placeholder, drawn when the entry has no link yet. */
   placeholder: ReactNode;
@@ -45,10 +43,13 @@ type VideoPosterProps = {
  * What a video's frame shows before it plays: the YouTube poster frame, or
  * the design's placeholder for an entry without a link. Decorative either
  * way (the title is always written next to it), so it has no alt text.
+ *
+ * The poster loads straight from YouTube, not through the image optimizer:
+ * the optimizer would take any video id, so anyone could spend the site's
+ * image quota through it. A poster is a 480 px JPEG of a few dozen KB.
  */
 export function VideoPoster({
   youtubeUrl,
-  sizes,
   priority = false,
   placeholder,
   className,
@@ -61,7 +62,7 @@ export function VideoPoster({
           src={youtubeThumbnail(id)}
           alt=""
           fill
-          sizes={sizes}
+          unoptimized
           priority={priority}
           className="object-cover"
         />

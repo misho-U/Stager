@@ -4,11 +4,7 @@ import {
   toTranslationMap,
   translationUpsert,
 } from '@/app/api/_lib/serializers';
-import type {
-  AdminPage,
-  PageUpdateInput,
-  PublicPage,
-} from '@/entity/page/model/page.model';
+import type { AdminPage, PageUpdateInput, PublicPage } from '@/entity/page/model/page.model';
 import type { DbLocale, PageKey } from '@/shared/types/enums';
 import { prisma } from '@pkg/db/prisma';
 import { sanitizeRichText } from '@pkg/security/sanitize';
@@ -106,57 +102,63 @@ export async function updateAdminPage(
 
   const ownedSectionIds = new Set(page.sections.map((section) => section.id));
 
-  await prisma.$transaction(async (tx) => {
-    if (input.translations) {
-      await tx.page.update({
-        where: { id: page.id },
-        data: {
-          translations: {
-            upsert: translationUpsert('pageId', page.id, 'pageId_locale', {
-              KA: {
-                title: input.translations.KA.title,
-                metaTitle: input.translations.KA.metaTitle ?? null,
-                metaDescription: input.translations.KA.metaDescription ?? null,
-                ogMediaId: input.translations.KA.ogMediaId ?? null,
-              },
-              EN: {
-                title: input.translations.EN.title,
-                metaTitle: input.translations.EN.metaTitle ?? null,
-                metaDescription: input.translations.EN.metaDescription ?? null,
-                ogMediaId: input.translations.EN.ogMediaId ?? null,
-              },
-            }) as never,
+  await prisma.$transaction(
+    async (tx) => {
+      if (input.translations) {
+        await tx.page.update({
+          where: { id: page.id },
+          data: {
+            translations: {
+              upsert: translationUpsert('pageId', page.id, 'pageId_locale', {
+                KA: {
+                  title: input.translations.KA.title,
+                  metaTitle: input.translations.KA.metaTitle ?? null,
+                  metaDescription: input.translations.KA.metaDescription ?? null,
+                  ogMediaId: input.translations.KA.ogMediaId ?? null,
+                },
+                EN: {
+                  title: input.translations.EN.title,
+                  metaTitle: input.translations.EN.metaTitle ?? null,
+                  metaDescription: input.translations.EN.metaDescription ?? null,
+                  ogMediaId: input.translations.EN.ogMediaId ?? null,
+                },
+              }) as never,
+            },
           },
-        },
-      });
-    }
+        });
+      }
 
-    for (const section of input.sections ?? []) {
-      // A section id from another page would let one page's editor rewrite
-      // another's copy. Ignore anything not belonging to this page.
-      if (!ownedSectionIds.has(section.id)) continue;
+      for (const section of input.sections ?? []) {
+        // A section id from another page would let one page's editor rewrite
+        // another's copy. Ignore anything not belonging to this page.
+        if (!ownedSectionIds.has(section.id)) continue;
 
-      await tx.pageSection.update({
-        where: { id: section.id },
-        data: {
-          ...(section.isVisible === undefined ? {} : { isVisible: section.isVisible }),
-          ...(section.mediaId === undefined ? {} : { mediaId: section.mediaId ?? null }),
-          translations: {
-            upsert: translationUpsert('sectionId', section.id, 'sectionId_locale', {
-              KA: {
-                ...section.translations.KA,
-                body: sanitizeRichText(section.translations.KA.body ?? ''),
-              },
-              EN: {
-                ...section.translations.EN,
-                body: sanitizeRichText(section.translations.EN.body ?? ''),
-              },
-            }) as never,
+        await tx.pageSection.update({
+          where: { id: section.id },
+          data: {
+            ...(section.isVisible === undefined ? {} : { isVisible: section.isVisible }),
+            ...(section.mediaId === undefined ? {} : { mediaId: section.mediaId ?? null }),
+            translations: {
+              upsert: translationUpsert('sectionId', section.id, 'sectionId_locale', {
+                KA: {
+                  ...section.translations.KA,
+                  body: sanitizeRichText(section.translations.KA.body ?? ''),
+                },
+                EN: {
+                  ...section.translations.EN,
+                  body: sanitizeRichText(section.translations.EN.body ?? ''),
+                },
+              }) as never,
+            },
           },
-        },
-      });
-    }
-  });
+        });
+      }
+      // The writes run one after another, a round trip each. Prisma's 5 s
+      // default left too little room for a page with many sections when the
+      // function and the database are far apart.
+    },
+    { timeout: 15_000 },
+  );
 
   return getAdminPage(key);
 }

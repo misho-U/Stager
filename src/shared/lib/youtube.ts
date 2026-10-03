@@ -3,7 +3,8 @@
  * in shared/types/api.ts accepts the same hosts).
  *
  * Playback always goes through youtube-nocookie.com, and thumbnails come from
- * i.ytimg.com: the CSP and next/image allow exactly those two hosts.
+ * i.ytimg.com: the CSP allows exactly those two hosts. Thumbnails skip the
+ * image optimizer (see VideoPoster).
  */
 
 const ID_PATTERN = /^[\w-]{11}$/;

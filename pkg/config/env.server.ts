@@ -117,6 +117,11 @@ const serverEnvSchema = z.object({
   // guarantee the probe can never be switched on for the live site.
   VERCEL: z.string().optional(),
 
+  // Vercel sends it to /api/cron/daily as `Authorization: Bearer …`; any long
+  // random string. Optional, and any value is accepted (a rule that fails at
+  // build would take the site down): without it the daily job refuses to run.
+  CRON_SECRET: z.preprocess(blankAsUnset, z.string().optional()),
+
   // Set by CI runners (GitHub Actions sets CI=true). Lets the probe run under
   // `pnpm start` in CI, where NODE_ENV is production, and nowhere else that is.
   CI: z.preprocess(blankAsUnset, z.string().optional()),

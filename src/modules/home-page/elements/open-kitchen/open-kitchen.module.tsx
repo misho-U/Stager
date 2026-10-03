@@ -21,7 +21,7 @@ import {
 import type { PublicInsightListItem } from '@/entity/insight/model/insight.model';
 import { homeSections, type PublicPage } from '@/entity/page/model/page.model';
 import type { PublicProjectListItem } from '@/entity/project/model/project.model';
-import type { PublicService } from '@/entity/service/model/service.model';
+import type { PublicServiceListItem } from '@/entity/service/model/service.model';
 import type { PublicLayoutData } from '@/entity/site-setting/model/site-setting.model';
 import type { PublicVideo } from '@/entity/video/model/video.model';
 import { AcademyTimetable } from '@/modules/home-page/elements/open-kitchen/elements/academy-timetable/academy-timetable.module';
@@ -64,7 +64,7 @@ type OpenKitchenProps = {
     layout: PublicLayoutData | null;
     page: PublicPage | null;
     projects: ListResponse<PublicProjectListItem>;
-    services: ListResponse<PublicService>;
+    services: ListResponse<PublicServiceListItem>;
     insights: ListResponse<PublicInsightListItem>;
     courses: { items: PublicCourse[]; sample: boolean };
     videos: { items: PublicVideo[]; sample: boolean };
@@ -289,7 +289,6 @@ export async function OpenKitchen({ locale, content }: OpenKitchenProps) {
               <div className="relative aspect-video overflow-hidden rounded-(--ok-radius-thumb)">
                 <VideoPoster
                   youtubeUrl={newestVideo.youtubeUrl}
-                  sizes="(min-width: 1024px) 34vw, 100vw"
                   placeholder={<PosterPlaceholder kind={newestVideo.kind} />}
                 />
                 <PlayInSectionButton
@@ -800,14 +799,12 @@ export async function OpenKitchen({ locale, content }: OpenKitchenProps) {
                     poster: (
                       <VideoPoster
                         youtubeUrl={video.youtubeUrl}
-                        sizes="(min-width: 1024px) 55vw, 100vw"
                         placeholder={<PosterPlaceholder kind={video.kind} />}
                       />
                     ),
                     thumb: (
                       <VideoPoster
                         youtubeUrl={video.youtubeUrl}
-                        sizes="8rem"
                         placeholder={<PosterPlaceholder kind={video.kind} />}
                       />
                     ),

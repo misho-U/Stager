@@ -3,6 +3,7 @@ import 'server-only';
 import { Resend } from 'resend';
 
 import { serverEnv } from '@pkg/config/env.server';
+import { withTimeout } from '@pkg/http/timeout';
 import { logger, serialiseError } from '@pkg/logger';
 
 let client: Resend | null = null;
@@ -59,15 +60,10 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
     return { ok: false, error: 'Email is not configured' };
   }
 
-  // The SDK sets no time limit of its own; a hung request would hold the
-  // function until the platform killed it.
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timedOut = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error('Mail send timed out')), SEND_TIMEOUT_MS);
-  });
-
   try {
-    const { data, error } = await Promise.race([
+    // The SDK sets no time limit of its own; a hung request would hold the
+    // function until the platform killed it.
+    const { data, error } = await withTimeout(
       getResend(apiKey).emails.send(
         {
           from,
@@ -79,8 +75,9 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
         },
         input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : undefined,
       ),
-      timedOut,
-    ]);
+      SEND_TIMEOUT_MS,
+      'Mail send',
+    );
 
     if (error) {
       logger.error('mail.send_rejected', { purpose: input.purpose, reason: error.message });
@@ -91,7 +88,5 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
   } catch (error) {
     logger.error('mail.send_failed', { purpose: input.purpose, ...serialiseError(error) });
     return { ok: false, error: 'Mail transport failed' };
-  } finally {
-    clearTimeout(timer);
   }
 }

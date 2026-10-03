@@ -95,12 +95,28 @@ function resolvePublishedAt(
   return current ?? new Date();
 }
 
+/**
+ * The list leaves the bodies out: they are the long part, in both languages,
+ * and a list of them all would in time pass Vercel's 4.5 MB response limit.
+ * Nothing on the list shows them; the edit form loads its record whole.
+ */
 export async function listAdminInsights() {
   const rows = await prisma.insight.findMany({
-    include: adminInclude,
+    include: {
+      ...adminInclude,
+      translations: { include: { ogMedia: mediaInclude }, omit: { body: true } },
+    },
     orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
   });
-  return { items: rows.map(toAdminInsight), total: rows.length };
+  return {
+    items: rows.map((row) =>
+      toAdminInsight({
+        ...row,
+        translations: row.translations.map((translation) => ({ ...translation, body: '' })),
+      }),
+    ),
+    total: rows.length,
+  };
 }
 
 export async function getAdminInsight(id: string) {
@@ -160,12 +176,7 @@ export async function updateInsight(
       ...(translations
         ? {
             translations: {
-              upsert: translationUpsert(
-                'insightId',
-                id,
-                'insightId_locale',
-                translations,
-              ) as never,
+              upsert: translationUpsert('insightId', id, 'insightId_locale', translations) as never,
             },
           }
         : {}),
