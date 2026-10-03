@@ -8,7 +8,7 @@ import { getAdminSession } from '@pkg/auth/admin-session';
 import { apiFail, apiOk } from '@pkg/http/api-response';
 import { logger } from '@pkg/logger';
 import { checkRateLimit, RATE_LIMITS } from '@pkg/ratelimit/limiter';
-import { getClientIp, hashIp, isSameOriginRequest } from '@pkg/security/request';
+import { getClientIp, hashIdentifier, hashIp, isSameOriginRequest } from '@pkg/security/request';
 import { createSupabaseServerClient } from '@pkg/supabase/server';
 
 /** Sessions are per-request; never let a CDN hold one. */
@@ -41,6 +41,21 @@ export const POST = withPublic(async ({ request }: { request: NextRequest }) => 
   const parsed = await readJson(request, loginInputSchema);
   if (!parsed.ok) return parsed.response;
 
+  // A second limit, per account: the one above is per address, and a password
+  // guessed from many machines would never meet it.
+  const account = hashIdentifier(parsed.data.email);
+  const accountLimit = await checkRateLimit({
+    key: `login-account:${account}`,
+    ...RATE_LIMITS.loginAccount,
+  });
+
+  if (!accountLimit.ok) {
+    return apiFail('RATE_LIMITED', 'Too many sign-in attempts. Please try again later.', {
+      reason: 'RATE_LIMITED',
+      headers: { 'Retry-After': String(accountLimit.retryAfterSeconds) },
+    });
+  }
+
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword({
     email: parsed.data.email,
@@ -60,7 +75,7 @@ export const POST = withPublic(async ({ request }: { request: NextRequest }) => 
     // a bare 401 and whoever is setting the site up has no way to tell a wrong
     // password from an account that was never created.
     logger.warn('auth.login_rejected', {
-      email: parsed.data.email.toLowerCase(),
+      account,
       supabaseCode: error.code ?? null,
       supabaseStatus: error.status ?? null,
       supabaseMessage: error.message,
@@ -135,7 +150,7 @@ export const POST = withPublic(async ({ request }: { request: NextRequest }) => 
       diff: { reason: 'not_on_allowlist' },
     });
 
-    logger.warn('auth.login_not_allowlisted', { email: parsed.data.email.toLowerCase() });
+    logger.warn('auth.login_not_allowlisted', { account });
     return apiFail('FORBIDDEN', 'This account is not permitted to use the dashboard', {
       reason: 'NOT_ALLOWED',
     });

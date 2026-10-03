@@ -75,5 +75,9 @@ export async function checkRateLimit({
 export const RATE_LIMITS = {
   contactForm: { limit: 5, windowSeconds: 60 * 60 },
   login: { limit: 10, windowSeconds: 15 * 60 },
+  // Per account, whatever the address: guessing one admin's password from
+  // many machines is capped too. High enough that the owner, retrying after a
+  // typo, never meets it.
+  loginAccount: { limit: 30, windowSeconds: 60 * 60 },
   upload: { limit: 60, windowSeconds: 60 * 60 },
 } as const;

@@ -4,7 +4,7 @@
  * Every deployment shares one database, and with it the inbox address set in
  * the dashboard. A test sent from a preview (design.stager.ge, a branch link)
  * or from a dev server whose `.env.local` points at the live database would
- * reach the client as a real lead: a row in her dashboard and an email. Only
+ * reach the client as a real lead: a row in their dashboard and an email. Only
  * the live site needs to deliver.
  *
  *  - A production build delivers, always, unless it is a Vercel preview. No

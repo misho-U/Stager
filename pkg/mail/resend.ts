@@ -17,6 +17,11 @@ function getResend(apiKey: string): Resend {
 
 type SendEmailInput = {
   to: string | string[];
+  /**
+   * What the email is for, e.g. `inquiry:<id>`, for the log. The subject is
+   * never logged: an inquiry's carries the visitor's name and company.
+   */
+  purpose: string;
   subject: string;
   html: string;
   text: string;
@@ -43,7 +48,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
   // the deployment log rather than silently forgotten.
   if (!apiKey || !from) {
     logger.warn('mail.not_configured', {
-      subject: input.subject,
+      purpose: input.purpose,
       detail: 'RESEND_API_KEY/MAIL_FROM are unset — the inquiry is stored but no email was sent.',
     });
     return { ok: false, error: 'Email is not configured' };
@@ -60,13 +65,13 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
     });
 
     if (error) {
-      logger.error('mail.send_rejected', { subject: input.subject, reason: error.message });
+      logger.error('mail.send_rejected', { purpose: input.purpose, reason: error.message });
       return { ok: false, error: error.message };
     }
 
     return { ok: true, id: data?.id ?? null };
   } catch (error) {
-    logger.error('mail.send_failed', { subject: input.subject, ...serialiseError(error) });
+    logger.error('mail.send_failed', { purpose: input.purpose, ...serialiseError(error) });
     return { ok: false, error: 'Mail transport failed' };
   }
 }

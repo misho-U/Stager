@@ -2,6 +2,9 @@ import 'server-only';
 
 import sanitizeHtml from 'sanitize-html';
 
+import { blobStoreHost } from '@pkg/blob/store';
+import { sanitizeRichTextWith } from '@pkg/security/sanitize-options';
+
 /**
  * WHY sanitize-html AND NOT DOMPurify:
  * DOMPurify needs a DOM, and on the server that meant isomorphic-dompurify →
@@ -12,67 +15,11 @@ import sanitizeHtml from 'sanitize-html';
  * there is nothing environment-specific to break.
  *
  * Do not reintroduce a jsdom-based sanitizer.
+ *
+ * The rich-text policy (tags, attributes, schemes, links, images) lives in
+ * ./sanitize-options.ts, where tests can reach it; this file adds the one
+ * thing only the server knows, the blob store images may come from.
  */
-
-/**
- * Tags an admin may use in rich-text fields. Deliberately small: this is
- * editorial copy, not arbitrary markup. No <script>, no <style>, no <iframe>
- * (YouTube gets its own dedicated field and renders through a facade
- * component), no event handlers.
- */
-const ALLOWED_TAGS = [
-  'p',
-  'br',
-  'strong',
-  'b',
-  'em',
-  'i',
-  'u',
-  's',
-  'blockquote',
-  'ul',
-  'ol',
-  'li',
-  'h2',
-  'h3',
-  'h4',
-  'a',
-  'figure',
-  'figcaption',
-  'img',
-  'hr',
-  'code',
-  'pre',
-];
-
-/**
- * Attributes, scoped to the tag that needs them. The previous list was global,
- * which also permitted `href` on a <p> or `src` on a <strong> — harmless after
- * scheme filtering, but nothing needs them, so nothing gets them.
- */
-const ALLOWED_ATTRIBUTES: sanitizeHtml.IOptions['allowedAttributes'] = {
-  a: ['href', 'title', 'target', 'rel'],
-  img: ['src', 'alt', 'title', 'width', 'height', 'loading'],
-};
-
-const RICH_TEXT_OPTIONS: sanitizeHtml.IOptions = {
-  allowedTags: ALLOWED_TAGS,
-  allowedAttributes: ALLOWED_ATTRIBUTES,
-  // javascript:, vbscript:, data: and every other scheme are refused in
-  // href/src. Relative links (/contact, #section) are unaffected.
-  allowedSchemes: ['http', 'https', 'mailto', 'tel'],
-  allowedSchemesAppliedToAttributes: ['href', 'src'],
-  transformTags: {
-    // A link that opens a new tab can otherwise reach back through
-    // window.opener and redirect the page that opened it. The previous
-    // implementation claimed to prevent this but only permitted the `target`
-    // attribute; this actually enforces it.
-    a: (tagName, attribs) =>
-      attribs.target === '_blank'
-        ? { tagName, attribs: { ...attribs, rel: 'noopener noreferrer' } }
-        : { tagName, attribs },
-  },
-};
 
 /**
  * Sanitize rich text ON WRITE, in the route handler, before it reaches the
@@ -83,7 +30,8 @@ const RICH_TEXT_OPTIONS: sanitizeHtml.IOptions = {
  * remember to clean. Storing only safe HTML makes that impossible to forget.
  */
 export function sanitizeRichText(html: string): string {
-  return sanitizeHtml(html, RICH_TEXT_OPTIONS);
+  const store = blobStoreHost();
+  return sanitizeRichTextWith(html, { imageHosts: store ? [store] : [] });
 }
 
 /** The only three characters sanitize-html escapes in text output. */

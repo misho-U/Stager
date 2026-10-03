@@ -57,14 +57,21 @@ export const optionalEmailInput = () =>
     .pipe(z.email().or(z.literal('')))
     .nullish();
 
-export const urlInput = (message?: string) => z.string().trim().pipe(z.url(message));
+/*
+ * LINKS are web links: http or https, with a real host. `z.url()` alone takes
+ * any scheme, so `javascript:alert(1)` passed as a social link and was rendered
+ * as an href. React 19 refuses to render such a link today; the schema does
+ * not lean on that.
+ */
+
+export const urlInput = (message?: string) => z.string().trim().pipe(z.httpUrl(message));
 
 /** May be left blank; "   " is treated as blank rather than as an invalid URL. */
 export const optionalUrlInput = () =>
   z
     .string()
     .trim()
-    .pipe(z.url().or(z.literal('')))
+    .pipe(z.httpUrl().or(z.literal('')))
     .nullish();
 
 /** SEO fields shared by every translatable record. */
@@ -153,16 +160,21 @@ export const slugSchema = z
 export const youtubeUrlSchema = z
   .string()
   .trim()
-  .url()
-  .refine((value) => {
-    try {
-      const host = new URL(value).hostname.replace(/^www\./, '');
-      return host === 'youtube.com' || host === 'youtu.be' || host === 'm.youtube.com';
-    } catch {
-      return false;
-    }
-    // The key names the dashboard's message for this check (validation-message.ts).
-  }, { params: { key: 'youtube' } });
+  // A web link first: the host check alone let `javascript://www.youtube.com/…`
+  // through, and this link is rendered as an href ("Watch on YouTube").
+  .pipe(z.httpUrl())
+  .refine(
+    (value) => {
+      try {
+        const host = new URL(value).hostname.replace(/^www\./, '');
+        return host === 'youtube.com' || host === 'youtu.be' || host === 'm.youtube.com';
+      } catch {
+        return false;
+      }
+      // The key names the dashboard's message for this check (validation-message.ts).
+    },
+    { params: { key: 'youtube' } },
+  );
 
 /**
  * A YouTube link that may be left blank. A cleared input sends "", which the

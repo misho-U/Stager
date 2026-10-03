@@ -1,17 +1,11 @@
 import { toIsoRequired, toTranslationMap } from '@/app/api/_lib/serializers';
-import type {
-  Media,
-  MediaRegisterInput,
-  MediaUpdateInput,
-} from '@/entity/media/model/media.model';
+import type { Media, MediaRegisterInput, MediaUpdateInput } from '@/entity/media/model/media.model';
 import { prisma } from '@pkg/db/prisma';
 import { sanitizePlainText } from '@pkg/security/sanitize';
 
 const include = { translations: true } as const;
 
-type Row = Awaited<
-  ReturnType<typeof prisma.media.findFirstOrThrow<{ include: typeof include }>>
->;
+type Row = Awaited<ReturnType<typeof prisma.media.findFirstOrThrow<{ include: typeof include }>>>;
 
 function toMedia(row: Row): Media {
   return {
@@ -40,6 +34,11 @@ export async function listMedia() {
 export async function getMedia(id: string) {
   const row = await prisma.media.findUnique({ where: { id }, include });
   return row ? toMedia(row) : null;
+}
+
+/** Whether a Media row already points at this file. */
+export async function mediaUrlTaken(url: string): Promise<boolean> {
+  return (await prisma.media.count({ where: { url } })) > 0;
 }
 
 /**

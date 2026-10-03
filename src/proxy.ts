@@ -92,8 +92,11 @@ async function handleAdmin(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Everything except Next's own assets and static files. Running middleware
-    // on those would add latency to every image and script for no benefit.
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)',
+    // Everything except Next's own assets and the few files served by name.
+    // Running middleware on those would add latency for no benefit. Not "any
+    // path ending in .png": that also let /admin/projects/x.png render a
+    // dashboard page with no CSP, and this app serves no such files itself
+    // (images come from the blob store, fonts from _next/static).
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',
   ],
 };

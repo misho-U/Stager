@@ -76,6 +76,22 @@ export type PublicPage = z.infer<typeof publicPageSchema>;
 
 // --- Input ---
 
+/**
+ * Where a section's button points: a page on this site ("/ka/projects"), a
+ * section of this page ("#inquiry"), a web address, or an email or phone link.
+ * Blank means no button. Nothing that runs (`javascript:`, `data:`), and no
+ * "//host" that only looks like a path.
+ */
+const SECTION_LINK =
+  /^(?:https?:\/\/[^\s]+|mailto:[^\s]+|tel:[+\d][\d\s()-]*|\/(?!\/)[^\s]*|#[^\s]*)$/i;
+
+export const pageSectionLinkInput = () =>
+  z
+    .string()
+    .trim()
+    .max(300)
+    .refine((value) => value === '' || SECTION_LINK.test(value), { params: { key: 'link' } });
+
 export const pageSectionInputSchema = z.object({
   id: z.string().min(1),
   isVisible: z.boolean().optional(),
@@ -86,7 +102,7 @@ export const pageSectionInputSchema = z.object({
       subheading: z.string().trim().max(1000).default(''),
       body: z.string().trim().max(40_000).default(''),
       ctaLabel: z.string().trim().max(80).default(''),
-      ctaHref: z.string().trim().max(300).default(''),
+      ctaHref: pageSectionLinkInput().default(''),
     }),
   ),
 });

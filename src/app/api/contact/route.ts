@@ -11,12 +11,7 @@ import { logger } from '@pkg/logger';
 import { buildInquiryNotification } from '@pkg/mail/templates/inquiry-notification';
 import { sendEmail } from '@pkg/mail/resend';
 import { checkRateLimit, RATE_LIMITS } from '@pkg/ratelimit/limiter';
-import {
-  getClientIp,
-  getUserAgent,
-  hashIp,
-  isSameOriginRequest,
-} from '@pkg/security/request';
+import { getClientIp, getUserAgent, hashIp, isSameOriginRequest } from '@pkg/security/request';
 import { sanitizePlainText } from '@pkg/security/sanitize';
 
 export const dynamic = 'force-dynamic';
@@ -38,7 +33,8 @@ export const POST = withPublic(async ({ request }) => {
     return apiFail('FORBIDDEN', 'Cross-site request rejected');
   }
 
-  const parsed = await readJson(request, contactSubmissionSchema);
+  // A message at its longest, in Georgian, is about 15 KB.
+  const parsed = await readJson(request, contactSubmissionSchema, { maxBytes: 32 * 1024 });
   if (!parsed.ok) return parsed.response;
 
   const submission = parsed.data;
@@ -50,7 +46,10 @@ export const POST = withPublic(async ({ request }) => {
     return apiOk({ ok: true as const, id: 'accepted' });
   }
 
-  if (submission.elapsedMs !== undefined && submission.elapsedMs < MIN_FORM_FILL_MS) {
+  // The site's form always reports how long it was open; a submission that
+  // does not came from somewhere else, and is treated like one that was too
+  // fast rather than let through by leaving the field out.
+  if (submission.elapsedMs === undefined || submission.elapsedMs < MIN_FORM_FILL_MS) {
     logger.warn('contact.too_fast', { elapsedMs: submission.elapsedMs });
     return apiOk({ ok: true as const, id: 'accepted' });
   }
@@ -100,8 +99,7 @@ export const POST = withPublic(async ({ request }) => {
   // the deployment's own override, then the admin's own email. The last is why
   // CONTACT_INBOX_EMAIL is optional — one fewer variable to get right on a new
   // deployment, and notifications still reach a real person by default.
-  const inbox =
-    (await getInquiryInbox()) ?? serverEnv.CONTACT_INBOX_EMAIL ?? serverEnv.ADMIN_EMAIL;
+  const inbox = (await getInquiryInbox()) ?? serverEnv.CONTACT_INBOX_EMAIL ?? serverEnv.ADMIN_EMAIL;
 
   const email = buildInquiryNotification({
     name: inquiry.name,
@@ -115,6 +113,7 @@ export const POST = withPublic(async ({ request }) => {
   });
 
   const sent = await sendEmail({
+    purpose: `inquiry:${inquiry.id}`,
     to: inbox,
     subject: email.subject,
     html: email.html,

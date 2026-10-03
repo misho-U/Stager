@@ -38,7 +38,9 @@ export const contactSubmissionSchema = z.object({
   interest: inquiryInterestSchema,
   message: z.string().trim().min(10, 'Please tell us a little more').max(5000),
   locale: dbLocaleSchema,
-  website: z.string().max(0, 'Unexpected value').optional(),
+  // Any value is accepted here and dropped by the route: refusing it with a
+  // 422 named the field, which tells a bot exactly what tripped it.
+  website: z.string().max(500).optional(),
   elapsedMs: z.number().int().nonnegative().optional(),
 });
 

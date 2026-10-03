@@ -94,9 +94,9 @@ test.describe('spam controls', () => {
       data: validSubmission({ website: 'http://spam.example.com' }),
     });
 
-    // The honeypot field is constrained to an empty string, so this is a 422 by
-    // schema. Either outcome is acceptable; what matters is no 500 and no send.
-    expect([200, 422]).toContain(response.status());
+    // A 422 would name the field that gave the bot away.
+    expect(response.status()).toBe(200);
+    expect((await response.json()).id).toBe('accepted');
   });
 
   test('a submission faster than a human can type is silently dropped', async ({ request }) => {
@@ -107,6 +107,26 @@ test.describe('spam controls', () => {
     expect(response.status()).toBe(200);
     const body = await response.json();
     expect(body.id).toBe('accepted');
+  });
+
+  test('a submission that does not say how long the form was open is dropped', async ({
+    request,
+  }) => {
+    // The site's own form always sends it; leaving it out must not skip the check.
+    const withoutTiming = validSubmission();
+    delete withoutTiming.elapsedMs;
+    const response = await request.post('/api/contact', { data: withoutTiming });
+
+    expect(response.status()).toBe(200);
+    expect((await response.json()).id).toBe('accepted');
+  });
+
+  test('an oversized body is refused', async ({ request }) => {
+    const response = await request.post('/api/contact', {
+      data: validSubmission({ message: 'x'.repeat(40_000) }),
+    });
+
+    expect(response.status()).toBe(413);
   });
 
   test('cross-site submissions are rejected', async ({ request }) => {

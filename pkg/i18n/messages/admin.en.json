@@ -69,6 +69,12 @@
     "submitting": "Signing in…",
     "restricted": "Access is limited to approved accounts."
   },
+  "noAccess": {
+    "title": "No access",
+    "body": "You are signed in as {email}, but this account may not use the dashboard. Sign out, then sign in with an account that may.",
+    "bodyNoEmail": "This account may not use the dashboard. Sign out, then sign in with an account that may.",
+    "signOut": "Sign out"
+  },
   "seo": {
     "caption": "Search & social",
     "metaTitle": {
@@ -91,6 +97,7 @@
     "url": "Enter a full web address, starting with https://",
     "slug": "Use lowercase letters, numbers and hyphens only (e.g. kitchen-operations).",
     "youtube": "Must be a youtube.com or youtu.be link.",
+    "link": "Use a page path like /ka/projects, a section like #inquiry, or a full https://, mailto: or tel: link.",
     "seatsLeftOverTotal": "Seats left can't be more than the seats in total.",
     "invalid": "Check this value."
   },

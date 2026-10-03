@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation';
 
+import { AdminNoAccess } from '@/widgets/admin-no-access/admin-no-access.module';
 import { AdminSidebar } from '@/widgets/admin-sidebar/admin-sidebar.module';
-import { getAdminSession } from '@pkg/auth/admin-session';
+import { getAdminAccess } from '@pkg/auth/admin-session';
 
 /** Never cache a page rendered for a specific signed-in admin. */
 export const dynamic = 'force-dynamic';
@@ -15,20 +16,31 @@ export const dynamic = 'force-dynamic';
  * AdminUser allowlist — an authenticated Supabase user who is not on it never
  * gets past here.
  *
+ * Someone signed in but not allowed is told so, with a way to sign out, rather
+ * than sent to the login page: middleware sends anyone with a session from
+ * there straight back here, and the two used to bounce a deactivated admin
+ * between them until the browser gave up.
+ *
  * Every route handler repeats the check independently. Defence here is for the
  * UI; defence there is for the data.
  */
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const session = await getAdminSession();
+  const access = await getAdminAccess();
 
-  if (!session) {
+  if (access.state === 'anonymous') {
     redirect('/admin/login');
   }
+
+  if (access.state === 'denied') {
+    return <AdminNoAccess email={access.email} />;
+  }
+
+  const { session } = access;
 
   return (
     <div className="flex min-h-dvh flex-col lg:flex-row">
       <AdminSidebar email={session.email} name={session.name} role={session.role} />
-      <main className="min-w-0 flex-1 px-gutter py-6 lg:px-8 lg:py-8">
+      <main className="px-gutter min-w-0 flex-1 py-6 lg:px-8 lg:py-8">
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">{children}</div>
       </main>
     </div>

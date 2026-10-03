@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import type { NextRequest, NextResponse } from 'next/server';
 
 import { clientEnv } from '@pkg/config/env.client';
+import { SESSION_COOKIE_OPTIONS } from '@pkg/supabase/cookie-options';
 
 /**
  * Refreshes the Supabase auth session for the current request.
@@ -21,6 +22,7 @@ export async function refreshSupabaseSession(request: NextRequest, response: Nex
     clientEnv.NEXT_PUBLIC_SUPABASE_URL,
     clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
+      cookieOptions: SESSION_COOKIE_OPTIONS,
       cookies: {
         getAll() {
           return request.cookies.getAll();

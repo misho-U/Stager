@@ -231,6 +231,31 @@ Non-negotiable. Each exists because of a specific failure mode.
     `INQUIRY_DELIVERY=on` lifts that for a preview or a dev server; nothing
     turns the live site off. `pkg/config/inquiry-delivery.ts` holds the rule,
     and `contact-form.spec.ts` pins every case.
+14. **Session cookies are HttpOnly and Secure** (`pkg/supabase/cookie-options.ts`,
+    passed to both server clients). Nothing in the browser reads them, and
+    public pages allow inline scripts. There is no browser Supabase client;
+    do not add one.
+15. **The database is reached over TLS** unless it is local (`databaseSsl`,
+    `pkg/db/prisma.ts`). node-postgres is plain text by default and Supabase's
+    connection string has no `sslmode`; leave it out, as a URL setting
+    overrides this one. `DATABASE_SSL_CA` adds certificate verification.
+16. **Links an admin types are web links**: `urlInput()` / `optionalUrlInput()`
+    take http(s) only, and a section button takes `pageSectionLinkInput()`
+    (a site path, `#anchor`, https, `mailto:`, `tel:`). `z.url()` alone takes
+    `javascript:`.
+17. **Nothing the browser says about an upload is trusted**: a Media row must
+    point at THIS project's store (`blobStoreHost()`, `pkg/blob/store.ts`;
+    every Vercel customer's store shares the domain), under `media/`, and its
+    type and size are read from the store (`head()`).
+18. **JSON bodies are capped** (`readJson`, 2 MB by default; the contact form
+    32 KB), and the honeypot answers like a success: a 422 would name it.
+19. **Errors go into logs under `error`** (`serialiseError`), cause included,
+    so they never overwrite the event name. No personal data in logs: an email
+    address is logged as `hashIdentifier()`, an email by its `purpose`.
+20. **A signed-in account that may not use the dashboard sees "No access"**
+    with Sign out (`getAdminAccess`, `pkg/auth/admin-session.ts`). Never redirect
+    it to the login page: middleware sends a session from there straight back.
+    An admin row is matched by email only while unlinked.
 
 ---
 

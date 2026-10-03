@@ -17,8 +17,9 @@ in order; nothing works until `.env.local` is filled in.
 1. Create a project. Pick **EU Central (Frankfurt)** — it is the closest region
    to Georgia.
 2. **Project Settings → Database → Connection string.** Copy both:
-   - `DATABASE_URL` — the **pooled** string, port **6543**. Append
-     `?pgbouncer=true&connection_limit=1`.
+   - `DATABASE_URL` — the **pooled** string, port **6543**, as Supabase gives
+     it. Add nothing: pool size and TLS are set in `pkg/db/prisma.ts`, and an
+     `sslmode` would override the TLS setting.
    - `DIRECT_URL` — the **direct** string, port **5432**. Migrations need a real
      session, which the pooler cannot give them.
 3. **Project Settings → API.** Copy `NEXT_PUBLIC_SUPABASE_URL`,
