@@ -31,7 +31,7 @@ const EMPTY: SocialLinkFormValues = {
 export function useAdminSocialLinks() {
   const formErrors = useFormErrors();
   const validationErrorMap = useValidationErrorMap();
-  const { data, isLoading, error } = useQuery(adminSocialLinksQuery());
+  const { data, isLoading, error, refetch } = useQuery(adminSocialLinksQuery());
   const createLink = useCreateSocialLink();
   const updateLink = useUpdateSocialLink();
   const deleteLink = useDeleteSocialLink();
@@ -62,22 +62,28 @@ export function useAdminSocialLinks() {
     });
   };
 
-  const onSubmit = form.handleSubmit(async (values) => {
-    setFormError(null);
-    try {
-      if (editingId) {
-        await updateLink.mutateAsync({ id: editingId, input: values });
-      } else {
-        await createLink.mutateAsync(values);
+  const onSubmit = form.handleSubmit(
+    async (values) => {
+      setFormError(null);
+      try {
+        if (editingId) {
+          await updateLink.mutateAsync({ id: editingId, input: values });
+        } else {
+          await createLink.mutateAsync(values);
+        }
+        startCreate();
+      } catch (caught) {
+        setFormError(formErrors.message(caught));
+        for (const [field, message] of Object.entries(formErrors.fields(caught))) {
+          form.setError(field as keyof SocialLinkFormValues, { type: 'server', message });
+        }
       }
-      startCreate();
-    } catch (caught) {
-      setFormError(formErrors.message(caught));
-      for (const [field, message] of Object.entries(formErrors.fields(caught))) {
-        form.setError(field as keyof SocialLinkFormValues, { type: 'server', message });
-      }
-    }
-  });
+    },
+    // The form's own checks stopped the save. A field may have no message in
+    // view (a dropdown, a field on the other language's tab), so say it here
+    // rather than leave Save looking dead.
+    () => setFormError(formErrors.invalid()),
+  );
 
   /** Quick on/off without opening the editor — the most common change here. */
   const toggleActive = async (link: AdminSocialLink) => {
@@ -102,7 +108,9 @@ export function useAdminSocialLinks() {
   return {
     links: data?.items ?? [],
     isLoading,
-    loadError: error ? formErrors.message(error) : null,
+    // Only while nothing has loaded; a failed refresh keeps what is on screen.
+    loadError: error && !data ? formErrors.message(error) : null,
+    retry: () => void refetch(),
     form,
     onSubmit,
     editingId,

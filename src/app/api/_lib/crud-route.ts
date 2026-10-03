@@ -2,6 +2,7 @@ import type { z } from 'zod';
 
 import { readJson, recordAudit, withAdmin } from '@/app/api/_lib/route-helpers';
 import { revalidateEntity } from '@pkg/cache/revalidate';
+import { isUniqueViolationOn } from '@pkg/db/errors';
 import type { ContentEntity } from '@pkg/cache/tags';
 import { apiCreated, apiFail, apiNoContent, apiOk } from '@pkg/http/api-response';
 import type { ListResponse } from '@/shared/types/api';
@@ -22,12 +23,10 @@ import type { ListResponse } from '@/shared/types/api';
 
 type Conflict = { field: string; message: string };
 
-function isUniqueViolation(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002';
-}
-
 function conflictResponse(conflict: Conflict) {
-  return apiFail('CONFLICT', conflict.message, { fields: { [conflict.field]: [conflict.message] } });
+  return apiFail('CONFLICT', conflict.message, {
+    fields: { [conflict.field]: [conflict.message] },
+  });
 }
 
 type CollectionConfig<TRecord, TInput> = {
@@ -70,7 +69,11 @@ export function createCollectionRoutes<TRecord, TInput>(config: CollectionConfig
 
       return apiCreated(record);
     } catch (error) {
-      if (config.conflict && isUniqueViolation(error)) return conflictResponse(config.conflict);
+      // Only a clash on the configured field (the slug) is answered as one:
+      // a duplicate elsewhere used to read "this link is taken" too.
+      if (config.conflict && isUniqueViolationOn(error, config.conflict.field)) {
+        return conflictResponse(config.conflict);
+      }
       throw error;
     }
   });
@@ -129,7 +132,9 @@ export function createItemRoutes<TRecord, TUpdate>(config: ItemConfig<TRecord, T
 
       return apiOk(record);
     } catch (error) {
-      if (config.conflict && isUniqueViolation(error)) return conflictResponse(config.conflict);
+      if (config.conflict && isUniqueViolationOn(error, config.conflict.field)) {
+        return conflictResponse(config.conflict);
+      }
       throw error;
     }
   });

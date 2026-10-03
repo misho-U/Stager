@@ -18,6 +18,8 @@ import { sanitizeRichText } from '@pkg/security/sanitize';
 const adminInclude = {
   coverMedia: mediaInclude,
   translations: { include: { ogMedia: mediaInclude } },
+  // How many projects and courses link to it: the delete confirmation says so.
+  _count: { select: { projects: true, courses: true } },
 } as const;
 
 const EMPTY_TRANSLATION = {
@@ -36,6 +38,7 @@ type AdminRow = Awaited<
 function toAdminService(row: AdminRow): AdminService {
   return {
     id: row.id,
+    linkedCount: row._count.projects + row._count.courses,
     slug: row.slug,
     icon: row.icon,
     coverMediaId: row.coverMediaId,
@@ -133,12 +136,7 @@ export async function updateService(
       ...(translations
         ? {
             translations: {
-              upsert: translationUpsert(
-                'serviceId',
-                id,
-                'serviceId_locale',
-                translations,
-              ) as never,
+              upsert: translationUpsert('serviceId', id, 'serviceId_locale', translations) as never,
             },
           }
         : {}),

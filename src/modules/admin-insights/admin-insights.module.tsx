@@ -11,7 +11,7 @@ import { Button } from '@/shared/components/button';
 import { ConfirmButton } from '@/shared/components/confirm-button';
 import { DataTable, type Column } from '@/shared/components/data-table';
 import { PageHeader } from '@/shared/components/page-header';
-import { ErrorNotice, Panel, StatusBadge } from '@/shared/components/panel';
+import { ErrorNotice, LoadFailed, Panel, StatusBadge } from '@/shared/components/panel';
 import { useFormErrors } from '@/shared/lib/form-errors';
 import { useAdminFormat } from '@/shared/lib/use-admin-format';
 
@@ -19,7 +19,9 @@ export function AdminInsightsModule() {
   const t = useTranslations('admin');
   const format = useAdminFormat();
   const formErrors = useFormErrors();
-  const { data, isLoading, error } = useQuery(adminInsightsQuery());
+  const { data, isLoading, error, refetch } = useQuery(adminInsightsQuery());
+  // Only while nothing has loaded; a failed refresh keeps the list on screen.
+  const loadFailed = error && !data ? formErrors.message(error) : null;
   const deleteInsight = useDeleteInsight();
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -39,7 +41,7 @@ export function AdminInsightsModule() {
       render: (insight) => (
         <Link
           href={`/admin/insights/${insight.id}`}
-          className="font-medium text-ink underline-offset-4 hover:underline"
+          className="text-ink font-medium underline-offset-4 hover:underline"
         >
           {insight.translations.KA.title || insight.translations.EN.title || insight.slug}
         </Link>
@@ -55,7 +57,9 @@ export function AdminInsightsModule() {
       header: t('columns.published'),
       secondary: true,
       render: (insight) => (
-        <span className="text-ink-muted">{insight.publishedAt ? format.date(insight.publishedAt) : '—'}</span>
+        <span className="text-ink-muted">
+          {insight.publishedAt ? format.date(insight.publishedAt) : '—'}
+        </span>
       ),
     },
     {
@@ -106,11 +110,12 @@ export function AdminInsightsModule() {
         }
       />
 
-      {error ? <ErrorNotice message={formErrors.message(error)} /> : null}
       {deleteError ? <ErrorNotice message={deleteError} /> : null}
 
       <Panel>
-        {isLoading ? (
+        {loadFailed ? (
+          <LoadFailed message={loadFailed} onRetry={() => void refetch()} />
+        ) : isLoading ? (
           <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
         ) : (
           <DataTable

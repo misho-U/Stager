@@ -96,25 +96,37 @@ export function useAdminSettings() {
     if (settingsQuery.data) reset(toFormValues(settingsQuery.data));
   }, [settingsQuery.data, reset]);
 
-  const onSubmit = form.handleSubmit(async (values) => {
-    setSubmitError(null);
-    setIsSaved(false);
-    try {
-      await updateSettings.mutateAsync(values);
-      setIsSaved(true);
-    } catch (caught) {
-      setSubmitError(formErrors.message(caught));
-      for (const [field, message] of Object.entries(formErrors.fields(caught))) {
-        form.setError(field as FieldPath<SiteSettingFormValues>, { type: 'server', message });
+  const onSubmit = form.handleSubmit(
+    async (values) => {
+      setSubmitError(null);
+      setIsSaved(false);
+      try {
+        await updateSettings.mutateAsync(values);
+        // What is on screen is now what is stored: nothing is unsaved.
+        form.reset(form.getValues());
+        setIsSaved(true);
+      } catch (caught) {
+        setSubmitError(formErrors.message(caught));
+        for (const [field, message] of Object.entries(formErrors.fields(caught))) {
+          form.setError(field as FieldPath<SiteSettingFormValues>, { type: 'server', message });
+        }
       }
-    }
-  });
+    },
+    // The form's own checks stopped the save. A field may have no message in
+    // view (a dropdown, a field on the other language's tab), so say it here
+    // rather than leave Save looking dead.
+    () => setSubmitError(formErrors.invalid()),
+  );
 
   return {
     form,
     onSubmit,
     isLoading: settingsQuery.isLoading,
-    loadError: settingsQuery.error ? formErrors.message(settingsQuery.error) : null,
+    // Only while nothing has loaded: a failed background refresh must not
+    // take away a form someone is typing in.
+    loadError:
+      settingsQuery.error && !settingsQuery.data ? formErrors.message(settingsQuery.error) : null,
+    retry: () => void settingsQuery.refetch(),
     isSubmitting: updateSettings.isPending,
     submitError,
     isSaved,

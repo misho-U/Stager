@@ -13,10 +13,11 @@ import {
 } from '@/shared/components/content-locale';
 import { SelectField, TextAreaField, TextField } from '@/shared/components/field';
 import { PageHeader } from '@/shared/components/page-header';
-import { ErrorNotice, Panel } from '@/shared/components/panel';
+import { ErrorNotice, LoadFailed, Panel } from '@/shared/components/panel';
 import { SeoFields } from '@/shared/components/seo-fields';
 import { useStatusOptions } from '@/shared/lib/use-enum-options';
 import type { DbLocale } from '@/shared/types/enums';
+import { useUnsavedChangesGuard } from '@/shared/lib/use-unsaved-changes-guard';
 import { MediaPicker } from '@/widgets/media-picker/media-picker.module';
 
 export function AdminServiceFormModule({ serviceId }: { serviceId?: string }) {
@@ -27,14 +28,19 @@ export function AdminServiceFormModule({ serviceId }: { serviceId?: string }) {
     onSubmit,
     isEdit,
     isLoading,
+    loadError,
+    retry,
     isSubmitting,
     submitError,
     slugAutofill,
   } = useAdminServiceForm({ serviceId });
 
-  const { errors, submitCount } = form.formState;
+  const { errors, submitCount, isDirty } = form.formState;
+  useUnsavedChangesGuard(isDirty, t('common.unsavedChanges'));
 
   if (isLoading) return <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>;
+  // Its blank fields would be saved over the record: no form until it loads.
+  if (loadError) return <LoadFailed message={loadError} onRetry={retry} />;
 
   return (
     <ContentLocaleProvider errors={errors} submitCount={submitCount}>

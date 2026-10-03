@@ -210,7 +210,7 @@ type PublicRow = {
     ogMedia: { url: string } | null;
   }>;
   category: { slug: string; translations: Array<{ name: string }> } | null;
-  author: { slug: string; translations: Array<{ name: string }> } | null;
+  author: { slug: string; status: string; translations: Array<{ name: string }> } | null;
 };
 
 function toPublicListItem(row: PublicRow, locale: DbLocale): PublicInsightListItem {
@@ -227,8 +227,10 @@ function toPublicListItem(row: PublicRow, locale: DbLocale): PublicInsightListIt
       : null,
     // showAuthor === false means the article is published anonymously, so the
     // author must not leak through the API either — not just be hidden in the UI.
+    // Nor may a team member who is not published: their name would appear, and
+    // their link would lead nowhere.
     author:
-      row.showAuthor && row.author
+      row.showAuthor && row.author && row.author.status === 'PUBLISHED'
         ? { slug: row.author.slug, name: row.author.translations[0]?.name ?? '' }
         : null,
     readingMinutes: row.readingMinutes,

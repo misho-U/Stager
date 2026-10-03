@@ -99,7 +99,10 @@ export function useAdminInsightForm({ insightId }: { insightId?: string }) {
   // was tried, so an empty title does not flag the slug mid-typing.
   const setSlug = useCallback(
     (slug: string) =>
-      form.setValue('slug', slug, { shouldDirty: true, shouldValidate: form.formState.isSubmitted }),
+      form.setValue('slug', slug, {
+        shouldDirty: true,
+        shouldValidate: form.formState.isSubmitted,
+      }),
     [form],
   );
   const slugAutofill = useSlugAutofill({ enabled: !isEdit, setSlug });
@@ -110,23 +113,29 @@ export function useAdminInsightForm({ insightId }: { insightId?: string }) {
     if (insightQuery.data) reset(toFormValues(insightQuery.data));
   }, [insightQuery.data, reset]);
 
-  const onSubmit = form.handleSubmit(async (values) => {
-    setSubmitError(null);
-    try {
-      if (insightId) {
-        await updateInsight.mutateAsync({ id: insightId, input: values });
-      } else {
-        await createInsight.mutateAsync(values);
+  const onSubmit = form.handleSubmit(
+    async (values) => {
+      setSubmitError(null);
+      try {
+        if (insightId) {
+          await updateInsight.mutateAsync({ id: insightId, input: values });
+        } else {
+          await createInsight.mutateAsync(values);
+        }
+        router.push('/admin/insights');
+        router.refresh();
+      } catch (caught) {
+        setSubmitError(formErrors.message(caught));
+        for (const [field, message] of Object.entries(formErrors.fields(caught))) {
+          form.setError(field as keyof InsightFormValues, { type: 'server', message });
+        }
       }
-      router.push('/admin/insights');
-      router.refresh();
-    } catch (caught) {
-      setSubmitError(formErrors.message(caught));
-      for (const [field, message] of Object.entries(formErrors.fields(caught))) {
-        form.setError(field as keyof InsightFormValues, { type: 'server', message });
-      }
-    }
-  });
+    },
+    // The form's own checks stopped the save. A field may have no message in
+    // view (a dropdown, a field on the other language's tab), so say it here
+    // rather than leave Save looking dead.
+    () => setSubmitError(formErrors.invalid()),
+  );
 
   return {
     form,
@@ -134,6 +143,12 @@ export function useAdminInsightForm({ insightId }: { insightId?: string }) {
     isEdit,
     slugAutofill,
     isLoading: isEdit && insightQuery.isLoading,
+    // A record that failed to load gets no form (LoadFailed), but only while
+    // nothing has loaded: a failed background refresh must not
+    // take away a form someone is typing in.
+    loadError:
+      insightQuery.error && !insightQuery.data ? formErrors.message(insightQuery.error) : null,
+    retry: () => void insightQuery.refetch(),
     isSubmitting: createInsight.isPending || updateInsight.isPending,
     submitError,
     categoryOptions: (categoriesQuery.data?.items ?? []).map((category) => ({

@@ -5,6 +5,7 @@
     "positioning": "Culinary & Foodservice Development",
     "loading": "Loading…",
     "error": "Something went wrong",
+    "errorBody": "This page could not be shown. Try again; if it keeps happening, come back in a few minutes.",
     "retry": "Try again",
     "readMore": "Read more",
     "backToList": "Back to list",

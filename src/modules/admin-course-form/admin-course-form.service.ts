@@ -85,7 +85,10 @@ export function useAdminCourseForm({ courseId }: { courseId?: string }) {
   // was tried, so an empty title does not flag the slug mid-typing.
   const setSlug = useCallback(
     (slug: string) =>
-      form.setValue('slug', slug, { shouldDirty: true, shouldValidate: form.formState.isSubmitted }),
+      form.setValue('slug', slug, {
+        shouldDirty: true,
+        shouldValidate: form.formState.isSubmitted,
+      }),
     [form],
   );
   const slugAutofill = useSlugAutofill({ enabled: !isEdit, setSlug });
@@ -96,23 +99,29 @@ export function useAdminCourseForm({ courseId }: { courseId?: string }) {
     if (courseQuery.data) reset(toFormValues(courseQuery.data));
   }, [courseQuery.data, reset]);
 
-  const onSubmit = form.handleSubmit(async (values) => {
-    setSubmitError(null);
-    try {
-      if (courseId) {
-        await updateCourse.mutateAsync({ id: courseId, input: values });
-      } else {
-        await createCourse.mutateAsync(values);
+  const onSubmit = form.handleSubmit(
+    async (values) => {
+      setSubmitError(null);
+      try {
+        if (courseId) {
+          await updateCourse.mutateAsync({ id: courseId, input: values });
+        } else {
+          await createCourse.mutateAsync(values);
+        }
+        router.push('/admin/courses');
+        router.refresh();
+      } catch (caught) {
+        setSubmitError(formErrors.message(caught));
+        for (const [field, message] of Object.entries(formErrors.fields(caught))) {
+          form.setError(field as keyof CourseFormValues, { type: 'server', message });
+        }
       }
-      router.push('/admin/courses');
-      router.refresh();
-    } catch (caught) {
-      setSubmitError(formErrors.message(caught));
-      for (const [field, message] of Object.entries(formErrors.fields(caught))) {
-        form.setError(field as keyof CourseFormValues, { type: 'server', message });
-      }
-    }
-  });
+    },
+    // The form's own checks stopped the save. A field may have no message in
+    // view (a dropdown, a field on the other language's tab), so say it here
+    // rather than leave Save looking dead.
+    () => setSubmitError(formErrors.invalid()),
+  );
 
   return {
     form,
@@ -120,6 +129,12 @@ export function useAdminCourseForm({ courseId }: { courseId?: string }) {
     isEdit,
     slugAutofill,
     isLoading: isEdit && courseQuery.isLoading,
+    // A record that failed to load gets no form (LoadFailed), but only while
+    // nothing has loaded: a failed background refresh must not
+    // take away a form someone is typing in.
+    loadError:
+      courseQuery.error && !courseQuery.data ? formErrors.message(courseQuery.error) : null,
+    retry: () => void courseQuery.refetch(),
     isSubmitting: createCourse.isPending || updateCourse.isPending,
     submitError,
     categoryOptions: (categoriesQuery.data?.items ?? []).map((category) => ({

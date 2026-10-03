@@ -7,7 +7,7 @@ import { adminProjectsQuery, useDeleteProject } from '@/entity/project/api/proje
 import { useFormErrors } from '@/shared/lib/form-errors';
 
 export function useAdminProjects() {
-  const { data, isLoading, error } = useQuery(adminProjectsQuery());
+  const { data, isLoading, error, refetch } = useQuery(adminProjectsQuery());
   const deleteProject = useDeleteProject();
   const formErrors = useFormErrors();
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -24,7 +24,9 @@ export function useAdminProjects() {
   return {
     projects: data?.items ?? [],
     isLoading,
-    loadError: error ? formErrors.message(error) : null,
+    // Only while nothing has loaded; a failed refresh keeps what is on screen.
+    loadError: error && !data ? formErrors.message(error) : null,
+    retry: () => void refetch(),
     remove,
     isDeleting: deleteProject.isPending,
     deletingId: deleteProject.variables ?? null,

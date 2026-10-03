@@ -69,7 +69,10 @@ export function useAdminVideoForm({ videoId }: { videoId?: string }) {
   // was tried, so an empty title does not flag the slug mid-typing.
   const setSlug = useCallback(
     (slug: string) =>
-      form.setValue('slug', slug, { shouldDirty: true, shouldValidate: form.formState.isSubmitted }),
+      form.setValue('slug', slug, {
+        shouldDirty: true,
+        shouldValidate: form.formState.isSubmitted,
+      }),
     [form],
   );
   const slugAutofill = useSlugAutofill({ enabled: !isEdit, setSlug });
@@ -80,23 +83,29 @@ export function useAdminVideoForm({ videoId }: { videoId?: string }) {
     if (videoQuery.data) reset(toFormValues(videoQuery.data));
   }, [videoQuery.data, reset]);
 
-  const onSubmit = form.handleSubmit(async (values) => {
-    setSubmitError(null);
-    try {
-      if (videoId) {
-        await updateVideo.mutateAsync({ id: videoId, input: values });
-      } else {
-        await createVideo.mutateAsync(values);
+  const onSubmit = form.handleSubmit(
+    async (values) => {
+      setSubmitError(null);
+      try {
+        if (videoId) {
+          await updateVideo.mutateAsync({ id: videoId, input: values });
+        } else {
+          await createVideo.mutateAsync(values);
+        }
+        router.push('/admin/videos');
+        router.refresh();
+      } catch (caught) {
+        setSubmitError(formErrors.message(caught));
+        for (const [field, message] of Object.entries(formErrors.fields(caught))) {
+          form.setError(field as keyof VideoFormValues, { type: 'server', message });
+        }
       }
-      router.push('/admin/videos');
-      router.refresh();
-    } catch (caught) {
-      setSubmitError(formErrors.message(caught));
-      for (const [field, message] of Object.entries(formErrors.fields(caught))) {
-        form.setError(field as keyof VideoFormValues, { type: 'server', message });
-      }
-    }
-  });
+    },
+    // The form's own checks stopped the save. A field may have no message in
+    // view (a dropdown, a field on the other language's tab), so say it here
+    // rather than leave Save looking dead.
+    () => setSubmitError(formErrors.invalid()),
+  );
 
   return {
     form,
@@ -104,6 +113,11 @@ export function useAdminVideoForm({ videoId }: { videoId?: string }) {
     isEdit,
     slugAutofill,
     isLoading: isEdit && videoQuery.isLoading,
+    // A record that failed to load gets no form (LoadFailed), but only while
+    // nothing has loaded: a failed background refresh must not
+    // take away a form someone is typing in.
+    loadError: videoQuery.error && !videoQuery.data ? formErrors.message(videoQuery.error) : null,
+    retry: () => void videoQuery.refetch(),
     isSubmitting: createVideo.isPending || updateVideo.isPending,
     submitError,
   };

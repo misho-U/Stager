@@ -15,6 +15,9 @@ function getResend(apiKey: string): Resend {
   return client;
 }
 
+/** Long enough for a slow day at the provider, short enough to give up cleanly. */
+const SEND_TIMEOUT_MS = 10_000;
+
 type SendEmailInput = {
   to: string | string[];
   /**
@@ -22,6 +25,8 @@ type SendEmailInput = {
    * never logged: an inquiry's carries the visitor's name and company.
    */
   purpose: string;
+  /** Resend sends one email per key, however often it is asked: safe retries. */
+  idempotencyKey?: string;
   subject: string;
   html: string;
   text: string;
@@ -54,15 +59,28 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
     return { ok: false, error: 'Email is not configured' };
   }
 
+  // The SDK sets no time limit of its own; a hung request would hold the
+  // function until the platform killed it.
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timedOut = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('Mail send timed out')), SEND_TIMEOUT_MS);
+  });
+
   try {
-    const { data, error } = await getResend(apiKey).emails.send({
-      from,
-      to: input.to,
-      subject: input.subject,
-      html: input.html,
-      text: input.text,
-      ...(input.replyTo ? { replyTo: input.replyTo } : {}),
-    });
+    const { data, error } = await Promise.race([
+      getResend(apiKey).emails.send(
+        {
+          from,
+          to: input.to,
+          subject: input.subject,
+          html: input.html,
+          text: input.text,
+          ...(input.replyTo ? { replyTo: input.replyTo } : {}),
+        },
+        input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : undefined,
+      ),
+      timedOut,
+    ]);
 
     if (error) {
       logger.error('mail.send_rejected', { purpose: input.purpose, reason: error.message });
@@ -73,5 +91,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
   } catch (error) {
     logger.error('mail.send_failed', { purpose: input.purpose, ...serialiseError(error) });
     return { ok: false, error: 'Mail transport failed' };
+  } finally {
+    clearTimeout(timer);
   }
 }

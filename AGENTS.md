@@ -320,6 +320,31 @@ Non-negotiable. Each exists because of a specific failure mode.
   reads the same in every time zone, and "today" is Tbilisi's
   (`shared/lib/calendar-date.ts`): a Vercel function runs in UTC, four hours
   behind.
+- **Something that failed to load gets `LoadFailed` (message + Try again),
+  never the empty state and never a form** (`shared/components/panel.tsx`).
+  A list that says "nothing yet" when its read failed invites duplicates; an
+  edit form rendered without its record saves blanks over it. Only while
+  nothing has loaded (`error && !data`): a failed background refresh must not
+  take away a form someone is typing in. Every list and edit form follows this.
+- **Every form passes `handleSubmit` an invalid handler**
+  (`() => setSubmitError(formErrors.invalid())`): a field whose message is out
+  of view (a dropdown, the other language's tab) otherwise left Save looking
+  dead. Every edit form also calls `useUnsavedChangesGuard(isDirty, …)`, and a
+  form that stays open after saving resets to what it saved.
+- **Error boundaries**: `app/[locale]/error.tsx` (in the visitor's language),
+  `app/admin/(dashboard)/error.tsx` (keeps the sidebar), `app/admin/error.tsx`
+  (the dashboard itself failed, e.g. the access check with the database down),
+  `app/global-error.tsx` (bilingual, self-contained). The prop is `retry`, not
+  `reset`, in Next 16.
+- **A database refusal is an answer, not a crash** (`pkg/db/errors.ts`,
+  `handleRouteError`): P2025 → 404, P2003 → 409 `STALE_REFERENCE`, P2002 →
+  409 (a slug clash only when the constraint names the slug), P2020 → 422.
+  Prisma 7 behind the pg adapter reports the constraint in
+  `meta.driverAdapterError.cause.constraint.index`, not `meta.target`.
+- **The inquiry email is sent after the response** (`after()`,
+  `app/api/_lib/notify-inquiry.ts`), with a 10 s limit and the inquiry id as
+  Resend's idempotency key, so it can be retried safely. The visitor's answer
+  never waits on the mail provider.
 - **Bilingual content is authored in both languages at once.** Translation
   tables, `@@unique([<parent>Id, locale])`, one ქართული | English toggle per
   admin form (§ Dashboard language).

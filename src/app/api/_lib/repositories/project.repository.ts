@@ -237,7 +237,12 @@ const publicInclude = (locale: DbLocale) =>
     coverMedia: mediaInclude,
     translations: { where: { locale }, include: { ogMedia: mediaInclude } },
     gallery: { orderBy: { order: 'asc' }, include: { media: mediaInclude } },
-    services: { include: { service: { include: { translations: { where: { locale } } } } } },
+    // Only published services: a draft's title and slug must not reach the
+    // site through a project that links to it.
+    services: {
+      where: { service: { status: 'PUBLISHED' } },
+      include: { service: { include: { translations: { where: { locale } } } } },
+    },
   }) as const;
 
 export async function listPublicProjects(locale: DbLocale, limit: number, offset: number) {

@@ -121,7 +121,7 @@ const courseFieldsSchema = z.object({
   seatsLeft: z.number().int().min(0).max(10_000).nullish(),
   priceGel: z.number().int().min(0).max(1_000_000).nullish(),
   status: contentStatusSchema.default('DRAFT'),
-  order: z.number().int().min(0).default(0),
+  order: z.number().int().min(0).max(100_000).default(0),
   translations: bothLocales(courseTranslationInputSchema),
 });
 
@@ -149,7 +149,10 @@ export type CourseFormValues = z.input<typeof courseInputSchema>;
 
 // zod refuses .partial() on a refined object, so the update schema starts
 // from the plain fields and repeats the check.
-export const courseUpdateInputSchema = partialUpdate(courseFieldsSchema).refine(seatsAddUp, SEATS_CHECK);
+export const courseUpdateInputSchema = partialUpdate(courseFieldsSchema).refine(
+  seatsAddUp,
+  SEATS_CHECK,
+);
 export type CourseUpdateInput = z.output<typeof courseUpdateInputSchema>;
 
 /**

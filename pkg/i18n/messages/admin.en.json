@@ -50,6 +50,8 @@
     "confirm": "Confirm",
     "remove": "Remove",
     "loading": "Loading…",
+    "retry": "Try again",
+    "unsavedChanges": "You have unsaved changes. Leave without saving?",
     "yes": "Yes",
     "close": "Close",
     "no": "No"
@@ -122,7 +124,8 @@
       "NOT_ALLOWED": "This account is not permitted to use the dashboard.",
       "RATE_LIMITED": "Too many sign-in attempts. Please try again later.",
       "PROVIDER_RATE_LIMITED": "Supabase is throttling sign-in attempts. Wait a minute.",
-      "MEDIA_IN_USE": "This image is still used by other content. Remove it there first, then delete it here."
+      "MEDIA_IN_USE": "This image is still used by other content. Remove it there first, then delete it here.",
+      "STALE_REFERENCE": "Something this links to no longer exists (deleted meanwhile, perhaps). Reload the page and choose again."
     },
     "uploadStalled": "The upload stopped making progress, so it was cancelled. Check the connection and try again. If it keeps happening, uploads are being blocked: contact whoever maintains the site.",
     "fileTooBig": "Images must be under {max} MB."
@@ -131,6 +134,7 @@
     "title": "Dashboard",
     "greeting": "Hello, {name}",
     "intro": "Edits here appear on the public site as soon as you save.",
+    "countsFailed": "The counts could not be loaded. Every other screen works as usual; try refreshing the page.",
     "newInquiries": "{count, plural, one {# new inquiry waiting} other {# new inquiries waiting}}",
     "openInbox": "Open the inbox →",
     "shortcutsTitle": "Common tasks",
@@ -287,7 +291,8 @@
     "columns": {
       "nameKa": "Name (KA)",
       "nameEn": "Name (EN)"
-    }
+    },
+    "deleteLinked": "{count, plural, one {# article uses this category and will be left without one.} other {# articles use this category and will be left without one.}}"
   },
   "services": {
     "title": "Services",
@@ -309,7 +314,8 @@
         "hint": "Matches an icon component in the codebase. Leave blank for none."
       },
       "submit": "Save service"
-    }
+    },
+    "deleteLinked": "{count, plural, one {# project or course links to this service and will lose the link.} other {# projects and courses link to this service and will lose the link.}}"
   },
   "courses": {
     "title": "Courses",
@@ -445,7 +451,8 @@
       "linkedin": "LinkedIn URL",
       "photo": "Photo",
       "submit": "Save member"
-    }
+    },
+    "deleteLinked": "{count, plural, one {# article names this person as its author and will show no author.} other {# articles name this person as their author and will show no author.}}"
   },
   "units": {
     "bytes": "{size} B",

@@ -10,6 +10,8 @@ import {
 
 export const adminCategorySchema = z.object({
   id: z.string(),
+  /** What links to it and would lose the link if it were deleted. */
+  linkedCount: z.number().int(),
   slug: z.string(),
   order: z.number().int(),
   createdAt: isoDateTime,
@@ -33,10 +35,8 @@ export const publicCategoryListResponseSchema = listResponseSchema(publicCategor
 
 export const categoryInputSchema = z.object({
   slug: slugSchema,
-  order: z.number().int().min(0).default(0),
-  translations: bothLocales(
-    z.object({ name: z.string().trim().min(1).max(120) }),
-  ),
+  order: z.number().int().min(0).max(100_000).default(0),
+  translations: bothLocales(z.object({ name: z.string().trim().min(1).max(120) })),
 });
 
 /** Validated values, with schema defaults applied. */

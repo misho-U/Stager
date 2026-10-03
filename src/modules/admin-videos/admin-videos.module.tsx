@@ -11,7 +11,7 @@ import { Button } from '@/shared/components/button';
 import { ConfirmButton } from '@/shared/components/confirm-button';
 import { DataTable, type Column } from '@/shared/components/data-table';
 import { PageHeader } from '@/shared/components/page-header';
-import { ErrorNotice, Panel, StatusBadge } from '@/shared/components/panel';
+import { ErrorNotice, LoadFailed, Panel, StatusBadge } from '@/shared/components/panel';
 import { useFormErrors } from '@/shared/lib/form-errors';
 import { useAdminFormat } from '@/shared/lib/use-admin-format';
 
@@ -19,7 +19,9 @@ export function AdminVideosModule() {
   const t = useTranslations('admin');
   const format = useAdminFormat();
   const formErrors = useFormErrors();
-  const { data, isLoading, error } = useQuery(adminVideosQuery());
+  const { data, isLoading, error, refetch } = useQuery(adminVideosQuery());
+  // Only while nothing has loaded; a failed refresh keeps the list on screen.
+  const loadFailed = error && !data ? formErrors.message(error) : null;
   const deleteVideo = useDeleteVideo();
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -40,7 +42,7 @@ export function AdminVideosModule() {
         <span className="flex flex-col">
           <Link
             href={`/admin/videos/${video.id}`}
-            className="font-medium text-ink underline-offset-4 hover:underline"
+            className="text-ink font-medium underline-offset-4 hover:underline"
           >
             {video.translations.KA.title || video.translations.EN.title || video.slug}
           </Link>
@@ -95,11 +97,12 @@ export function AdminVideosModule() {
         }
       />
 
-      {error ? <ErrorNotice message={formErrors.message(error)} /> : null}
       {deleteError ? <ErrorNotice message={deleteError} /> : null}
 
       <Panel>
-        {isLoading ? (
+        {loadFailed ? (
+          <LoadFailed message={loadFailed} onRetry={() => void refetch()} />
+        ) : isLoading ? (
           <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
         ) : (
           <DataTable

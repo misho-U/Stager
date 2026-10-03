@@ -32,7 +32,7 @@ export const socialLinkInputSchema = z.object({
   platform: socialPlatformSchema,
   url: urlInput(),
   label: z.string().trim().max(80).nullish(),
-  order: z.number().int().min(0).default(0),
+  order: z.number().int().min(0).max(100_000).default(0),
   isActive: z.boolean().default(true),
 });
 

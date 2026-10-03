@@ -66,7 +66,10 @@ export function useAdminTeamForm({ memberId }: { memberId?: string }) {
   // was tried, so an empty name does not flag the slug mid-typing.
   const setSlug = useCallback(
     (slug: string) =>
-      form.setValue('slug', slug, { shouldDirty: true, shouldValidate: form.formState.isSubmitted }),
+      form.setValue('slug', slug, {
+        shouldDirty: true,
+        shouldValidate: form.formState.isSubmitted,
+      }),
     [form],
   );
   const slugAutofill = useSlugAutofill({ enabled: !isEdit, setSlug });
@@ -77,23 +80,29 @@ export function useAdminTeamForm({ memberId }: { memberId?: string }) {
     if (memberQuery.data) reset(toFormValues(memberQuery.data));
   }, [memberQuery.data, reset]);
 
-  const onSubmit = form.handleSubmit(async (values) => {
-    setSubmitError(null);
-    try {
-      if (memberId) {
-        await updateMember.mutateAsync({ id: memberId, input: values });
-      } else {
-        await createMember.mutateAsync(values);
+  const onSubmit = form.handleSubmit(
+    async (values) => {
+      setSubmitError(null);
+      try {
+        if (memberId) {
+          await updateMember.mutateAsync({ id: memberId, input: values });
+        } else {
+          await createMember.mutateAsync(values);
+        }
+        router.push('/admin/team');
+        router.refresh();
+      } catch (caught) {
+        setSubmitError(formErrors.message(caught));
+        for (const [field, message] of Object.entries(formErrors.fields(caught))) {
+          form.setError(field as keyof TeamMemberFormValues, { type: 'server', message });
+        }
       }
-      router.push('/admin/team');
-      router.refresh();
-    } catch (caught) {
-      setSubmitError(formErrors.message(caught));
-      for (const [field, message] of Object.entries(formErrors.fields(caught))) {
-        form.setError(field as keyof TeamMemberFormValues, { type: 'server', message });
-      }
-    }
-  });
+    },
+    // The form's own checks stopped the save. A field may have no message in
+    // view (a dropdown, a field on the other language's tab), so say it here
+    // rather than leave Save looking dead.
+    () => setSubmitError(formErrors.invalid()),
+  );
 
   return {
     form,
@@ -101,6 +110,12 @@ export function useAdminTeamForm({ memberId }: { memberId?: string }) {
     isEdit,
     slugAutofill,
     isLoading: isEdit && memberQuery.isLoading,
+    // A record that failed to load gets no form (LoadFailed), but only while
+    // nothing has loaded: a failed background refresh must not
+    // take away a form someone is typing in.
+    loadError:
+      memberQuery.error && !memberQuery.data ? formErrors.message(memberQuery.error) : null,
+    retry: () => void memberQuery.refetch(),
     isSubmitting: createMember.isPending || updateMember.isPending,
     submitError,
   };

@@ -8,12 +8,12 @@ import { Button } from '@/shared/components/button';
 import { ConfirmButton } from '@/shared/components/confirm-button';
 import { DataTable, type Column } from '@/shared/components/data-table';
 import { PageHeader } from '@/shared/components/page-header';
-import { ErrorNotice, Panel, StatusBadge } from '@/shared/components/panel';
+import { ErrorNotice, LoadFailed, Panel, StatusBadge } from '@/shared/components/panel';
 import type { AdminProject } from '@/entity/project/model/project.model';
 
 export function AdminProjectsModule() {
   const t = useTranslations('admin');
-  const { projects, isLoading, loadError, remove, isDeleting, deletingId, deleteError } =
+  const { projects, isLoading, loadError, retry, remove, isDeleting, deletingId, deleteError } =
     useAdminProjects();
 
   const columns: Array<Column<AdminProject>> = [
@@ -23,7 +23,7 @@ export function AdminProjectsModule() {
       render: (project) => (
         <Link
           href={`/admin/projects/${project.id}`}
-          className="font-medium text-ink underline-offset-4 hover:underline"
+          className="text-ink font-medium underline-offset-4 hover:underline"
         >
           {project.translations.KA.title || project.translations.EN.title || project.slug}
         </Link>
@@ -75,11 +75,12 @@ export function AdminProjectsModule() {
         }
       />
 
-      {loadError ? <ErrorNotice message={loadError} /> : null}
       {deleteError ? <ErrorNotice message={deleteError} /> : null}
 
       <Panel>
-        {isLoading ? (
+        {loadError ? (
+          <LoadFailed message={loadError} onRetry={retry} />
+        ) : isLoading ? (
           <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
         ) : (
           <DataTable

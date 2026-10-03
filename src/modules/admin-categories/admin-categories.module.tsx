@@ -9,7 +9,7 @@ import { ConfirmButton } from '@/shared/components/confirm-button';
 import { DataTable, type Column } from '@/shared/components/data-table';
 import { TextField } from '@/shared/components/field';
 import { PageHeader } from '@/shared/components/page-header';
-import { ErrorNotice, Panel } from '@/shared/components/panel';
+import { ErrorNotice, LoadFailed, Panel } from '@/shared/components/panel';
 import type { AdminCategory } from '@/entity/category/model/category.model';
 
 export function AdminCategoriesModule() {
@@ -18,6 +18,7 @@ export function AdminCategoriesModule() {
     categories,
     isLoading,
     loadError,
+    retry,
     form,
     onSubmit,
     editingId,
@@ -38,7 +39,7 @@ export function AdminCategoriesModule() {
       key: 'name',
       header: t('categories.columns.nameKa'),
       render: (category) => (
-        <span className="font-medium text-ink">{category.translations.KA.name || '—'}</span>
+        <span className="text-ink font-medium">{category.translations.KA.name || '—'}</span>
       ),
     },
     {
@@ -68,6 +69,11 @@ export function AdminCategoriesModule() {
             label={t('common.delete')}
             confirmLabel={t('common.confirm')}
             loading={isDeleting && deletingId === category.id}
+            warning={
+              category.linkedCount > 0
+                ? t('categories.deleteLinked', { count: category.linkedCount })
+                : null
+            }
             onConfirm={() => remove(category.id)}
           />
         </span>
@@ -86,8 +92,6 @@ export function AdminCategoriesModule() {
           </Link>
         }
       />
-
-      {loadError ? <ErrorNotice message={loadError} /> : null}
 
       <Panel
         title={editingId ? t('categories.editTitle') : t('categories.addTitle')}
@@ -145,7 +149,9 @@ export function AdminCategoriesModule() {
       </Panel>
 
       <Panel title={t('categories.allTitle')}>
-        {isLoading ? (
+        {loadError ? (
+          <LoadFailed message={loadError} onRetry={retry} />
+        ) : isLoading ? (
           <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
         ) : (
           <DataTable

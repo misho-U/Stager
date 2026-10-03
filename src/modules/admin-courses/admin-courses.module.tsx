@@ -12,7 +12,7 @@ import { Button } from '@/shared/components/button';
 import { ConfirmButton } from '@/shared/components/confirm-button';
 import { DataTable, type Column } from '@/shared/components/data-table';
 import { PageHeader } from '@/shared/components/page-header';
-import { ErrorNotice, Panel, StatusBadge } from '@/shared/components/panel';
+import { ErrorNotice, LoadFailed, Panel, StatusBadge } from '@/shared/components/panel';
 import { todayInTbilisi } from '@/shared/lib/calendar-date';
 import { useFormErrors } from '@/shared/lib/form-errors';
 import { useAdminFormat } from '@/shared/lib/use-admin-format';
@@ -21,7 +21,9 @@ export function AdminCoursesModule() {
   const t = useTranslations('admin');
   const format = useAdminFormat();
   const formErrors = useFormErrors();
-  const { data, isLoading, error } = useQuery(adminCoursesQuery());
+  const { data, isLoading, error, refetch } = useQuery(adminCoursesQuery());
+  // Only while nothing has loaded; a failed refresh keeps the list on screen.
+  const loadFailed = error && !data ? formErrors.message(error) : null;
   const categoriesQuery = useQuery(adminCourseCategoriesQuery());
   const deleteCourse = useDeleteCourse();
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -50,7 +52,7 @@ export function AdminCoursesModule() {
       render: (course) => (
         <Link
           href={`/admin/courses/${course.id}`}
-          className="font-medium text-ink underline-offset-4 hover:underline"
+          className="text-ink font-medium underline-offset-4 hover:underline"
         >
           {course.translations.KA.title || course.translations.EN.title || course.slug}
         </Link>
@@ -120,11 +122,12 @@ export function AdminCoursesModule() {
         }
       />
 
-      {error ? <ErrorNotice message={formErrors.message(error)} /> : null}
       {deleteError ? <ErrorNotice message={deleteError} /> : null}
 
       <Panel>
-        {isLoading ? (
+        {loadFailed ? (
+          <LoadFailed message={loadFailed} onRetry={() => void refetch()} />
+        ) : isLoading ? (
           <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
         ) : (
           <DataTable

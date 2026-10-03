@@ -71,24 +71,35 @@ export function useAdminPageEditor(pageKey: PageKey) {
     if (pageQuery.data) reset(toFormValues(pageQuery.data));
   }, [pageQuery.data, reset]);
 
-  const onSubmit = form.handleSubmit(async (payload) => {
-    setSubmitError(null);
-    setIsSaved(false);
+  const onSubmit = form.handleSubmit(
+    async (payload) => {
+      setSubmitError(null);
+      setIsSaved(false);
 
-    try {
-      await updatePage.mutateAsync({ key: pageKey, input: payload });
-      setIsSaved(true);
-    } catch (caught) {
-      setSubmitError(formErrors.message(caught));
-    }
-  });
+      try {
+        await updatePage.mutateAsync({ key: pageKey, input: payload });
+        // What is on screen is now what is stored: nothing is unsaved.
+        form.reset(form.getValues());
+        setIsSaved(true);
+      } catch (caught) {
+        setSubmitError(formErrors.message(caught));
+      }
+    },
+    // The form's own checks stopped the save. A field may have no message in
+    // view (a dropdown, a field on the other language's tab), so say it here
+    // rather than leave Save looking dead.
+    () => setSubmitError(formErrors.invalid()),
+  );
 
   return {
     form,
     onSubmit,
     sections: pageQuery.data?.sections ?? [],
     isLoading: pageQuery.isLoading,
-    loadError: pageQuery.error ? formErrors.message(pageQuery.error) : null,
+    // Only while nothing has loaded: a failed background refresh must not
+    // take away a form someone is typing in.
+    loadError: pageQuery.error && !pageQuery.data ? formErrors.message(pageQuery.error) : null,
+    retry: () => void pageQuery.refetch(),
     isSubmitting: updatePage.isPending,
     submitError,
     isSaved,

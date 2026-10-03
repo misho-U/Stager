@@ -41,7 +41,12 @@ export const contactSubmissionSchema = z.object({
   // Any value is accepted here and dropped by the route: refusing it with a
   // 422 named the field, which tells a bot exactly what tripped it.
   website: z.string().max(500).optional(),
-  elapsedMs: z.number().int().nonnegative().optional(),
+  elapsedMs: z
+    .number()
+    .int()
+    .nonnegative()
+    .max(2 ** 31 - 1)
+    .optional(),
 });
 
 export type ContactSubmission = z.infer<typeof contactSubmissionSchema>;

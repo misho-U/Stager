@@ -201,5 +201,16 @@ export const optionalChoice = () =>
     .nullish()
     .transform((value) => value || null);
 
+/**
+ * A list of ids, each once, in the order first given. A repeated id (a double
+ * click in a picker) hit a unique constraint and came back as "this link is
+ * already used", which was about something else entirely.
+ */
+export const idList = () =>
+  z
+    .array(z.string().min(1))
+    .max(500)
+    .transform((ids) => [...new Set(ids)]);
+
 /** Reference to an uploaded image, or nothing. */
 export const mediaIdSchema = z.string().min(1).nullish();

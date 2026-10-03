@@ -9,7 +9,7 @@ import { useDeleteMedia, useUpdateMedia } from '@/entity/media/api/media.query';
 import { Button } from '@/shared/components/button';
 import { ConfirmButton } from '@/shared/components/confirm-button';
 import { PageHeader } from '@/shared/components/page-header';
-import { EmptyState, ErrorNotice, Panel } from '@/shared/components/panel';
+import { EmptyState, ErrorNotice, LoadFailed, Panel } from '@/shared/components/panel';
 import { useFormErrors } from '@/shared/lib/form-errors';
 import { useAdminFormat } from '@/shared/lib/use-admin-format';
 import { useMediaPicker } from '@/widgets/media-picker/media-picker.service';
@@ -25,8 +25,16 @@ export function AdminMediaModule() {
   const t = useTranslations('admin');
   const format = useAdminFormat();
   const formErrors = useFormErrors();
-  const { items, isLoading, loadError, uploadFile, isUploading, uploadProgress, uploadError } =
-    useMediaPicker();
+  const {
+    items,
+    isLoading,
+    loadError,
+    retry,
+    uploadFile,
+    isUploading,
+    uploadProgress,
+    uploadError,
+  } = useMediaPicker();
   const updateMedia = useUpdateMedia();
   const deleteMedia = useDeleteMedia();
 
@@ -77,24 +85,20 @@ export function AdminMediaModule() {
 
   return (
     <>
-      <PageHeader
-        title={t('media.title')}
-        description={t('media.description')}
-      />
+      <PageHeader title={t('media.title')} description={t('media.description')} />
 
-      {loadError ? <ErrorNotice message={loadError} /> : null}
       {uploadError ? <ErrorNotice message={uploadError} /> : null}
       {actionError ? <ErrorNotice message={actionError} /> : null}
 
       <Panel title={t('media.upload')}>
         <div className="flex flex-col gap-3">
-          <label className="text-caption font-medium text-ink-muted">
+          <label className="text-caption text-ink-muted font-medium">
             {t('alt.label')}
             <input
               value={newAlt}
               onChange={(event) => setNewAlt(event.target.value)}
               placeholder={t('media.altPlaceholder')}
-              className="mt-1 w-full rounded-md border border-line bg-surface-raised px-3 py-2 text-body-sm"
+              className="border-line bg-surface-raised text-body-sm mt-1 w-full rounded-md border px-3 py-2"
             />
           </label>
           <p className="text-caption text-ink-subtle">{t('alt.hint')}</p>
@@ -137,7 +141,9 @@ export function AdminMediaModule() {
       </Panel>
 
       <Panel title={t('media.library', { count: items.length })}>
-        {isLoading ? (
+        {loadError ? (
+          <LoadFailed message={loadError} onRetry={retry} />
+        ) : isLoading ? (
           <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
         ) : items.length === 0 ? (
           <EmptyState title={t('media.emptyTitle')} description={t('media.emptyDescription')} />
@@ -146,9 +152,9 @@ export function AdminMediaModule() {
             {items.map((media) => (
               <li
                 key={media.id}
-                className="flex gap-3 rounded-md border border-line bg-surface-inset p-3"
+                className="border-line bg-surface-inset flex gap-3 rounded-md border p-3"
               >
-                <div className="relative size-20 shrink-0 overflow-hidden rounded-sm bg-surface-muted">
+                <div className="bg-surface-muted relative size-20 shrink-0 overflow-hidden rounded-sm">
                   <Image
                     src={media.url}
                     alt={media.translations.KA.alt || media.translations.EN.alt || ''}
@@ -166,17 +172,21 @@ export function AdminMediaModule() {
                         onChange={(event) => setAltKa(event.target.value)}
                         placeholder={t('media.altKa')}
                         aria-label={t('media.altKa')}
-                        className="w-full rounded-md border border-line bg-surface-raised px-2 py-1 text-caption"
+                        className="border-line bg-surface-raised text-caption w-full rounded-md border px-2 py-1"
                       />
                       <input
                         value={altEn}
                         onChange={(event) => setAltEn(event.target.value)}
                         placeholder={t('media.altEn')}
                         aria-label={t('media.altEn')}
-                        className="w-full rounded-md border border-line bg-surface-raised px-2 py-1 text-caption"
+                        className="border-line bg-surface-raised text-caption w-full rounded-md border px-2 py-1"
                       />
                       <div className="flex gap-1.5">
-                        <Button size="sm" loading={updateMedia.isPending} onClick={() => void saveAlt()}>
+                        <Button
+                          size="sm"
+                          loading={updateMedia.isPending}
+                          onClick={() => void saveAlt()}
+                        >
                           {t('common.save')}
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>
@@ -186,15 +196,13 @@ export function AdminMediaModule() {
                     </div>
                   ) : (
                     <>
-                      <p className="truncate text-body-sm text-ink">
+                      <p className="text-body-sm text-ink truncate">
                         {media.translations.KA.alt || (
                           <span className="text-danger">{t('media.noAlt')}</span>
                         )}
                       </p>
-                      <p className="truncate text-caption text-ink-subtle">
-                        {media.width && media.height
-                          ? `${media.width}×${media.height} · `
-                          : ''}
+                      <p className="text-caption text-ink-subtle truncate">
+                        {media.width && media.height ? `${media.width}×${media.height} · ` : ''}
                         {format.fileSize(media.size)}
                       </p>
                       <div className="mt-1 flex flex-wrap gap-1.5">

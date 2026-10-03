@@ -41,7 +41,7 @@ class UploadStalledError extends Error {}
 export function useMediaPicker() {
   const t = useTranslations('admin.errors');
   const formErrors = useFormErrors();
-  const { data, isLoading, error } = useQuery(mediaListQuery());
+  const { data, isLoading, error, refetch } = useQuery(mediaListQuery());
   const registerMedia = useRegisterMedia();
 
   const [isUploading, setIsUploading] = useState(false);
@@ -142,7 +142,9 @@ export function useMediaPicker() {
   return {
     items: data?.items ?? [],
     isLoading,
-    loadError: error ? formErrors.message(error) : null,
+    // Only while nothing has loaded; a failed refresh keeps what is on screen.
+    loadError: error && !data ? formErrors.message(error) : null,
+    retry: () => void refetch(),
     uploadFile,
     isUploading,
     /** 0–100 while an upload is running, otherwise null. */

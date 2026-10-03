@@ -69,9 +69,9 @@ export const mediaRegisterInputSchema = z.object({
   url: z.url({ protocol: /^https$/ }),
   pathname: z.string().min(1),
   contentType: z.string().min(1),
-  size: z.number().int().positive(),
-  width: z.number().int().positive().nullish(),
-  height: z.number().int().positive().nullish(),
+  size: z.number().int().positive().max(1_000_000_000),
+  width: z.number().int().positive().max(100_000).nullish(),
+  height: z.number().int().positive().max(100_000).nullish(),
   blurDataUrl: z.string().max(4096).regex(BLUR_DATA_URL).nullish(),
   alt: z.string().trim().max(300).default(''),
 });

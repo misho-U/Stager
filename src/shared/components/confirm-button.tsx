@@ -6,6 +6,8 @@ import { useState } from 'react';
 import { Button } from '@/shared/components/button';
 
 type ConfirmButtonProps = {
+  /** What deleting also does ("3 articles will lose their category"), shown with Confirm. */
+  warning?: string | null;
   label: string;
   confirmLabel: string;
   onConfirm: () => void | Promise<void>;
@@ -20,7 +22,13 @@ type ConfirmButtonProps = {
  * away. The point is only to make a delete impossible to trigger by one
  * mis-aimed click.
  */
-export function ConfirmButton({ label, confirmLabel, onConfirm, loading }: ConfirmButtonProps) {
+export function ConfirmButton({
+  label,
+  confirmLabel,
+  onConfirm,
+  loading,
+  warning,
+}: ConfirmButtonProps) {
   const t = useTranslations('admin.common');
   const [armed, setArmed] = useState(false);
 
@@ -33,7 +41,12 @@ export function ConfirmButton({ label, confirmLabel, onConfirm, loading }: Confi
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5">
+    <span className="inline-flex flex-wrap items-center justify-end gap-1.5">
+      {warning ? (
+        <span role="note" className="text-caption text-danger basis-full text-right">
+          {warning}
+        </span>
+      ) : null}
       <Button variant="danger" size="sm" loading={loading} onClick={() => void onConfirm()}>
         {confirmLabel}
       </Button>

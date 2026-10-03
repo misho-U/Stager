@@ -11,6 +11,7 @@ import type {
   ApiValidationIssue,
 } from '@pkg/http/api-error';
 import { toValidationIssue } from '@pkg/http/validation-issue';
+import { describeDbError } from '@pkg/db/errors';
 import { logger, serialiseError } from '@pkg/logger';
 
 const STATUS_BY_CODE: Record<ApiErrorCode, number> = {
@@ -97,6 +98,28 @@ export function handleRouteError(error: unknown, context: Record<string, unknown
 
   if (error instanceof ForbiddenError) {
     return apiFail('FORBIDDEN', error.message);
+  }
+
+  // The database refusing a write because the data changed under it, or a
+  // value it cannot hold, is an answer for the caller, not a crash. Each used
+  // to come back as a bare 500.
+  const db = describeDbError(error);
+  const dbAnswer =
+    db?.code === 'P2025'
+      ? apiFail('NOT_FOUND', 'This item no longer exists')
+      : db?.code === 'P2003'
+        ? apiFail('CONFLICT', 'Something this links to no longer exists', {
+            reason: 'STALE_REFERENCE',
+          })
+        : db?.code === 'P2002'
+          ? apiFail('CONFLICT', 'This clashes with something that already exists')
+          : db?.code === 'P2020'
+            ? apiFail('VALIDATION_FAILED', 'A value is out of range')
+            : null;
+
+  if (db && dbAnswer) {
+    logger.warn('api.database_refused', { ...context, code: db.code, constraint: db.constraint });
+    return dbAnswer;
   }
 
   logger.error('api.unhandled_error', { ...context, ...serialiseError(error) });

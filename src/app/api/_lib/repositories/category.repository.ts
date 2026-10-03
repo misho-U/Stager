@@ -8,7 +8,8 @@ import type {
 import type { DbLocale } from '@/shared/types/enums';
 import { prisma } from '@pkg/db/prisma';
 
-const adminInclude = { translations: true } as const;
+// How many articles use it: the delete confirmation says so.
+const adminInclude = { translations: true, _count: { select: { insights: true } } } as const;
 
 type AdminRow = Awaited<
   ReturnType<typeof prisma.category.findFirstOrThrow<{ include: typeof adminInclude }>>
@@ -17,6 +18,7 @@ type AdminRow = Awaited<
 function toAdminCategory(row: AdminRow): AdminCategory {
   return {
     id: row.id,
+    linkedCount: row._count.insights,
     slug: row.slug,
     order: row.order,
     createdAt: toIsoRequired(row.createdAt),

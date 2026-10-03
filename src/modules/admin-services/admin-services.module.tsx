@@ -11,13 +11,15 @@ import { Button } from '@/shared/components/button';
 import { ConfirmButton } from '@/shared/components/confirm-button';
 import { DataTable, type Column } from '@/shared/components/data-table';
 import { PageHeader } from '@/shared/components/page-header';
-import { ErrorNotice, Panel, StatusBadge } from '@/shared/components/panel';
+import { ErrorNotice, LoadFailed, Panel, StatusBadge } from '@/shared/components/panel';
 import { useFormErrors } from '@/shared/lib/form-errors';
 
 export function AdminServicesModule() {
   const t = useTranslations('admin');
   const formErrors = useFormErrors();
-  const { data, isLoading, error } = useQuery(adminServicesQuery());
+  const { data, isLoading, error, refetch } = useQuery(adminServicesQuery());
+  // Only while nothing has loaded; a failed refresh keeps the list on screen.
+  const loadFailed = error && !data ? formErrors.message(error) : null;
   const deleteService = useDeleteService();
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -37,7 +39,7 @@ export function AdminServicesModule() {
       render: (service) => (
         <Link
           href={`/admin/services/${service.id}`}
-          className="font-medium text-ink underline-offset-4 hover:underline"
+          className="text-ink font-medium underline-offset-4 hover:underline"
         >
           {service.translations.KA.title || service.translations.EN.title || service.slug}
         </Link>
@@ -63,6 +65,11 @@ export function AdminServicesModule() {
           label={t('common.delete')}
           confirmLabel={t('common.confirm')}
           loading={deleteService.isPending && deleteService.variables === service.id}
+          warning={
+            service.linkedCount > 0
+              ? t('services.deleteLinked', { count: service.linkedCount })
+              : null
+          }
           onConfirm={() => remove(service.id)}
         />
       ),
@@ -81,11 +88,12 @@ export function AdminServicesModule() {
         }
       />
 
-      {error ? <ErrorNotice message={formErrors.message(error)} /> : null}
       {deleteError ? <ErrorNotice message={deleteError} /> : null}
 
       <Panel>
-        {isLoading ? (
+        {loadFailed ? (
+          <LoadFailed message={loadFailed} onRetry={() => void refetch()} />
+        ) : isLoading ? (
           <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
         ) : (
           <DataTable
