@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-import { OK_MOTION } from '@/modules/home-page/elements/open-kitchen/open-kitchen.constants';
-import { getSmoothScroll } from '@/widgets/smooth-scroll/smooth-scroll.service';
+import { getSmoothScroll, glideTo } from '@/widgets/smooth-scroll/smooth-scroll.service';
 
 /**
  * Which section is in view: the one crossing a band just above the middle of
@@ -95,12 +94,8 @@ export function useMenuDialog() {
     close();
     const target = document.querySelector<HTMLElement>(href);
     if (!target) return;
-    window.requestAnimationFrame(() => {
-      const lenis = getSmoothScroll();
-      // Without Lenis, the section's scroll-margin keeps it clear of the header.
-      if (lenis) lenis.scrollTo(target, { offset: -OK_MOTION.anchorOffset });
-      else target.scrollIntoView({ block: 'start' });
-    });
+    // The section's scroll-margin keeps it clear of the header.
+    window.requestAnimationFrame(() => glideTo(target));
   };
 
   return { dialog, open, close, onClose, follow };

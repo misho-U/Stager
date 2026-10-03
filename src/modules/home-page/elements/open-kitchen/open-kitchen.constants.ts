@@ -6,8 +6,6 @@
 export const OK_MOTION = {
   /** Lenis: how quickly the page catches up with the wheel (higher is snappier). */
   lerp: 0.1,
-  /** In-page links land this far below the top, clear of the floating header. */
-  anchorOffset: 96,
   /** The hero's headline and the elements under it. */
   enter: { duration: 1, ease: 'expo.out', stagger: 0.09, delay: 0.1 },
   /** Sections and cards as they scroll into view. */

@@ -544,6 +544,17 @@ of the content being edited, and the two stay apart in code and in wording.
 Tests that need a signed-in admin are skipped unless `E2E_ADMIN_EMAIL` and
 `E2E_ADMIN_PASSWORD` are set.
 
+- **They need no Supabase project.** CI (`.github/workflows/ci.yml`) runs
+  every one of them on each push against a throwaway Supabase Auth: GoTrue,
+  Supabase's own auth server, in Docker, behind `scripts/test-auth.ts proxy`,
+  with a test admin made by `scripts/test-auth.ts user` and fresh secrets per
+  run. No GitHub secrets, nothing live touched. The workflow's "Write
+  .env.local" and "Start Supabase Auth" steps work the same on a Linux
+  machine with Docker and a local database; it is also how a machine that
+  cannot reach supabase.co runs them. (Docker Desktop has no `--network
+  host`: publish GoTrue's port and point its `DATABASE_URL` at
+  `host.docker.internal` instead.)
+
 - **They sign in once per run, never per test.** The `setup` project
   (`tests/e2e/admin-session.setup.ts`) signs in before `chromium` and `mobile`
   start and saves the session to `tests/e2e/.auth/admin.json` (gitignored: it
@@ -603,6 +614,8 @@ overrides that, deliberately. `db:migrate:deploy` is not guarded; it is how the
 live database is updated.
 
 Before pushing: `pnpm lint && pnpm typecheck && pnpm build && pnpm test:e2e`.
+CI runs the same on every push, signed-in tests included, plus a check that
+the migrations match `schema.prisma` (`prisma migrate diff … --exit-code`).
 
 ### Running on Vercel
 

@@ -22,7 +22,7 @@ const R = OK_MOTION.reveal;
  * nothing was ever hidden.
  */
 export function useOpenKitchenMotion(scope: RefObject<HTMLElement | null>) {
-  useSmoothScroll({ lerp: OK_MOTION.lerp, anchorOffset: OK_MOTION.anchorOffset });
+  useSmoothScroll({ lerp: OK_MOTION.lerp });
 
   useMotion(scope, ({ motion, finePointer }, root) => {
     if (!motion) return;

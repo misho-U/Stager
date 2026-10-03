@@ -7,7 +7,7 @@ import { gsap, ScrollTrigger } from '@/shared/lib/motion/gsap';
 import { magnetic } from '@/shared/lib/motion/pointer';
 import { cappedStagger, splitReveal } from '@/shared/lib/motion/split';
 import { useMotion } from '@/shared/lib/motion/use-motion';
-import { getSmoothScroll, useSmoothScroll } from '@/widgets/smooth-scroll/smooth-scroll.service';
+import { glideTo, useSmoothScroll } from '@/widgets/smooth-scroll/smooth-scroll.service';
 
 type Cleanup = () => void;
 
@@ -18,7 +18,7 @@ type Cleanup = () => void;
  * same content, one section after another.
  */
 export function useChefsTableMotion(scope: RefObject<HTMLElement | null>) {
-  useSmoothScroll({ lerp: M.lerp, anchorOffset: M.anchorOffset });
+  useSmoothScroll({ lerp: M.lerp });
 
   useMotion(scope, ({ motion, desktop, finePointer }, root) => {
     if (!motion) return;
@@ -312,9 +312,7 @@ function stackServices(root: HTMLElement): Cleanup {
     if (index < 0) return;
     event.preventDefault();
     event.stopPropagation();
-    const lenis = getSmoothScroll();
-    if (lenis) lenis.scrollTo(arrival(index));
-    else window.scrollTo({ top: arrival(index) });
+    glideTo(arrival(index));
   };
   section.addEventListener('click', onClick);
 

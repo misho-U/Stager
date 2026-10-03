@@ -7,8 +7,6 @@
 export const CT_MOTION = {
   /** Lenis: a slower, heavier glide than option 1's. */
   lerp: 0.08,
-  /** In-page links land this far below the top, clear of the header pill. */
-  anchorOffset: 92,
   /** The hero's headline: letters rising into place on arrival. */
   assemble: { duration: 1.1, ease: 'expo.out', stagger: 0.03, delay: 0.15 },
   /** The rest of the hero, after the headline. */

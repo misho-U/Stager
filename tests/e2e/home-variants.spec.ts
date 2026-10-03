@@ -493,6 +493,22 @@ test.describe('design 2: the tickets, the screening room and the menu', () => {
     // On a desktop the cards stack, and the index marks the one in front.
     if (testInfo.project.name === 'chromium') {
       await expect(links.nth(target)).toHaveAttribute('aria-current', 'true');
+    } else {
+      // A plain in-page link: the card lands its scroll-margin below the top,
+      // clear of the header, and not twice that (Lenis applies the margin
+      // itself; an offset on top of it once doubled the gap).
+      await expect
+        .poll(() =>
+          cards
+            .nth(target)
+            .evaluate((card) =>
+              Math.abs(
+                card.getBoundingClientRect().top -
+                  parseFloat(getComputedStyle(card).scrollMarginTop),
+              ),
+            ),
+        )
+        .toBeLessThan(2);
     }
   });
 

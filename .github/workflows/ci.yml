@@ -1,0 +1,131 @@
+# Checks every push: lint, types, then the whole Playwright suite against a
+# production build, a fresh Postgres and a throwaway Supabase Auth (GoTrue),
+# so the signed-in tests run too, with no secrets and nothing live touched.
+# AGENTS.md § Credential-gated tests describes the same setup on a laptop.
+
+name: CI
+
+on:
+  push:
+  workflow_dispatch:
+
+# A newer push to the same branch makes the running check moot.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Lint and types
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      # postinstall generates the Prisma client and the brand tokens.
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+
+  e2e:
+    name: Playwright
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: stager
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s
+          --health-timeout 5s --health-retries 20
+    env:
+      PGPASSWORD: postgres
+      GOTRUE_IMAGE: public.ecr.aws/supabase/gotrue:v2.177.0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # Fresh secrets for this run only; nothing here reaches a real service.
+      - name: Write .env.local
+        run: |
+          JWT_SECRET=$(openssl rand -hex 32)
+          echo "TEST_AUTH_JWT_SECRET=$JWT_SECRET" >> "$GITHUB_ENV"
+          {
+            echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/stager"
+            echo "DIRECT_URL=postgresql://postgres:postgres@localhost:5432/stager"
+            echo "NEXT_PUBLIC_SITE_URL=http://localhost:3000"
+            echo "NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321"
+            TEST_AUTH_JWT_SECRET=$JWT_SECRET pnpm exec tsx scripts/test-auth.ts keys
+            echo "ADMIN_EMAIL=e2e-admin@example.com"
+            echo "BLOB_READ_WRITE_TOKEN=vercel_blob_rw_ci_placeholder"
+            echo "IP_HASH_SALT=$(openssl rand -hex 32)"
+            echo "CRON_SECRET=$(openssl rand -hex 24)"
+            echo "E2E_ADMIN_EMAIL=e2e-admin@example.com"
+            echo "E2E_ADMIN_PASSWORD=$(openssl rand -hex 16)"
+          } > .env.local
+
+      - name: Start Supabase Auth
+        run: |
+          psql -h localhost -U postgres -c "CREATE DATABASE stager_auth"
+          psql -h localhost -U postgres -d stager_auth -c "CREATE SCHEMA auth"
+          docker run -d --name auth --network host \
+            -e GOTRUE_DB_DRIVER=postgres \
+            -e "DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/stager_auth?sslmode=disable&search_path=auth" \
+            -e DB_NAMESPACE=auth \
+            -e GOTRUE_API_HOST=127.0.0.1 -e PORT=9999 \
+            -e API_EXTERNAL_URL=http://localhost:54321/auth/v1 \
+            -e GOTRUE_SITE_URL=http://localhost:3000 \
+            -e GOTRUE_JWT_SECRET="$TEST_AUTH_JWT_SECRET" \
+            -e GOTRUE_JWT_AUD=authenticated \
+            -e GOTRUE_JWT_DEFAULT_GROUP_NAME=authenticated \
+            -e GOTRUE_JWT_ADMIN_ROLES=service_role \
+            -e GOTRUE_EXTERNAL_EMAIL_ENABLED=true \
+            -e GOTRUE_MAILER_AUTOCONFIRM=true \
+            -e GOTRUE_DISABLE_SIGNUP=true \
+            "$GOTRUE_IMAGE"
+          nohup pnpm exec tsx scripts/test-auth.ts proxy > test-auth-proxy.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            curl -sf http://localhost:54321/auth/v1/health > /dev/null && exit 0
+            sleep 1
+          done
+          docker logs auth
+          exit 1
+
+      - name: Database, migrations and drift
+        run: |
+          pnpm db:migrate:deploy
+          # A schema.prisma change with no migration fails here, not on deploy.
+          pnpm exec dotenv -e .env.local -- prisma migrate diff \
+            --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+          pnpm db:seed
+          pnpm exec dotenv -e .env.local -- tsx scripts/test-auth.ts user
+
+      - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+
+      - name: Keep the report of a failed run
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+            test-auth-proxy.log
+          retention-days: 3

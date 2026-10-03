@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { CT_MOTION } from '@/modules/home-page/elements/chefs-table/chefs-table.constants';
 import { gsap } from '@/shared/lib/motion/gsap';
-import { getSmoothScroll } from '@/widgets/smooth-scroll/smooth-scroll.service';
+import { getSmoothScroll, glideTo } from '@/widgets/smooth-scroll/smooth-scroll.service';
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -57,12 +57,8 @@ export function useMenu() {
     close();
     const target = document.querySelector<HTMLElement>(href);
     if (!target) return;
-    window.requestAnimationFrame(() => {
-      const lenis = getSmoothScroll();
-      // Without Lenis, the section's scroll-margin keeps it clear of the header.
-      if (lenis) lenis.scrollTo(target, { offset: -CT_MOTION.anchorOffset });
-      else target.scrollIntoView({ block: 'start' });
-    });
+    // The section's scroll-margin keeps it clear of the header.
+    window.requestAnimationFrame(() => glideTo(target));
   };
 
   return { dialog, open, close, onClose, follow };

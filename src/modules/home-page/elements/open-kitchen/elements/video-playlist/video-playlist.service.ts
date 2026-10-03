@@ -5,7 +5,7 @@ import { create } from 'zustand';
 
 import { OK_MOTION } from '@/modules/home-page/elements/open-kitchen/open-kitchen.constants';
 import { gsap } from '@/shared/lib/motion/gsap';
-import { getSmoothScroll } from '@/widgets/smooth-scroll/smooth-scroll.service';
+import { glideTo } from '@/widgets/smooth-scroll/smooth-scroll.service';
 
 /**
  * Which video the player shows, and whether it is playing. Shared by the
@@ -32,10 +32,7 @@ const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)'
 export function playInSection(id: string, sectionId: string) {
   usePlaylistStore.getState().play(id);
   const section = document.getElementById(sectionId);
-  if (!section) return;
-  const lenis = getSmoothScroll();
-  if (lenis) lenis.scrollTo(section, { offset: -OK_MOTION.anchorOffset });
-  else section.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth' });
+  if (section) glideTo(section);
 }
 
 /** The player and its caption settle in each time another video is chosen. */
