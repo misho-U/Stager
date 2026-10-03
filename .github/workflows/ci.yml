@@ -23,9 +23,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -50,11 +50,11 @@ jobs:
           --health-timeout 5s --health-retries 20
     env:
       PGPASSWORD: postgres
-      GOTRUE_IMAGE: public.ecr.aws/supabase/gotrue:v2.177.0
+      GOTRUE_VERSION: v2.177.0
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -64,6 +64,11 @@ jobs:
       - name: Write .env.local
         run: |
           JWT_SECRET=$(openssl rand -hex 32)
+          SALT=$(openssl rand -hex 32)
+          CRON=$(openssl rand -hex 24)
+          PASSWORD=$(openssl rand -hex 16)
+          # Throwaway values, but kept out of the log all the same.
+          for value in "$JWT_SECRET" "$SALT" "$CRON" "$PASSWORD"; do echo "::add-mask::$value"; done
           echo "TEST_AUTH_JWT_SECRET=$JWT_SECRET" >> "$GITHUB_ENV"
           {
             echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/stager"
@@ -73,16 +78,25 @@ jobs:
             TEST_AUTH_JWT_SECRET=$JWT_SECRET pnpm exec tsx scripts/test-auth.ts keys
             echo "ADMIN_EMAIL=e2e-admin@example.com"
             echo "BLOB_READ_WRITE_TOKEN=vercel_blob_rw_ci_placeholder"
-            echo "IP_HASH_SALT=$(openssl rand -hex 32)"
-            echo "CRON_SECRET=$(openssl rand -hex 24)"
+            echo "IP_HASH_SALT=$SALT"
+            echo "CRON_SECRET=$CRON"
             echo "E2E_ADMIN_EMAIL=e2e-admin@example.com"
-            echo "E2E_ADMIN_PASSWORD=$(openssl rand -hex 16)"
+            echo "E2E_ADMIN_PASSWORD=$PASSWORD"
           } > .env.local
 
       - name: Start Supabase Auth
         run: |
           psql -h localhost -U postgres -c "CREATE DATABASE stager_auth"
           psql -h localhost -U postgres -d stager_auth -c "CREATE SCHEMA auth"
+          # Registries throttle shared runners now and then: retry, then try
+          # the other copy of the same image.
+          for image in "supabase/gotrue:$GOTRUE_VERSION" "public.ecr.aws/supabase/gotrue:$GOTRUE_VERSION"; do
+            for attempt in 1 2 3; do
+              if docker pull -q "$image"; then GOTRUE_IMAGE=$image; break 2; fi
+              sleep $((attempt * 15))
+            done
+          done
+          [ -n "$GOTRUE_IMAGE" ] || { echo "Could not pull GoTrue"; exit 1; }
           docker run -d --name auth --network host \
             -e GOTRUE_DB_DRIVER=postgres \
             -e "DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/stager_auth?sslmode=disable&search_path=auth" \
@@ -121,7 +135,7 @@ jobs:
 
       - name: Keep the report of a failed run
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: |
