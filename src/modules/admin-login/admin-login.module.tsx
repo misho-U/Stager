@@ -1,13 +1,17 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import { useAdminLoginForm } from '@/modules/admin-login/admin-login.service';
 import { Button } from '@/shared/components/button';
 import { TextField } from '@/shared/components/field';
 import { ErrorNotice } from '@/shared/components/panel';
 import { BRAND } from '@/shared/brandbook/tokens';
+import { AdminLocaleSwitch } from '@/widgets/admin-locale-switch/admin-locale-switch.module';
 
 /** Markup only — all behaviour lives in admin-login.service.ts. */
 export function AdminLoginModule() {
+  const t = useTranslations('admin.signIn');
   const { form, onSubmit, isSubmitting, errorMessage } = useAdminLoginForm();
   const { errors } = form.formState;
 
@@ -26,12 +30,17 @@ export function AdminLoginModule() {
           noValidate
           className="flex flex-col gap-4 rounded-lg border border-line bg-surface-raised p-6"
         >
-          <h1 className="text-title-sm font-semibold">Sign in</h1>
+          {/* Here as well as in the sidebar, so the language can be changed
+              before signing in. */}
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="text-title-sm font-semibold">{t('title')}</h1>
+            <AdminLocaleSwitch />
+          </div>
 
           {errorMessage ? <ErrorNotice message={errorMessage} /> : null}
 
           <TextField
-            label="Email"
+            label={t('email')}
             type="email"
             autoComplete="username"
             autoFocus
@@ -41,7 +50,7 @@ export function AdminLoginModule() {
           />
 
           <TextField
-            label="Password"
+            label={t('password')}
             type="password"
             autoComplete="current-password"
             required
@@ -50,12 +59,12 @@ export function AdminLoginModule() {
           />
 
           <Button type="submit" loading={isSubmitting} className="mt-2 w-full">
-            {isSubmitting ? 'Signing in…' : 'Sign in'}
+            {isSubmitting ? t('submitting') : t('submit')}
           </Button>
         </form>
 
         <p className="mt-4 text-center text-caption text-ink-subtle">
-          Access is limited to approved accounts.
+          {t('restricted')}
         </p>
       </div>
     </main>

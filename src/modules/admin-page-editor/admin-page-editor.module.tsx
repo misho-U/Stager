@@ -1,12 +1,17 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Controller } from 'react-hook-form';
 
 import { useAdminPageEditor } from '@/modules/admin-page-editor/admin-page-editor.service';
 import { Button } from '@/shared/components/button';
+import {
+  ContentLocaleProvider,
+  ContentLocaleToggle,
+  TranslatedFields,
+} from '@/shared/components/content-locale';
 import { CheckboxField, TextAreaField, TextField } from '@/shared/components/field';
-import { LocaleTabs } from '@/shared/components/locale-tabs';
 import { PageHeader } from '@/shared/components/page-header';
 import { ErrorNotice, Panel, SuccessNotice } from '@/shared/components/panel';
 import { SeoFields } from '@/shared/components/seo-fields';
@@ -20,117 +25,145 @@ function humanise(key: string): string {
 }
 
 export function AdminPageEditorModule({ pageKey }: { pageKey: PageKey }) {
+  const t = useTranslations('admin');
   const { form, onSubmit, sections, isLoading, loadError, isSubmitting, submitError, isSaved } =
     useAdminPageEditor(pageKey);
 
-  if (isLoading) return <p className="text-body-sm text-ink-subtle">Loading…</p>;
+  const { errors, submitCount } = form.formState;
+
+  if (isLoading) return <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>;
 
   return (
-    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-6">
-      <PageHeader
-        title={`${humanise(pageKey.toLowerCase())} page`}
-        description="Edit the copy and SEO. Sections cannot be added or removed here — they are part of the layout."
-        actions={
-          <>
-            <Link href="/admin/pages">
-              <Button variant="ghost">Back</Button>
-            </Link>
-            <Button type="submit" loading={isSubmitting}>
-              Save
-            </Button>
-          </>
-        }
-      />
-
-      {loadError ? <ErrorNotice message={loadError} /> : null}
-      {submitError ? <ErrorNotice message={submitError} /> : null}
-      {isSaved && !submitError ? <SuccessNotice message="Saved. The site is updated." /> : null}
-
-      <Panel title="Page title and SEO">
-        <LocaleTabs>
-          {(locale: DbLocale) => (
+    <ContentLocaleProvider errors={errors} submitCount={submitCount}>
+      <form onSubmit={onSubmit} noValidate className="flex flex-col gap-6">
+        <PageHeader
+          title={t('pageEditor.title', { page: t(`pages.keys.${pageKey}`) })}
+          description={t('pageEditor.description')}
+          actions={
             <>
-              <TextField
-                label="Page title"
-                {...form.register(`translations.${locale}.title`)}
-              />
-              <SeoFields
-                metaTitle={form.register(`translations.${locale}.metaTitle`)}
-                metaDescription={form.register(`translations.${locale}.metaDescription`)}
-              />
+              <Link href="/admin/pages">
+                <Button variant="ghost">{t('common.back')}</Button>
+              </Link>
+              <Button type="submit" loading={isSubmitting}>
+                {t('common.save')}
+              </Button>
             </>
-          )}
-        </LocaleTabs>
-      </Panel>
+          }
+        />
 
-      {sections.map((section, index) => (
-        <Panel
-          key={section.id}
-          title={humanise(section.key)}
-          description={`Section key: ${section.key}`}
-        >
+        <ContentLocaleToggle />
+
+        {loadError ? <ErrorNotice message={loadError} /> : null}
+        {submitError ? <ErrorNotice message={submitError} /> : null}
+        {isSaved && !submitError ? <SuccessNotice message={t('pageEditor.saved')} /> : null}
+
+        <Panel title={t('pageEditor.pagePanel')}>
           <div className="flex flex-col gap-4">
-            <CheckboxField
-              label="Show this section"
-              {...form.register(`sections.${index}.isVisible`)}
-            />
-
-            <LocaleTabs>
+            <TranslatedFields>
               {(locale: DbLocale) => (
                 <>
                   <TextField
-                    label="Heading"
-                    {...form.register(`sections.${index}.translations.${locale}.heading`)}
+                    label={t('pageEditor.pageTitle')}
+                    error={errors.translations?.[locale]?.title?.message}
+                    {...form.register(`translations.${locale}.title`)}
                   />
-                  <TextAreaField
-                    label="Subheading"
-                    rows={2}
-                    {...form.register(`sections.${index}.translations.${locale}.subheading`)}
+                  <SeoFields
+                    metaTitle={form.register(`translations.${locale}.metaTitle`)}
+                    metaDescription={form.register(`translations.${locale}.metaDescription`)}
+                    errors={{
+                      metaTitle: errors.translations?.[locale]?.metaTitle?.message,
+                      metaDescription: errors.translations?.[locale]?.metaDescription?.message,
+                    }}
                   />
-                  <TextAreaField
-                    label="Body"
-                    rows={6}
-                    hint="Basic HTML is allowed; scripts are stripped on save."
-                    {...form.register(`sections.${index}.translations.${locale}.body`)}
-                  />
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <TextField
-                      label="Button label"
-                      {...form.register(`sections.${index}.translations.${locale}.ctaLabel`)}
-                    />
-                    <TextField
-                      label="Button link"
-                      placeholder="/contact"
-                      {...form.register(`sections.${index}.translations.${locale}.ctaHref`)}
-                    />
-                  </div>
                 </>
               )}
-            </LocaleTabs>
-
-            <Controller
-              control={form.control}
-              name={`sections.${index}.mediaId`}
-              render={({ field }) => (
-                <MediaPicker
-                  label="Section image"
-                  value={field.value ?? null}
-                  onChange={field.onChange}
-                />
-              )}
-            />
+            </TranslatedFields>
           </div>
         </Panel>
-      ))}
 
-      <div className="flex justify-end gap-2">
-        <Link href="/admin/pages">
-          <Button variant="ghost">Back</Button>
-        </Link>
-        <Button type="submit" loading={isSubmitting}>
-          Save page
-        </Button>
-      </div>
-    </form>
+        {sections.map((section, index) => {
+          const sectionErrors = errors.sections?.[index]?.translations;
+
+          return (
+            <Panel
+              key={section.id}
+              title={
+                t.has(`pages.sections.${section.key}`)
+                  ? t(`pages.sections.${section.key}`)
+                  : humanise(section.key)
+              }
+              description={t('pageEditor.sectionKey', { key: section.key })}
+            >
+              <div className="flex flex-col gap-4">
+                <CheckboxField
+                  label={t('pageEditor.visible')}
+                  {...form.register(`sections.${index}.isVisible`)}
+                />
+
+                <TranslatedFields>
+                  {(locale: DbLocale) => (
+                    <>
+                      <TextField
+                        label={t('pageEditor.heading')}
+                        error={sectionErrors?.[locale]?.heading?.message}
+                        {...form.register(`sections.${index}.translations.${locale}.heading`)}
+                      />
+                      <TextAreaField
+                        label={t('pageEditor.subheading')}
+                        rows={2}
+                        error={sectionErrors?.[locale]?.subheading?.message}
+                        {...form.register(`sections.${index}.translations.${locale}.subheading`)}
+                      />
+                      <TextAreaField
+                        label={t('fields.body')}
+                        rows={6}
+                        hint={t('fields.bodyHint')}
+                        error={sectionErrors?.[locale]?.body?.message}
+                        {...form.register(`sections.${index}.translations.${locale}.body`)}
+                      />
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <TextField
+                          label={t('pageEditor.buttonLabel')}
+                          error={sectionErrors?.[locale]?.ctaLabel?.message}
+                          {...form.register(`sections.${index}.translations.${locale}.ctaLabel`)}
+                        />
+                        <TextField
+                          label={t('pageEditor.buttonLink.label')}
+                          placeholder={t('pageEditor.buttonLink.placeholder')}
+                          hint={t('pageEditor.buttonLink.hint')}
+                          error={sectionErrors?.[locale]?.ctaHref?.message}
+                          {...form.register(`sections.${index}.translations.${locale}.ctaHref`)}
+                        />
+                      </div>
+                    </>
+                  )}
+                </TranslatedFields>
+
+                <Controller
+                  control={form.control}
+                  name={`sections.${index}.mediaId`}
+                  render={({ field }) => (
+                    <MediaPicker
+                      label={t('pageEditor.sectionImage')}
+                      value={field.value ?? null}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
+              </div>
+            </Panel>
+          );
+        })}
+
+        <div className="flex justify-end gap-2">
+          <Link href="/admin/pages">
+            <Button variant="ghost">{t('common.back')}</Button>
+          </Link>
+          <Button type="submit" loading={isSubmitting}>
+            {t('pageEditor.submit')}
+          </Button>
+        </div>
+      </form>
+    </ContentLocaleProvider>
   );
 }

@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import {
@@ -17,7 +17,9 @@ import {
   type CategoryFormValues,
   type CategoryInput,
 } from '@/entity/category/model/category.model';
-import { toFieldErrors, toFormErrorMessage } from '@/shared/lib/form-errors';
+import { useFormErrors } from '@/shared/lib/form-errors';
+import { useSlugAutofill } from '@/shared/lib/use-slug-autofill';
+import { useValidationErrorMap } from '@/shared/lib/use-validation-error-map';
 
 const EMPTY: CategoryFormValues = {
   slug: '',
@@ -31,6 +33,8 @@ const EMPTY: CategoryFormValues = {
  * navigation than the task deserves.
  */
 export function useAdminCategories() {
+  const formErrors = useFormErrors();
+  const validationErrorMap = useValidationErrorMap();
   const { data, isLoading, error } = useQuery(adminCategoriesQuery());
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
@@ -40,14 +44,24 @@ export function useAdminCategories() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const form = useForm<CategoryFormValues, unknown, CategoryInput>({
-    resolver: zodResolver(categoryInputSchema),
+    resolver: zodResolver(categoryInputSchema, { error: validationErrorMap }),
     defaultValues: EMPTY,
   });
+
+  // While adding, the slug follows the English name until it is edited by
+  // hand; never while editing a saved category (use-slug-autofill.ts).
+  const setSlug = useCallback(
+    (slug: string) =>
+      form.setValue('slug', slug, { shouldDirty: true, shouldValidate: form.formState.isSubmitted }),
+    [form],
+  );
+  const slugAutofill = useSlugAutofill({ enabled: editingId === null, setSlug });
 
   const startCreate = () => {
     setEditingId(null);
     setFormError(null);
     form.reset(EMPTY);
+    slugAutofill.restart();
   };
 
   const startEdit = (category: AdminCategory) => {
@@ -73,8 +87,8 @@ export function useAdminCategories() {
       }
       startCreate();
     } catch (caught) {
-      setFormError(toFormErrorMessage(caught));
-      for (const [field, message] of Object.entries(toFieldErrors(caught))) {
+      setFormError(formErrors.message(caught));
+      for (const [field, message] of Object.entries(formErrors.fields(caught))) {
         form.setError(field as keyof CategoryFormValues, { type: 'server', message });
       }
     }
@@ -86,17 +100,18 @@ export function useAdminCategories() {
       await deleteCategory.mutateAsync(id);
       if (editingId === id) startCreate();
     } catch (caught) {
-      setFormError(toFormErrorMessage(caught));
+      setFormError(formErrors.message(caught));
     }
   };
 
   return {
     categories: data?.items ?? [],
     isLoading,
-    loadError: error ? toFormErrorMessage(error) : null,
+    loadError: error ? formErrors.message(error) : null,
     form,
     onSubmit,
     editingId,
+    slugAutofill,
     startCreate,
     startEdit,
     remove,

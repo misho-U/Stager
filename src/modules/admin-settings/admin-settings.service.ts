@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type FieldPath } from 'react-hook-form';
 
 import {
   siteSettingsQuery,
@@ -15,7 +15,8 @@ import {
   type SiteSettingFormValues,
   type SiteSettingUpdateInput,
 } from '@/entity/site-setting/model/site-setting.model';
-import { toFormErrorMessage } from '@/shared/lib/form-errors';
+import { useFormErrors } from '@/shared/lib/form-errors';
+import { useValidationErrorMap } from '@/shared/lib/use-validation-error-map';
 
 function toFormValues(settings: AdminSiteSetting): SiteSettingFormValues {
   return {
@@ -76,6 +77,8 @@ const EMPTY: SiteSettingFormValues = {
 };
 
 export function useAdminSettings() {
+  const formErrors = useFormErrors();
+  const validationErrorMap = useValidationErrorMap();
   const settingsQuery = useQuery(siteSettingsQuery());
   const updateSettings = useUpdateSiteSettings();
 
@@ -83,7 +86,7 @@ export function useAdminSettings() {
   const [isSaved, setIsSaved] = useState(false);
 
   const form = useForm<SiteSettingFormValues, unknown, SiteSettingUpdateInput>({
-    resolver: zodResolver(siteSettingUpdateInputSchema),
+    resolver: zodResolver(siteSettingUpdateInputSchema, { error: validationErrorMap }),
     defaultValues: EMPTY,
   });
 
@@ -100,7 +103,10 @@ export function useAdminSettings() {
       await updateSettings.mutateAsync(values);
       setIsSaved(true);
     } catch (caught) {
-      setSubmitError(toFormErrorMessage(caught));
+      setSubmitError(formErrors.message(caught));
+      for (const [field, message] of Object.entries(formErrors.fields(caught))) {
+        form.setError(field as FieldPath<SiteSettingFormValues>, { type: 'server', message });
+      }
     }
   });
 
@@ -108,7 +114,7 @@ export function useAdminSettings() {
     form,
     onSubmit,
     isLoading: settingsQuery.isLoading,
-    loadError: settingsQuery.error ? toFormErrorMessage(settingsQuery.error) : null,
+    loadError: settingsQuery.error ? formErrors.message(settingsQuery.error) : null,
     isSubmitting: updateSettings.isPending,
     submitError,
     isSaved,

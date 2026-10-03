@@ -8,6 +8,7 @@ import {
   mediaIdSchema,
   optionalEmailInput,
   optionalUrlInput,
+  partialUpdate,
   slugSchema,
 } from '@/shared/types/api';
 import { contentStatusSchema } from '@/shared/types/enums';
@@ -53,7 +54,7 @@ export type PublicTeamMember = z.infer<typeof publicTeamMemberSchema>;
 export const publicTeamMemberListResponseSchema = listResponseSchema(publicTeamMemberSchema);
 
 export const teamMemberTranslationInputSchema = z.object({
-  name: z.string().trim().min(1, 'Name is required').max(160),
+  name: z.string().trim().min(1).max(160),
   position: z.string().trim().max(160).default(''),
   bio: z.string().trim().max(4000).default(''),
   expertise: z.string().trim().max(600).default(''),
@@ -75,5 +76,5 @@ export type TeamMemberInput = z.output<typeof teamMemberInputSchema>;
 /** Raw form values, before defaults are applied. See the useForm generics. */
 export type TeamMemberFormValues = z.input<typeof teamMemberInputSchema>;
 
-export const teamMemberUpdateInputSchema = teamMemberInputSchema.partial();
+export const teamMemberUpdateInputSchema = partialUpdate(teamMemberInputSchema);
 export type TeamMemberUpdateInput = z.output<typeof teamMemberUpdateInputSchema>;

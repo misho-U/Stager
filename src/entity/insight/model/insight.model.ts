@@ -6,6 +6,8 @@ import {
   isoDateTime,
   listResponseSchema,
   mediaIdSchema,
+  optionalChoice,
+  partialUpdate,
   seoFieldsSchema,
   seoInputSchema,
   slugSchema,
@@ -66,7 +68,7 @@ export type PublicInsightDetail = z.infer<typeof publicInsightDetailSchema>;
 export const publicInsightListResponseSchema = listResponseSchema(publicInsightListItemSchema);
 
 export const insightTranslationInputSchema = seoInputSchema.extend({
-  title: z.string().trim().min(1, 'Title is required').max(200),
+  title: z.string().trim().min(1).max(200),
   excerpt: z.string().trim().max(600).default(''),
   body: z.string().trim().max(200_000).default(''),
 });
@@ -74,8 +76,8 @@ export const insightTranslationInputSchema = seoInputSchema.extend({
 export const insightInputSchema = z.object({
   slug: slugSchema,
   coverMediaId: mediaIdSchema,
-  categoryId: z.string().min(1).nullish(),
-  authorId: z.string().min(1).nullish(),
+  categoryId: optionalChoice(),
+  authorId: optionalChoice(),
   showAuthor: z.boolean().default(true),
   readingMinutes: z.number().int().min(1).max(240).nullish(),
   status: contentStatusSchema.default('DRAFT'),
@@ -89,5 +91,5 @@ export type InsightInput = z.output<typeof insightInputSchema>;
 /** Raw form values, before defaults are applied. See the useForm generics. */
 export type InsightFormValues = z.input<typeof insightInputSchema>;
 
-export const insightUpdateInputSchema = insightInputSchema.partial();
+export const insightUpdateInputSchema = partialUpdate(insightInputSchema);
 export type InsightUpdateInput = z.output<typeof insightUpdateInputSchema>;

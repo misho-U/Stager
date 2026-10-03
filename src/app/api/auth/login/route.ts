@@ -33,6 +33,7 @@ export const POST = withPublic(async ({ request }: { request: NextRequest }) => 
 
   if (!limit.ok) {
     return apiFail('RATE_LIMITED', 'Too many sign-in attempts. Please try again later.', {
+      reason: 'RATE_LIMITED',
       headers: { 'Retry-After': String(limit.retryAfterSeconds) },
     });
   }
@@ -72,6 +73,7 @@ export const POST = withPublic(async ({ request }: { request: NextRequest }) => 
       return apiFail(
         'INTERNAL',
         'Could not reach the authentication service. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local.',
+        { reason: 'AUTH_UNREACHABLE' },
       );
     }
 
@@ -85,6 +87,7 @@ export const POST = withPublic(async ({ request }: { request: NextRequest }) => 
       return apiFail(
         'INTERNAL',
         'The authentication service rejected the request path, which means NEXT_PUBLIC_SUPABASE_URL is wrong. It must be the bare origin — https://<project-ref>.supabase.co, with no /rest/v1 or other path. Run `pnpm setup:check`.',
+        { reason: 'AUTH_MISCONFIGURED' },
       );
     }
 
@@ -97,11 +100,14 @@ export const POST = withPublic(async ({ request }: { request: NextRequest }) => 
       return apiFail(
         'UNAUTHENTICATED',
         'This account exists but its email is not confirmed. Tick "Auto Confirm User" when creating it, or run `pnpm admin:set-password`.',
+        { reason: 'EMAIL_NOT_CONFIRMED' },
       );
     }
 
     if (error.code === 'over_request_rate_limit') {
-      return apiFail('RATE_LIMITED', 'Supabase is throttling sign-in attempts. Wait a minute.');
+      return apiFail('RATE_LIMITED', 'Supabase is throttling sign-in attempts. Wait a minute.', {
+        reason: 'PROVIDER_RATE_LIMITED',
+      });
     }
 
     // Everything else stays one message: telling "no such user" apart from
@@ -109,6 +115,7 @@ export const POST = withPublic(async ({ request }: { request: NextRequest }) => 
     return apiFail(
       'UNAUTHENTICATED',
       'Email or password is incorrect. Run `pnpm setup:check` to check the account, or `pnpm admin:set-password` to set a known one.',
+      { reason: 'INVALID_CREDENTIALS' },
     );
   }
 
@@ -129,7 +136,9 @@ export const POST = withPublic(async ({ request }: { request: NextRequest }) => 
     });
 
     logger.warn('auth.login_not_allowlisted', { email: parsed.data.email.toLowerCase() });
-    return apiFail('FORBIDDEN', 'This account is not permitted to use the dashboard');
+    return apiFail('FORBIDDEN', 'This account is not permitted to use the dashboard', {
+      reason: 'NOT_ALLOWED',
+    });
   }
 
   await recordAudit({ request, session, action: 'LOGIN', entityType: 'AdminUser' });

@@ -4,7 +4,13 @@ import { NextResponse } from 'next/server';
 import type { ZodError } from 'zod';
 
 import { ForbiddenError, UnauthenticatedError } from '@pkg/auth/errors';
-import type { ApiErrorBody, ApiErrorCode } from '@pkg/http/api-error';
+import type {
+  ApiErrorBody,
+  ApiErrorCode,
+  ApiErrorReason,
+  ApiValidationIssue,
+} from '@pkg/http/api-error';
+import { toValidationIssue } from '@pkg/http/validation-issue';
 import { logger, serialiseError } from '@pkg/logger';
 
 const STATUS_BY_CODE: Record<ApiErrorCode, number> = {
@@ -35,10 +41,21 @@ export function apiNoContent() {
 export function apiFail(
   code: ApiErrorCode,
   message: string,
-  options?: { fields?: Record<string, string[]>; headers?: Record<string, string> },
+  options?: {
+    reason?: ApiErrorReason;
+    fields?: Record<string, string[]>;
+    issues?: Record<string, ApiValidationIssue[]>;
+    headers?: Record<string, string>;
+  },
 ) {
   const body: ApiErrorBody = {
-    error: { code, message, ...(options?.fields ? { fields: options.fields } : {}) },
+    error: {
+      code,
+      message,
+      ...(options?.reason ? { reason: options.reason } : {}),
+      ...(options?.fields ? { fields: options.fields } : {}),
+      ...(options?.issues ? { issues: options.issues } : {}),
+    },
   };
 
   return NextResponse.json(body, {
@@ -47,16 +64,22 @@ export function apiFail(
   });
 }
 
-/** Turns a Zod failure into a 422 with per-field messages a form can render. */
+/**
+ * Turns a Zod failure into a 422 a form can render: per-field English messages,
+ * and the same problems as data (`issues`), which the dashboard words in the
+ * admin's own language.
+ */
 export function apiValidationFailed(error: ZodError) {
   const fields: Record<string, string[]> = {};
+  const issues: Record<string, ApiValidationIssue[]> = {};
 
   for (const issue of error.issues) {
     const path = issue.path.join('.') || '_root';
     (fields[path] ??= []).push(issue.message);
+    (issues[path] ??= []).push(toValidationIssue(issue));
   }
 
-  return apiFail('VALIDATION_FAILED', 'Some fields need attention', { fields });
+  return apiFail('VALIDATION_FAILED', 'Some fields need attention', { fields, issues });
 }
 
 /**

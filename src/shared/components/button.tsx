@@ -42,7 +42,9 @@ export function Button({
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors',
+        // One line always: the height is fixed, so a wrapped label (longer in
+        // Georgian) would spill out of the button.
+        'inline-flex items-center justify-center gap-2 rounded-md font-medium whitespace-nowrap transition-colors',
         'disabled:cursor-not-allowed disabled:opacity-60',
         VARIANTS[variant],
         SIZES[size],

@@ -39,7 +39,7 @@ test.describe('one brandbook, every consumer', () => {
       company: null,
       email: 'test@example.com',
       phone: null,
-      interestLabel: 'Menu development',
+      interest: 'MENU_DEVELOPMENT',
       message: 'Hello',
       locale: 'en',
       submittedAt: new Date('2026-01-01T00:00:00Z'),

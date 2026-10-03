@@ -39,6 +39,7 @@ export const DELETE = withAdmin<Params>(async ({ request, session, params }) => 
     return apiFail(
       'CONFLICT',
       'This image is still used by other content. Remove it there first, then delete it here.',
+      { reason: 'MEDIA_IN_USE' },
     );
   }
 

@@ -54,13 +54,5 @@
     "tooShort": "Too short",
     "tooLong": "Too long",
     "rateLimited": "Too many requests. Please try again later."
-  },
-  "admin": {
-    "signIn": "Sign in",
-    "signOut": "Sign out",
-    "email": "Email",
-    "password": "Password",
-    "invalidCredentials": "Email or password is incorrect",
-    "notAuthorized": "You do not have access to the admin dashboard"
   }
 }

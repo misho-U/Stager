@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import adminKa from '@pkg/i18n/messages/admin.ka.json';
+
 /**
  * The authentication boundary.
  *
@@ -23,7 +25,8 @@ test.describe('admin routes are closed to anonymous visitors', () => {
     test(`${route} redirects to the login page`, async ({ page }) => {
       await page.goto(route);
       await expect(page).toHaveURL(/\/admin\/login/);
-      await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+      // In Georgian: nothing has picked another language yet.
+      await expect(page.getByRole('heading', { name: adminKa.signIn.title })).toBeVisible();
     });
   }
 
@@ -41,6 +44,9 @@ test.describe('admin API rejects unauthenticated callers', () => {
     '/api/admin/team',
     '/api/admin/insights',
     '/api/admin/categories',
+    '/api/admin/courses',
+    '/api/admin/course-categories',
+    '/api/admin/videos',
     '/api/admin/social-links',
     '/api/admin/media',
     '/api/admin/settings',

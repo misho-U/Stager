@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import adminKa from '@pkg/i18n/messages/admin.ka.json';
+
 /**
  * The public shell.
  *
@@ -23,12 +25,13 @@ test.describe('locale routing', () => {
   });
 
   test('the dashboard declares the language of its own interface', async ({ page }) => {
-    // Admin routes have no locale segment. They used to fall back to the site
-    // default and serve English text as lang="ka", which screen readers then
-    // pronounce as Georgian.
+    // Admin routes have no locale segment, so the page must say which language
+    // its interface is in: English text once went out as lang="ka", and screen
+    // readers pronounced it as Georgian. Georgian until the admin picks
+    // English; admin-i18n.spec.ts covers the choice.
     await page.goto('/admin/login');
-    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
-    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page.getByRole('heading', { name: adminKa.signIn.title })).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'ka');
   });
 
   test('a missing page answers in the language of its URL', async ({ page }) => {
@@ -116,6 +119,7 @@ test.describe('security headers', () => {
 // the words with "-" or "_".
 const GEORGIAN_FILE = /noto[_-]sans[_-]georgian[_-]georgian/i;
 const LATIN_FILE = /noto[_-]sans[_-]georgian[_-]latin(?![_-]ext)/i;
+const LATIN_EXT_FILE = /noto[_-]sans[_-]georgian[_-]latin[_-]ext/i;
 
 test.describe('typography', () => {
   test('the Georgian typeface is self-hosted, not fetched from Google', async ({ page }) => {
@@ -182,19 +186,21 @@ test.describe('typography', () => {
 
   test('the typeface files are split by script', async ({ page }) => {
     // The unicode-range split means a page downloads a file only when it
-    // contains that script. The login page has no Georgian text, so fetching
-    // the Georgian file there means the split has been lost and every page
-    // is paying for every script.
+    // contains that script. The sign-in page has Georgian and basic Latin but
+    // no extended Latin, so fetching that file there means the split has been
+    // lost and every page is paying for every script. (No page is Latin-only
+    // any more: every language switch shows ქა or ქარ.)
     const fontFiles: string[] = [];
     page.on('request', (request) => {
       if (request.url().endsWith('.woff2')) fontFiles.push(request.url());
     });
 
     await page.goto('/admin/login');
-    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+    await expect(page.locator('input[type="password"]')).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
 
+    expect(fontFiles.some((url) => GEORGIAN_FILE.test(url))).toBe(true);
     expect(fontFiles.some((url) => LATIN_FILE.test(url))).toBe(true);
-    expect(fontFiles.filter((url) => GEORGIAN_FILE.test(url))).toEqual([]);
+    expect(fontFiles.filter((url) => LATIN_EXT_FILE.test(url))).toEqual([]);
   });
 });

@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 
 import { cn } from '@/shared/lib/cn';
@@ -47,7 +48,10 @@ const STATUS_STYLES: Record<string, string> = {
   READ: 'bg-ink-subtle/20 text-ink-muted',
 };
 
+/** A record's status as a label: content (draft, published…) or inquiry (new, read…). */
 export function StatusBadge({ status }: { status: string }) {
+  const t = useTranslations('admin.status');
+
   return (
     <span
       className={cn(
@@ -55,7 +59,7 @@ export function StatusBadge({ status }: { status: string }) {
         STATUS_STYLES[status] ?? 'bg-ink-subtle/20 text-ink-muted',
       )}
     >
-      {status.toLowerCase()}
+      {t.has(status) ? t(status) : status.toLowerCase()}
     </span>
   );
 }

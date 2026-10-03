@@ -66,6 +66,10 @@ Do not add a library outside this list without raising it first.
   without; report optional misconfiguration in `pnpm setup:check` instead.
 - Where a zod schema uses `.default()`, react-hook-form needs both types:
   `useForm<z.input<S>, unknown, z.output<S>>`.
+- **Update schemas are `partialUpdate(schema)`, never `.partial()`.** zod 4
+  applies defaults inside `.partial()`, so a one-field PATCH reset the rest:
+  hiding a social link reordered it. Optional dropdowns and links read "" as
+  none through `optionalChoice()` / `optionalYoutubeUrlInput()`.
 - **An optional number input uses `setValueAs: toOptionalNumber`**
   (`shared/lib/form-values.ts`). react-hook-form also runs `setValueAs` on the
   stored value, and `Number(null)` is 0 — which blocked saving a project with
@@ -83,6 +87,15 @@ Do not add a library outside this list without raising it first.
 - **`pkg/brand/hex.generated.ts` is generated** from `brandbook.css` on install,
   dev and build, for the email and the theme-color meta tag. Never edit it.
   Brand colours must be hex, or the build fails.
+- **Dashboard wording lives in `pkg/i18n/messages/admin.ka.json` and
+  `admin.en.json`, never in code** — the dashboard is Georgian until the admin
+  picks English. Shared schemas carry no messages: validation is worded from
+  the zod issue (`shared/lib/validation-message.ts`), server errors from
+  `code`/`reason`. `admin-i18n.spec.ts` fails on a hard-coded string.
+- **`pnpm dev` and Vercel previews refuse contact submissions** (403,
+  reason `DELIVERY_OFF`): they share the live database and inbox, and a test
+  would reach the client as a real lead. `INQUIRY_DELIVERY=on` lifts it, against
+  a local database only. The live site always delivers.
 - **The design skill (`design-taste-frontend`) is direction only.** AGENTS.md
   § Design skill lists what it may not change — dependencies, tokens, images
   and the CSP, folder structure, CMS copy — and the Georgian checks.

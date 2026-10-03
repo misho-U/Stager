@@ -13,7 +13,7 @@ import type { DbLocale } from '@/shared/types/enums';
  * home-page.service.ts, which is the part worth copying.
  */
 export async function HomePageModule({ locale }: { locale: DbLocale }) {
-  const { layout, page, projects, readFailed } = await loadHomePageData(locale);
+  const { layout, page, projects, courses, videos, readFailed } = await loadHomePageData(locale);
 
   const hero = page?.sections.find((section) => section.key === 'hero');
 
@@ -97,6 +97,56 @@ export async function HomePageModule({ locale }: { locale: DbLocale }) {
                 ) : null}
                 <p className="text-caption text-ink-subtle">
                   {[project.client, project.location, project.year].filter(Boolean).join(' · ')}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <h2 className="text-title font-semibold">Academy</h2>
+
+        {courses.items.length === 0 ? (
+          <p className="text-body-sm text-ink-subtle">
+            No upcoming courses yet. Add one in the dashboard and it will appear here.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-3" data-testid="course-list">
+            {courses.items.map((course) => (
+              <li key={course.id} className="flex flex-col gap-1">
+                <h3 className="text-title-sm font-medium" data-testid="course-title">
+                  {course.title}
+                </h3>
+                <p className="text-caption text-ink-subtle">
+                  {[course.startsAt, course.category?.name, course.duration, course.location]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <h2 className="text-title font-semibold">Videos</h2>
+
+        {videos.items.length === 0 ? (
+          <p className="text-body-sm text-ink-subtle">
+            No published videos yet. Add one in the dashboard and it will appear here.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-3" data-testid="video-list">
+            {videos.items.map((video) => (
+              <li key={video.id} className="flex flex-col gap-1">
+                <h3 className="text-title-sm font-medium" data-testid="video-title">
+                  {video.title}
+                </h3>
+                <p className="text-caption text-ink-subtle">
+                  {[video.publishedAt, video.youtubeUrl ? 'YouTube' : 'no link yet']
+                    .filter(Boolean)
+                    .join(' · ')}
                 </p>
               </li>
             ))}

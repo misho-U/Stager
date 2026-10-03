@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import {
@@ -21,11 +21,15 @@ import {
   EMPTY_PROJECT,
   toFormValues,
 } from '@/modules/admin-project-form/admin-project-form.constants';
-import { toFieldErrors, toFormErrorMessage } from '@/shared/lib/form-errors';
+import { useFormErrors } from '@/shared/lib/form-errors';
+import { useSlugAutofill } from '@/shared/lib/use-slug-autofill';
+import { useValidationErrorMap } from '@/shared/lib/use-validation-error-map';
 
 type UseProjectFormOptions = { projectId?: string };
 
 export function useAdminProjectForm({ projectId }: UseProjectFormOptions) {
+  const formErrors = useFormErrors();
+  const validationErrorMap = useValidationErrorMap();
   const router = useRouter();
   const isEdit = Boolean(projectId);
 
@@ -47,9 +51,19 @@ export function useAdminProjectForm({ projectId }: UseProjectFormOptions) {
   // validated values handleSubmit receives. They differ because the schema
   // applies defaults, so `status` is optional in the form and guaranteed after.
   const form = useForm<ProjectFormValues, unknown, ProjectInput>({
-    resolver: zodResolver(projectInputSchema),
+    resolver: zodResolver(projectInputSchema, { error: validationErrorMap }),
     defaultValues: EMPTY_PROJECT,
   });
+
+  // While creating, the slug follows the English title until it is edited
+  // by hand (use-slug-autofill.ts). Validated as it changes only after a save
+  // was tried, so an empty title does not flag the slug mid-typing.
+  const setSlug = useCallback(
+    (slug: string) =>
+      form.setValue('slug', slug, { shouldDirty: true, shouldValidate: form.formState.isSubmitted }),
+    [form],
+  );
+  const slugAutofill = useSlugAutofill({ enabled: !isEdit, setSlug });
 
   const { reset } = form;
 
@@ -72,11 +86,11 @@ export function useAdminProjectForm({ projectId }: UseProjectFormOptions) {
       router.push('/admin/projects');
       router.refresh();
     } catch (caught) {
-      setSubmitError(toFormErrorMessage(caught));
+      setSubmitError(formErrors.message(caught));
 
       // Re-attach server-side field errors (e.g. a duplicate slug) to the
       // inputs they belong to, so the message appears where the fix is.
-      for (const [field, message] of Object.entries(toFieldErrors(caught))) {
+      for (const [field, message] of Object.entries(formErrors.fields(caught))) {
         form.setError(field as keyof ProjectFormValues, { type: 'server', message });
       }
     }
@@ -86,8 +100,9 @@ export function useAdminProjectForm({ projectId }: UseProjectFormOptions) {
     form,
     onSubmit,
     isEdit,
+    slugAutofill,
     isLoading: isEdit && projectQuery.isLoading,
-    loadError: projectQuery.error ? toFormErrorMessage(projectQuery.error) : null,
+    loadError: projectQuery.error ? formErrors.message(projectQuery.error) : null,
     isSubmitting: createProject.isPending || updateProject.isPending,
     submitError,
     services: servicesQuery.data?.items ?? [],

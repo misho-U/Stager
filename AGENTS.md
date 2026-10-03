@@ -203,7 +203,9 @@ Non-negotiable. Each exists because of a specific failure mode.
    before debugging credentials by hand.
 4. **RLS is enabled on every table with no policies.** Prisma owns the tables and
    bypasses RLS; the `anon` and `authenticated` roles read zero rows. If you add
-   a table, add it to the RLS migration list.
+   a table, enable RLS on it in the migration that creates it, as
+   `20261002092246_academy_and_videos` does: the first RLS migration has
+   already run everywhere, so adding to its list would change nothing.
 5. **Validate at the boundary.** Every route handler parses its input with zod.
 6. **Sanitize rich text on write**, never on read — the database must only ever
    hold safe HTML.
@@ -220,6 +222,14 @@ Non-negotiable. Each exists because of a specific failure mode.
 11. **Uploads**: admin-only, server-issued Blob tokens, mime allowlist, size cap,
     random suffix. No SVG — it is an executable document.
 12. **Audit every mutation** via `recordAudit`.
+13. **Only the live site delivers contact submissions.** Every deployment
+    shares one database and inbox, so a test sent from a Vercel preview
+    (design.stager.ge, a branch link) or from `pnpm dev` would reach the client
+    as a real lead. There, `/api/contact` validates as usual and then refuses
+    with `403 FORBIDDEN`, reason `DELIVERY_OFF`, before writing anything.
+    `INQUIRY_DELIVERY=on` lifts that for a preview or a dev server; nothing
+    turns the live site off. `pkg/config/inquiry-delivery.ts` holds the rule,
+    and `contact-form.spec.ts` pins every case.
 
 ---
 
@@ -238,6 +248,15 @@ Non-negotiable. Each exists because of a specific failure mode.
   `shared/types/api.ts` for emails and URLs. The trim runs before validation,
   so `.min(1)` rejects whitespace-only values. Leave ids, machine-generated
   values, honeypots and passwords untrimmed. Output schemas need none of this.
+- **An update schema is `partialUpdate(createSchema)`, never `.partial()`**
+  (`shared/types/api.ts`). zod 4 applies `.default()` inside `.partial()`, so
+  a one-field PATCH filled in every default it was not given: hiding a social
+  link reset its order to 0, and any one-field update would have set a record
+  back to DRAFT. A field left out of an update means "unchanged".
+- **An optional dropdown or link reads blank as none:** `optionalChoice()`,
+  `optionalYoutubeUrlInput()` (`shared/types/api.ts`). The "none" option and an
+  emptied input send "", which `.min(1)` or a link check rejects, so a value
+  once saved could never be removed.
 - **One file holds every visual value: `src/shared/brandbook/brandbook.css`.**
   Colour, typeface, type scale, spacing, radii and motion are tokens in its
   `@theme` block; `src/app/globals.css` only imports it. Never hard-code a
@@ -270,8 +289,20 @@ Non-negotiable. Each exists because of a specific failure mode.
   Arial. Playwright asserts that no request goes to Google's font hosts, that
   Georgian and Latin both load the bundled family, and that the files stay
   split by script. The CSP does not allowlist Google's font hosts.
+- **A calendar day is a Postgres `date`, not a timestamp**: a course's start,
+  a video's release. It crosses the API as "2026-11-15" (`calendarDate`), so it
+  reads the same in every time zone, and "today" is Tbilisi's
+  (`shared/lib/calendar-date.ts`): a Vercel function runs in UTC, four hours
+  behind.
 - **Bilingual content is authored in both languages at once.** Translation
-  tables, `@@unique([<parent>Id, locale])`, KA/EN tabs in the admin form.
+  tables, `@@unique([<parent>Id, locale])`, one ქართული | English toggle per
+  admin form (§ Dashboard language).
+- **A slug follows the English title (or name) while the item is being
+  created** (`shared/lib/use-slug-autofill.ts`), until someone edits the slug
+  by hand; emptying it hands it back to the title. A saved item's slug is never
+  changed automatically, draft or not: links to a published page may already
+  be out there, and a draft may have been published before. It follows the
+  English because `slugify()` keeps Latin letters and digits only.
 - **Comments explain why, not what.** Do not narrate the code.
 - **Never edit the database by hand.** Change `schema.prisma`, run
   `pnpm db:migrate`, commit the generated SQL.
@@ -334,6 +365,51 @@ picked, the dashboard follows the OS (the `system` cookie state).
   blocks have not drifted, and asserts the main text pairs stay readable in
   both themes.
 
+### Dashboard language
+
+The dashboard's own words are Georgian or English, the admin's choice, and
+**Georgian until one is picked**. That is a different thing from the language
+of the content being edited, and the two stay apart in code and in wording.
+
+- **Interface language:** the ქა | EN switch on the sidebar's account row and
+  on the sign-in form. A cookie, `stager-admin-locale` (`Path=/admin`), parsed
+  by `pkg/i18n/admin-locale.ts` (anything unknown reads as Georgian) and read by
+  `pkg/i18n/request.ts` for every request without a locale segment, so
+  `<html lang>` follows it. Switching refreshes the page in place: a
+  half-filled form survives it.
+- **Content language:** "რედაქტირება: ქართული | English" at the top of each
+  bilingual form (`shared/components/content-locale.tsx`). One toggle per page
+  switches every translated field, and it opens on Georgian every time. Both
+  languages' fields stay mounted, the other one hidden: unmounted fields drop
+  out of react-hook-form, and saving would wipe the language not on screen. A
+  red dot marks a language with errors, and a failed save whose problems are
+  all in the hidden language switches to it. `TranslatedFields` gives each
+  input the `lang` of its copy, for spellcheck and screen readers.
+- **Wording lives in `pkg/i18n/messages/admin.ka.json` and `admin.en.json`,
+  never in code.** Same keys and placeholders in both. Client components use
+  `useTranslations('admin…')`, server components `getTranslations`. The
+  site's own messages load too, so the dashboard reuses labels the site has
+  (the inquiry interests).
+- **Validation is worded from what failed, not from schema text.** The shared
+  schemas carry no messages. `shared/lib/validation-message.ts` maps a zod
+  issue (its code, limit and pattern) to a message key: live through
+  `useValidationErrorMap()` → `zodResolver(schema, { error })`, and after a 422
+  through the `issues` the API returns beside `fields`. A new refinement names
+  its message with `params: { key }`.
+- **Server errors are worded from `code` and `reason`**, never from the
+  server's English `message`, which stays for logs. A service gets both helpers
+  from `useFormErrors()`. Add a `reason` only where one code covers cases the
+  admin must tell apart (why a sign-in failed, an image still in use).
+- **The notification email is always Georgian:** it has one reader. Its wording
+  is under `email` in `admin.ka.json`.
+- `tests/e2e/admin-i18n.spec.ts` fails on a missing or mismatched key, a
+  message that does not format, a key the code asks for that a language lacks,
+  and wording written into dashboard code: JSX text, and strings given to
+  label, placeholder, hint, title, aria-label and similar props or to a column
+  `header`. Tests that find things by English wording pick English first
+  (`setDashboardLanguage()`); tests that expect Georgian read it from
+  `admin.ka.json`, so correcting a translation never breaks a test.
+
 ### Credential-gated tests
 
 Tests that need a signed-in admin are skipped unless `E2E_ADMIN_EMAIL` and
@@ -346,6 +422,8 @@ Tests that need a signed-in admin are skipped unless `E2E_ADMIN_EMAIL` and
   `test.use({ storageState: ADMIN_SESSION })` from `tests/e2e/admin-session.ts`.
   The login route allows ten sign-ins per 15 minutes per IP, and signing in per
   test used up a whole window in a single run.
+- **They run in English.** The setup project picks English before signing
+  in, and the saved session keeps the choice.
 - **Never sign out in one.** `signOut()` defaults to scope `global`, so it
   would end the session every other test is using.
 - **They write to whatever database `.env.local` points at.** Run them against
@@ -363,6 +441,8 @@ pnpm build             # prisma generate + next build
 pnpm lint              # ESLint, including the architecture boundaries
 pnpm typecheck         # tsc --noEmit
 pnpm db:migrate        # create + apply a migration (writes SQL to prisma/migrations)
+pnpm db:generate       # regenerate the Prisma client; run after db:migrate, which no longer does in Prisma 7
+pnpm db:migrate:deploy # apply committed migrations, no prompts and no resets: how the live database is updated
 pnpm db:seed           # idempotent seed
 pnpm db:studio         # browse the database
 pnpm test:e2e          # Playwright (loads .env.local; needs a seeded database)
@@ -380,6 +460,11 @@ Before pushing: `pnpm lint && pnpm typecheck && pnpm build && pnpm test:e2e`.
 
 Built: schema, migrations, seed, the full API, auth, the admin dashboard,
 security, caching, and the Playwright suite.
+
+Courses (with categories the owner adds) and videos have their tables,
+dashboard screens and public endpoints (`/api/public/courses`, which lists a
+course until its start date has passed, and `/api/public/videos`, newest
+first). The scaffold page lists both, proving the edit→live loop for them.
 
 **Not built: the public site design.** `src/app/[locale]/page.tsx` renders a
 deliberately unstyled scaffold that proves the edit→live loop and nothing more.

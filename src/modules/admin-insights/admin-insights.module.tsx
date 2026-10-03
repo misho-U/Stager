@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -11,18 +12,13 @@ import { ConfirmButton } from '@/shared/components/confirm-button';
 import { DataTable, type Column } from '@/shared/components/data-table';
 import { PageHeader } from '@/shared/components/page-header';
 import { ErrorNotice, Panel, StatusBadge } from '@/shared/components/panel';
-import { toFormErrorMessage } from '@/shared/lib/form-errors';
-
-function formatDate(value: string | null): string {
-  if (!value) return '—';
-  return new Date(value).toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-}
+import { useFormErrors } from '@/shared/lib/form-errors';
+import { useAdminFormat } from '@/shared/lib/use-admin-format';
 
 export function AdminInsightsModule() {
+  const t = useTranslations('admin');
+  const format = useAdminFormat();
+  const formErrors = useFormErrors();
   const { data, isLoading, error } = useQuery(adminInsightsQuery());
   const deleteInsight = useDeleteInsight();
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -32,14 +28,14 @@ export function AdminInsightsModule() {
     try {
       await deleteInsight.mutateAsync(id);
     } catch (caught) {
-      setDeleteError(toFormErrorMessage(caught));
+      setDeleteError(formErrors.message(caught));
     }
   };
 
   const columns: Array<Column<AdminInsight>> = [
     {
       key: 'title',
-      header: 'Title',
+      header: t('columns.title'),
       render: (insight) => (
         <Link
           href={`/admin/insights/${insight.id}`}
@@ -49,22 +45,30 @@ export function AdminInsightsModule() {
         </Link>
       ),
     },
-    { key: 'status', header: 'Status', render: (insight) => <StatusBadge status={insight.status} /> },
+    {
+      key: 'status',
+      header: t('columns.status'),
+      render: (insight) => <StatusBadge status={insight.status} />,
+    },
     {
       key: 'published',
-      header: 'Published',
+      header: t('columns.published'),
       secondary: true,
       render: (insight) => (
-        <span className="text-ink-muted">{formatDate(insight.publishedAt)}</span>
+        <span className="text-ink-muted">{insight.publishedAt ? format.date(insight.publishedAt) : '—'}</span>
       ),
     },
     {
       key: 'author',
-      header: 'Author',
+      header: t('columns.author'),
       secondary: true,
       render: (insight) => (
         <span className="text-ink-muted">
-          {insight.showAuthor ? (insight.authorId ? 'Shown' : '—') : 'Hidden'}
+          {insight.showAuthor
+            ? insight.authorId
+              ? t('insights.authorShown')
+              : '—'
+            : t('insights.authorHidden')}
         </span>
       ),
     },
@@ -74,8 +78,8 @@ export function AdminInsightsModule() {
       align: 'right',
       render: (insight) => (
         <ConfirmButton
-          label="Delete"
-          confirmLabel="Confirm"
+          label={t('common.delete')}
+          confirmLabel={t('common.confirm')}
           loading={deleteInsight.isPending && deleteInsight.variables === insight.id}
           onConfirm={() => remove(insight.id)}
         />
@@ -86,27 +90,34 @@ export function AdminInsightsModule() {
   return (
     <>
       <PageHeader
-        title="Insights"
-        description="Articles and news."
+        title={t('insights.title')}
+        description={t('insights.description')}
         actions={
-          <Link href="/admin/insights/new">
-            <Button>New article</Button>
-          </Link>
+          <>
+            {/* Article categories live here, not in the sidebar: with course
+                categories as well, a bare "Categories" there was ambiguous. */}
+            <Link href="/admin/insights/categories">
+              <Button variant="secondary">{t('insights.categoriesLink')}</Button>
+            </Link>
+            <Link href="/admin/insights/new">
+              <Button>{t('insights.new')}</Button>
+            </Link>
+          </>
         }
       />
 
-      {error ? <ErrorNotice message={toFormErrorMessage(error)} /> : null}
+      {error ? <ErrorNotice message={formErrors.message(error)} /> : null}
       {deleteError ? <ErrorNotice message={deleteError} /> : null}
 
       <Panel>
         {isLoading ? (
-          <p className="text-body-sm text-ink-subtle">Loading…</p>
+          <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
         ) : (
           <DataTable
             rows={data?.items ?? []}
             columns={columns}
             rowKey={(insight) => insight.id}
-            emptyTitle="No articles yet"
+            emptyTitle={t('insights.emptyTitle')}
           />
         )}
       </Panel>

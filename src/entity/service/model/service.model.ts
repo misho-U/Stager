@@ -6,6 +6,7 @@ import {
   isoDateTime,
   listResponseSchema,
   mediaIdSchema,
+  partialUpdate,
   seoFieldsSchema,
   seoInputSchema,
   slugSchema,
@@ -52,7 +53,7 @@ export type PublicService = z.infer<typeof publicServiceSchema>;
 export const publicServiceListResponseSchema = listResponseSchema(publicServiceSchema);
 
 export const serviceTranslationInputSchema = seoInputSchema.extend({
-  title: z.string().trim().min(1, 'Title is required').max(200),
+  title: z.string().trim().min(1).max(200),
   shortDescription: z.string().trim().max(600).default(''),
   body: z.string().trim().max(80_000).default(''),
 });
@@ -72,5 +73,5 @@ export type ServiceInput = z.output<typeof serviceInputSchema>;
 /** Raw form values, before defaults are applied. See the useForm generics. */
 export type ServiceFormValues = z.input<typeof serviceInputSchema>;
 
-export const serviceUpdateInputSchema = serviceInputSchema.partial();
+export const serviceUpdateInputSchema = partialUpdate(serviceInputSchema);
 export type ServiceUpdateInput = z.output<typeof serviceUpdateInputSchema>;
