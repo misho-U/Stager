@@ -10,6 +10,8 @@ export const API_ERROR_CODES = [
   'PAYLOAD_TOO_LARGE',
   'UNSUPPORTED_MEDIA_TYPE',
   'INTERNAL',
+  // Something this depends on cannot be reached; trying again later can work.
+  'UNAVAILABLE',
 ] as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];

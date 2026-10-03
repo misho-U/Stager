@@ -59,11 +59,14 @@ async function handleAdmin(request: NextRequest) {
 
   // Must run against this exact response object — it writes the refreshed auth
   // cookies onto it.
-  const user = await refreshSupabaseSession(request, response);
+  const { user, unreachable } = await refreshSupabaseSession(request, response);
 
   const isLoginPage = pathname === LOGIN_PATH;
 
-  if (!user && !isLoginPage) {
+  // While Supabase cannot be asked, nobody is sent to the login page, which
+  // could not sign them in either: the page renders, and the dashboard's own
+  // check (Node runtime, the real boundary) reports the outage.
+  if (!user && !isLoginPage && !unreachable) {
     const loginUrl = new URL(LOGIN_PATH, request.url);
     // Send them back where they were heading once they are in. Only the path
     // and query are carried over, so this cannot become an open redirect.

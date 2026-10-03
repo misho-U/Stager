@@ -1,4 +1,13 @@
 import { expect, test } from '@playwright/test';
+import {
+  AuthApiError,
+  AuthInvalidTokenResponseError,
+  AuthRetryableFetchError,
+  AuthSessionMissingError,
+  AuthUnknownError,
+} from '@supabase/supabase-js';
+
+import { isAuthOutage } from '@pkg/supabase/outage';
 
 import { DB_WRITES_ALLOWED, DB_WRITES_SKIP_REASON } from './db-guard';
 
@@ -69,4 +78,24 @@ test('the sitemap lists the home page in both languages, each naming the other',
   for (const lang of ['ka', 'en', 'x-default']) {
     expect(xml).toContain(`hreflang="${lang}"`);
   }
+});
+
+test.describe('a Supabase outage is told apart from a signed-out visitor', () => {
+  // An outage keeps the admin where they are, with Try again; the login page
+  // could not sign them in either.
+  test('no answer, a failing gateway, a failure of its own, or an error page', () => {
+    expect(isAuthOutage(new AuthRetryableFetchError('fetch failed', 0))).toBe(true);
+    expect(isAuthOutage(new AuthRetryableFetchError('Bad gateway', 503))).toBe(true);
+    expect(isAuthOutage(new AuthApiError('Database error', 500, 'unexpected_failure'))).toBe(true);
+    expect(isAuthOutage(new AuthUnknownError('Unexpected token <', new Error()))).toBe(true);
+  });
+
+  // These must still reach the login page: one taken for an outage would keep
+  // a person from signing in at all.
+  test('no session, a rejected token, or a session error that says 500', () => {
+    expect(isAuthOutage(new AuthSessionMissingError())).toBe(false);
+    expect(isAuthOutage(new AuthApiError('invalid JWT', 403, 'bad_jwt'))).toBe(false);
+    expect(isAuthOutage(new AuthApiError('User not found', 404, 'user_not_found'))).toBe(false);
+    expect(isAuthOutage(new AuthInvalidTokenResponseError())).toBe(false);
+  });
 });

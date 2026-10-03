@@ -3,6 +3,7 @@ import type { NextRequest, NextResponse } from 'next/server';
 
 import { clientEnv } from '@pkg/config/env.client';
 import { SESSION_COOKIE_OPTIONS } from '@pkg/supabase/cookie-options';
+import { isAuthOutage } from '@pkg/supabase/outage';
 
 /**
  * Refreshes the Supabase auth session for the current request.
@@ -38,7 +39,10 @@ export async function refreshSupabaseSession(request: NextRequest, response: Nex
 
   const {
     data: { user },
+    error,
   } = await supabase.auth.getUser();
 
-  return user;
+  // `unreachable`: Supabase could not be asked, so whether anyone is signed in
+  // is unknown, not "no" (see isAuthOutage).
+  return { user, unreachable: error ? isAuthOutage(error) : false };
 }

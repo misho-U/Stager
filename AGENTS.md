@@ -256,6 +256,13 @@ Non-negotiable. Each exists because of a specific failure mode.
     with Sign out (`getAdminAccess`, `pkg/auth/admin-session.ts`). Never redirect
     it to the login page: middleware sends a session from there straight back.
     An admin row is matched by email only while unlinked.
+21. **Supabase being unreachable is not a sign-out.** `isAuthOutage`
+    (`pkg/supabase/outage.ts`) tells the two apart; on an outage the proxy
+    does not redirect, `getSupabaseUser` throws `AuthUnavailableError`, and the
+    API answers 503 `UNAVAILABLE` with reason `AUTH_UNREACHABLE`, so the
+    dashboard says "try again" instead of sending an admin to a login page that
+    could not sign them in either (a paused Free project does exactly this).
+    Keep the check narrow: supabase-js gives some bad-session errors a 500.
 
 ---
 
@@ -548,8 +555,25 @@ Tests that need a signed-in admin are skipped unless `E2E_ADMIN_EMAIL` and
   in, and the saved session keeps the choice.
 - **Never sign out in one.** `signOut()` defaults to scope `global`, so it
   would end the session every other test is using.
-- **They write to whatever database `.env.local` points at.** Run them against
-  a local database or a disposable Supabase branch, never production.
+- **A test that writes runs only against a local database** (`DB_WRITES_ALLOWED`,
+  `tests/e2e/db-guard.ts`; `E2E_ALLOW_SHARED_DB=1` overrides it, deliberately).
+  `.env.local` usually names the live one.
+- **Name what a test creates so it can be found:** slugs start `e2e-` (the
+  dashboard derives them from "E2E …" titles), contact senders are
+  `e2e-…@example.com`. Each test deletes its own rows in a `finally`, and
+  `tests/e2e/global-teardown.ts` removes whatever a killed run left.
+
+The suites that need no credentials hold the boundary in place:
+
+- **`api-auth-matrix.spec.ts` finds every route and dashboard page on disk**
+  and checks it signed out: 401 for each admin method, 403 for a cross-site
+  write, the login page for each dashboard page. A route outside `/api/admin`
+  must be listed in its `OUTSIDE_ADMIN`, so a public one is a decision, never
+  an accident; one under `/api/public/` may only read.
+- **`api-contract.spec.ts` parses every public read with its entity schema**,
+  in both languages, and checks the 404s, 422s, drafts and sign-in limits.
+  Sign-in tests send a documentation-range `x-forwarded-for`, so they never
+  use up the limit of the address the rest of the suite signs in from.
 
 ---
 

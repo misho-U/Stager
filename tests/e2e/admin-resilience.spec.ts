@@ -69,14 +69,18 @@ test('leaving unsaved changes asks first, and staying keeps them', async ({ page
   const title = page.getByLabel(adminEn.fields.title).first();
   await title.fill('Unsaved work');
 
-  const asked = page.waitForEvent('dialog');
+  // Answered from inside the handler: the confirm blocks the page, so a click
+  // awaited before answering it would never finish.
+  let asked = '';
+  page.once('dialog', (dialog) => {
+    asked = dialog.message();
+    void dialog.dismiss();
+  });
   await page
     .getByRole('navigation', { name: adminEn.sidebar.label })
     .getByRole('link', { name: adminEn.sidebar.nav.services })
     .click();
-  const dialog = await asked;
-  expect(dialog.message()).toBe(adminEn.common.unsavedChanges);
-  await dialog.dismiss();
+  expect(asked).toBe(adminEn.common.unsavedChanges);
 
   await expect(page).toHaveURL(/\/admin\/projects\/new$/);
   await expect(title).toHaveValue('Unsaved work');

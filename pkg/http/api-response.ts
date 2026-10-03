@@ -3,7 +3,7 @@ import 'server-only';
 import { NextResponse } from 'next/server';
 import type { ZodError } from 'zod';
 
-import { ForbiddenError, UnauthenticatedError } from '@pkg/auth/errors';
+import { AuthUnavailableError, ForbiddenError, UnauthenticatedError } from '@pkg/auth/errors';
 import type {
   ApiErrorBody,
   ApiErrorCode,
@@ -25,6 +25,7 @@ const STATUS_BY_CODE: Record<ApiErrorCode, number> = {
   PAYLOAD_TOO_LARGE: 413,
   UNSUPPORTED_MEDIA_TYPE: 415,
   INTERNAL: 500,
+  UNAVAILABLE: 503,
 };
 
 export function apiOk<T>(data: T, init?: ResponseInit) {
@@ -98,6 +99,12 @@ export function handleRouteError(error: unknown, context: Record<string, unknown
 
   if (error instanceof ForbiddenError) {
     return apiFail('FORBIDDEN', error.message);
+  }
+
+  // Logged where it was found (getSupabaseUser). A 401 here would send the
+  // dashboard to the login page, which cannot sign anyone in either.
+  if (error instanceof AuthUnavailableError) {
+    return apiFail('UNAVAILABLE', error.message, { reason: 'AUTH_UNREACHABLE' });
   }
 
   // The database refusing a write because the data changed under it, or a
