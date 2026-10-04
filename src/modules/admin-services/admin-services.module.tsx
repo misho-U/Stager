@@ -7,7 +7,7 @@ import { useState } from 'react';
 
 import type { AdminService } from '@/entity/service/model/service.model';
 import { adminServicesQuery, useDeleteService } from '@/entity/service/api/service.query';
-import { Button } from '@/shared/components/button';
+import { ButtonLink } from '@/shared/components/button';
 import { ConfirmButton } from '@/shared/components/confirm-button';
 import { DataTable, type Column } from '@/shared/components/data-table';
 import { PageHeader } from '@/shared/components/page-header';
@@ -81,11 +81,7 @@ export function AdminServicesModule() {
       <PageHeader
         title={t('services.title')}
         description={t('services.description')}
-        actions={
-          <Link href="/admin/services/new">
-            <Button>{t('services.new')}</Button>
-          </Link>
-        }
+        actions={<ButtonLink href="/admin/services/new">{t('services.new')}</ButtonLink>}
       />
 
       {deleteError ? <ErrorNotice message={deleteError} /> : null}

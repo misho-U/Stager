@@ -20,7 +20,37 @@ export const adminContactInquirySchema = z.object({
 
 export type AdminContactInquiry = z.infer<typeof adminContactInquirySchema>;
 
-export const adminContactInquiryListResponseSchema = listResponseSchema(adminContactInquirySchema);
+/**
+ * The two halves of the inbox: what still needs handling (new and read), and
+ * what has been put away (archived).
+ */
+export const INQUIRY_VIEWS = ['inbox', 'archived'] as const;
+export const inquiryViewSchema = z.enum(INQUIRY_VIEWS);
+export type InquiryView = z.infer<typeof inquiryViewSchema>;
+
+/** How many the list holds at most; `total` says how many there are. */
+export const INQUIRY_LIST_LIMIT = 500;
+
+export const adminContactInquiryListResponseSchema = listResponseSchema(
+  adminContactInquirySchema,
+).extend({
+  /** For the view switch: how many each half holds, and how many are new. */
+  counts: z.object({
+    inbox: z.number().int().nonnegative(),
+    archived: z.number().int().nonnegative(),
+    unread: z.number().int().nonnegative(),
+  }),
+  /**
+   * Whether new inquiries are emailed at all. Until email is set up none is,
+   * and the page says so once, instead of "could not be sent" on every one.
+   */
+  emailOn: z.boolean(),
+});
+
+export type AdminContactInquiryList = z.infer<typeof adminContactInquiryListResponseSchema>;
+
+/** The sidebar's badge: inquiries no one has marked read yet. */
+export const unreadInquiriesSchema = z.object({ count: z.number().int().nonnegative() });
 
 /**
  * Public submission payload.

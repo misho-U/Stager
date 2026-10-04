@@ -102,8 +102,12 @@ Do not add a library outside this list without raising it first.
   and the CSP, folder structure, CMS copy — and the Georgian checks.
 - **Motion (GSAP + Lenis) lives in one client leaf per design, never leaves
   content hidden, and does nothing under reduced motion.** Decoration takes no
-  clicks, and SplitText masks are loosened or they clip Georgian letters.
-  AGENTS.md § Motion has the rules and the traps behind them.
+  clicks, SplitText masks are loosened or they clip Georgian letters, text is
+  split only through `splitReveal` (or a screen reader hears nothing), and the
+  hero never waits for the script. AGENTS.md § Motion has the rules and the
+  traps behind them.
+- **Never a `<Button>` inside a `<Link>`**: use `ButtonLink`. Every page has a
+  `SkipLink` and one `<main id={CONTENT_ID}>`; `keyboard.spec.ts` checks.
 
 ## Sign-in needs two systems to agree
 

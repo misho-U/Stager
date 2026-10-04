@@ -44,26 +44,71 @@ type SplitRevealOptions = {
   animate: (split: SplitText) => gsap.core.Animation | void;
 };
 
+/** What a keyboard can reach. Text holding one of these is never split. */
+const INTERACTIVE = 'a[href], button, input, select, textarea, summary, [tabindex]';
+
 /**
  * Splits CMS text for an entrance and keeps it correct.
  *
- * - `aria: 'auto'` gives the element its full text as an accessible name and
- *   hides the fragments, so a screen reader hears the heading once, not
- *   letter by letter.
+ * - A screen reader hears the text once, never letter by letter: the pieces
+ *   are hidden from it. A heading carries its text as its accessible name
+ *   (`aria: 'auto'`); anything else may not (on a plain div or paragraph the
+ *   label is ignored, and the intro paragraph was announced as nothing), so
+ *   it gets a visually hidden copy of its markup instead (`hideFragments`).
+ * - Text holding a link (rich text may) is left whole and unanimated: split,
+ *   the link's words would be hidden from a screen reader while Tab still
+ *   reaches it, a link with no name.
  * - `autoSplit` re-splits when the width or the font changes, since line
  *   breaks computed in a fallback font would otherwise be kept forever.
  * - Georgian has no case and no italic, and SplitText changes neither: the
  *   pieces keep the element's own typography.
  */
-export function splitReveal(target: Element, { type, mask, animate }: SplitRevealOptions) {
+export function splitReveal(
+  target: Element,
+  { type, mask, animate }: SplitRevealOptions,
+): SplitText | null {
+  if (target.querySelector(INTERACTIVE)) return null;
+  const heading = /^H[1-6]$/.test(target.tagName);
+  // The element before splitting, for the copy a screen reader reads.
+  const original = heading ? null : target.cloneNode(true);
+  let copy: Element | null = null;
   return SplitText.create(target, {
     type,
     mask,
-    aria: 'auto',
+    aria: heading ? 'auto' : 'none',
     autoSplit: true,
     onSplit: (split: SplitText) => {
+      if (original instanceof Element) copy = readableCopy(target, original);
       loosenMasks(split);
       return animate(split);
     },
+    // Before every re-split, and when the motion is torn down.
+    onRevert: () => {
+      copy?.remove();
+      copy = null;
+      if (original) target.removeAttribute('aria-hidden');
+    },
   });
+}
+
+/**
+ * Hides split text from screen readers and puts it back just before it, as a
+ * visually hidden copy of the element as it was, so its paragraphs and
+ * emphasis read as before. The copy carries no id (they must stay unique), no
+ * data attribute (the motion selects by them, and so do tests) and no inline
+ * style (an entrance's starting state, set before the split).
+ */
+function readableCopy(target: Element, original: Element): Element {
+  const copy = original.cloneNode(true) as Element;
+  for (const element of [copy, ...copy.querySelectorAll('*')]) {
+    for (const { name } of [...element.attributes]) {
+      if (name === 'id' || name === 'style' || name.startsWith('data-')) {
+        element.removeAttribute(name);
+      }
+    }
+  }
+  copy.setAttribute('class', 'sr-only');
+  target.setAttribute('aria-hidden', 'true');
+  target.before(copy);
+  return copy;
 }

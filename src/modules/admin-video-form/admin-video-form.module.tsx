@@ -1,10 +1,9 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 
 import { useAdminVideoForm } from '@/modules/admin-video-form/admin-video-form.service';
-import { Button } from '@/shared/components/button';
+import { Button, ButtonLink } from '@/shared/components/button';
 import {
   ContentLocaleProvider,
   ContentLocaleToggle,
@@ -48,9 +47,9 @@ export function AdminVideoFormModule({ videoId }: { videoId?: string }) {
           title={isEdit ? t('videos.form.titleEdit') : t('videos.form.titleNew')}
           actions={
             <>
-              <Link href="/admin/videos">
-                <Button variant="ghost">{t('common.cancel')}</Button>
-              </Link>
+              <ButtonLink href="/admin/videos" variant="ghost">
+                {t('common.cancel')}
+              </ButtonLink>
               <Button type="submit" loading={isSubmitting}>
                 {t('common.save')}
               </Button>
@@ -138,9 +137,9 @@ export function AdminVideoFormModule({ videoId }: { videoId?: string }) {
         </Panel>
 
         <div className="flex justify-end gap-2">
-          <Link href="/admin/videos">
-            <Button variant="ghost">{t('common.cancel')}</Button>
-          </Link>
+          <ButtonLink href="/admin/videos" variant="ghost">
+            {t('common.cancel')}
+          </ButtonLink>
           <Button type="submit" loading={isSubmitting}>
             {t('videos.form.submit')}
           </Button>

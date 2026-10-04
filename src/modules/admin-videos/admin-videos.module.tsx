@@ -7,7 +7,7 @@ import { useState } from 'react';
 
 import { adminVideosQuery, useDeleteVideo } from '@/entity/video/api/video.query';
 import type { AdminVideo } from '@/entity/video/model/video.model';
-import { Button } from '@/shared/components/button';
+import { ButtonLink } from '@/shared/components/button';
 import { ConfirmButton } from '@/shared/components/confirm-button';
 import { DataTable, type Column } from '@/shared/components/data-table';
 import { PageHeader } from '@/shared/components/page-header';
@@ -90,11 +90,7 @@ export function AdminVideosModule() {
       <PageHeader
         title={t('videos.title')}
         description={t('videos.description')}
-        actions={
-          <Link href="/admin/videos/new">
-            <Button>{t('videos.new')}</Button>
-          </Link>
-        }
+        actions={<ButtonLink href="/admin/videos/new">{t('videos.new')}</ButtonLink>}
       />
 
       {deleteError ? <ErrorNotice message={deleteError} /> : null}

@@ -1,11 +1,10 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import { Controller } from 'react-hook-form';
 
 import { useAdminProjectForm } from '@/modules/admin-project-form/admin-project-form.service';
-import { Button } from '@/shared/components/button';
+import { Button, ButtonLink } from '@/shared/components/button';
 import {
   ContentLocaleProvider,
   ContentLocaleToggle,
@@ -55,9 +54,9 @@ export function AdminProjectFormModule({ projectId }: { projectId?: string }) {
           description={t('projects.form.description')}
           actions={
             <>
-              <Link href="/admin/projects">
-                <Button variant="ghost">{t('common.cancel')}</Button>
-              </Link>
+              <ButtonLink href="/admin/projects" variant="ghost">
+                {t('common.cancel')}
+              </ButtonLink>
               <Button type="submit" loading={isSubmitting}>
                 {isSubmitting ? t('common.saving') : t('common.save')}
               </Button>
@@ -239,9 +238,9 @@ export function AdminProjectFormModule({ projectId }: { projectId?: string }) {
         </Panel>
 
         <div className="flex justify-end gap-2">
-          <Link href="/admin/projects">
-            <Button variant="ghost">{t('common.cancel')}</Button>
-          </Link>
+          <ButtonLink href="/admin/projects" variant="ghost">
+            {t('common.cancel')}
+          </ButtonLink>
           <Button type="submit" loading={isSubmitting}>
             {isSubmitting ? t('common.saving') : t('projects.form.submit')}
           </Button>

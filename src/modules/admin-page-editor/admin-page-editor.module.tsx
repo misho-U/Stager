@@ -1,11 +1,10 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import { Controller } from 'react-hook-form';
 
 import { useAdminPageEditor } from '@/modules/admin-page-editor/admin-page-editor.service';
-import { Button } from '@/shared/components/button';
+import { Button, ButtonLink } from '@/shared/components/button';
 import {
   ContentLocaleProvider,
   ContentLocaleToggle,
@@ -54,9 +53,9 @@ export function AdminPageEditorModule({ pageKey }: { pageKey: PageKey }) {
           description={t('pageEditor.description')}
           actions={
             <>
-              <Link href="/admin/pages">
-                <Button variant="ghost">{t('common.back')}</Button>
-              </Link>
+              <ButtonLink href="/admin/pages" variant="ghost">
+                {t('common.back')}
+              </ButtonLink>
               <Button type="submit" loading={isSubmitting}>
                 {t('common.save')}
               </Button>
@@ -168,9 +167,9 @@ export function AdminPageEditorModule({ pageKey }: { pageKey: PageKey }) {
         })}
 
         <div className="flex justify-end gap-2">
-          <Link href="/admin/pages">
-            <Button variant="ghost">{t('common.back')}</Button>
-          </Link>
+          <ButtonLink href="/admin/pages" variant="ghost">
+            {t('common.back')}
+          </ButtonLink>
           <Button type="submit" loading={isSubmitting}>
             {t('pageEditor.submit')}
           </Button>

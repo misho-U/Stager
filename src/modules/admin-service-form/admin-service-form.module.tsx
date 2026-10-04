@@ -1,11 +1,10 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import { Controller } from 'react-hook-form';
 
 import { useAdminServiceForm } from '@/modules/admin-service-form/admin-service-form.service';
-import { Button } from '@/shared/components/button';
+import { Button, ButtonLink } from '@/shared/components/button';
 import {
   ContentLocaleProvider,
   ContentLocaleToggle,
@@ -49,9 +48,9 @@ export function AdminServiceFormModule({ serviceId }: { serviceId?: string }) {
           title={isEdit ? t('services.form.titleEdit') : t('services.form.titleNew')}
           actions={
             <>
-              <Link href="/admin/services">
-                <Button variant="ghost">{t('common.cancel')}</Button>
-              </Link>
+              <ButtonLink href="/admin/services" variant="ghost">
+                {t('common.cancel')}
+              </ButtonLink>
               <Button type="submit" loading={isSubmitting}>
                 {t('common.save')}
               </Button>
@@ -151,9 +150,9 @@ export function AdminServiceFormModule({ serviceId }: { serviceId?: string }) {
         </Panel>
 
         <div className="flex justify-end gap-2">
-          <Link href="/admin/services">
-            <Button variant="ghost">{t('common.cancel')}</Button>
-          </Link>
+          <ButtonLink href="/admin/services" variant="ghost">
+            {t('common.cancel')}
+          </ButtonLink>
           <Button type="submit" loading={isSubmitting}>
             {t('services.form.submit')}
           </Button>

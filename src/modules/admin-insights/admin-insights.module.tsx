@@ -7,7 +7,7 @@ import { useState } from 'react';
 
 import { adminInsightsQuery, useDeleteInsight } from '@/entity/insight/api/insight.query';
 import type { AdminInsight } from '@/entity/insight/model/insight.model';
-import { Button } from '@/shared/components/button';
+import { ButtonLink } from '@/shared/components/button';
 import { ConfirmButton } from '@/shared/components/confirm-button';
 import { DataTable, type Column } from '@/shared/components/data-table';
 import { PageHeader } from '@/shared/components/page-header';
@@ -100,12 +100,10 @@ export function AdminInsightsModule() {
           <>
             {/* Article categories live here, not in the sidebar: with course
                 categories as well, a bare "Categories" there was ambiguous. */}
-            <Link href="/admin/insights/categories">
-              <Button variant="secondary">{t('insights.categoriesLink')}</Button>
-            </Link>
-            <Link href="/admin/insights/new">
-              <Button>{t('insights.new')}</Button>
-            </Link>
+            <ButtonLink href="/admin/insights/categories" variant="secondary">
+              {t('insights.categoriesLink')}
+            </ButtonLink>
+            <ButtonLink href="/admin/insights/new">{t('insights.new')}</ButtonLink>
           </>
         }
       />

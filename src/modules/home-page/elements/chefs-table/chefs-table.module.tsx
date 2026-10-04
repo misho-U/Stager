@@ -40,6 +40,7 @@ import { SampleBadge } from '@/shared/components/sample-badge';
 import { hasServiceIcon, ServiceIcon } from '@/shared/components/service-icon';
 import { SocialLinks } from '@/shared/components/social-links';
 import { Wordmark } from '@/shared/components/wordmark';
+import { CONTENT_ID } from '@/shared/components/skip-link';
 import { cn } from '@/shared/lib/cn';
 import { ALL } from '@/shared/lib/motion/use-flip-filter';
 import { isBlankHtml, joinMeta, plainTextLength } from '@/shared/lib/content';
@@ -54,7 +55,11 @@ import type { RegistrationCourse } from '@/widgets/course-registration/course-re
 import { INQUIRY_ANCHOR } from '@/widgets/inquiry-form/inquiry-form.constants';
 import { InquiryForm } from '@/widgets/inquiry-form/inquiry-form.module';
 import { LanguageSwitcher } from '@/widgets/language-switcher/language-switcher.module';
-import { VideoCaption, VideoPoster, WatchOnYouTube } from '@/widgets/video-player/video-player.module';
+import {
+  VideoCaption,
+  VideoPoster,
+  WatchOnYouTube,
+} from '@/widgets/video-player/video-player.module';
 
 type ChefsTableProps = {
   locale: DbLocale;
@@ -230,7 +235,11 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
         links={links}
         cta={{ href: toInquiry, label: ctaLabel }}
         brand={
-          <a href="#top" aria-label={siteName} className="inline-flex min-h-11 shrink-0 items-center">
+          <a
+            href="#top"
+            aria-label={siteName}
+            className="inline-flex min-h-11 shrink-0 items-center"
+          >
             <Wordmark className="text-body-lg" />
           </a>
         }
@@ -257,7 +266,7 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
         labels={{ nav: t('home.sections'), menu: t('home.menu'), close: t('home.close') }}
       />
 
-      <main>
+      <main id={CONTENT_ID} tabIndex={-1}>
         {/* --- Hero: the promise, and a screen that grows to fill the view --- */}
         <section id="top" data-ct-hero aria-labelledby="hero-heading" className="relative">
           <div
@@ -292,7 +301,7 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                     <PlayButton
                       videoId={newest.id}
                       label={t('videos.playTitle', { title: newest.title })}
-                      className={`${BUTTON_OUTLINE} min-h-13 px-7 text-body-lg`}
+                      className={`${BUTTON_OUTLINE} text-body-lg min-h-13 px-7`}
                     >
                       <PlayIcon aria-hidden weight="fill" />
                       {t('videos.play')}
@@ -432,7 +441,11 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                 <ol className="ct-index-list">
                   {services.items.map((service) => (
                     <li key={service.id}>
-                      <a href={`#service-${service.slug}`} data-index-link className="ct-index-link">
+                      <a
+                        href={`#service-${service.slug}`}
+                        data-index-link
+                        className="ct-index-link"
+                      >
                         {hasServiceIcon(service.icon) ? (
                           <ServiceIcon name={service.icon} className="shrink-0" />
                         ) : null}
@@ -461,7 +474,10 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                       >
                         <div className="flex flex-col gap-5 lg:col-span-7">
                           {hasServiceIcon(service.icon) ? (
-                            <ServiceIcon name={service.icon} className="text-accent text-title-lg" />
+                            <ServiceIcon
+                              name={service.icon}
+                              className="text-accent text-title-lg"
+                            />
                           ) : null}
                           <h3 className={H2}>{service.title}</h3>
                           {service.shortDescription ? (
@@ -555,7 +571,7 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
             id="projects"
             aria-labelledby="projects-title"
             data-film
-            className="@container overflow-hidden py-section"
+            className="py-section @container overflow-hidden"
           >
             <div className="px-gutter">
               <div data-reveal className="max-w-page mx-auto">
@@ -576,7 +592,7 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                 role="region"
                 aria-label={projectsTitle}
                 tabIndex={0}
-                className="mt-12 snap-x snap-mandatory scroll-px-(--ct-film-inset) overflow-x-auto pb-4 [scrollbar-width:none]"
+                className="mt-12 snap-x snap-mandatory scroll-px-(--ct-film-inset) [scrollbar-width:none] overflow-x-auto pb-4"
               >
                 <ul
                   data-testid="project-list"
@@ -815,7 +831,7 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
               </article>
 
               {olderVideos.length > 0 ? (
-                <ul className="max-sm:-mx-gutter max-sm:px-gutter max-sm:scroll-px-gutter grid gap-x-6 gap-y-10 [scrollbar-width:none] max-sm:flex max-sm:snap-x max-sm:snap-mandatory max-sm:overflow-x-auto sm:grid-cols-2 lg:grid-cols-4">
+                <ul className="max-sm:-mx-gutter max-sm:px-gutter max-sm:scroll-px-gutter grid [scrollbar-width:none] gap-x-6 gap-y-10 max-sm:flex max-sm:snap-x max-sm:snap-mandatory max-sm:overflow-x-auto sm:grid-cols-2 lg:grid-cols-4">
                   {olderVideos.map((video) => (
                     <li
                       key={video.id}
@@ -927,7 +943,7 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                     </div>
                     <ArrowRightIcon
                       aria-hidden
-                      className="text-accent ease-brand hidden text-title transition-transform duration-300 group-hover:translate-x-2 lg:col-span-1 lg:block lg:justify-self-end"
+                      className="text-accent ease-brand text-title hidden transition-transform duration-300 group-hover:translate-x-2 lg:col-span-1 lg:block lg:justify-self-end"
                     />
                   </li>
                 ))}

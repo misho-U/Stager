@@ -103,3 +103,61 @@ test.describe('a video added in the dashboard', () => {
     }
   });
 });
+
+test.describe('services added in the dashboard', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(!DB_WRITES_ALLOWED, DB_WRITES_SKIP_REASON);
+    test.skip(
+      testInfo.project.name !== 'chromium',
+      'Writes shared rows; runs once, under chromium.',
+    );
+  });
+
+  test.afterAll(disconnectTestPrisma);
+
+  test('every published one is on the home page, past twelve', async ({ page, request }) => {
+    const prisma = testPrisma();
+    const run = `e2e-services-${Date.now()}`;
+    const revalidate = () =>
+      request.post('/api/dev/revalidate-probe', {
+        data: { entity: 'service' },
+        headers: { 'sec-fetch-site': 'same-origin' },
+      });
+
+    // Enough to make thirteen, ordered after every real one.
+    const published = await prisma.service.count({ where: { status: 'PUBLISHED' } });
+    const titles = Array.from(
+      { length: Math.max(1, 13 - published) },
+      (_, index) => `E2E service ${run}-${index}`,
+    );
+    await prisma.$transaction(
+      titles.map((title, index) =>
+        prisma.service.create({
+          data: {
+            slug: `${run}-${index}`,
+            status: 'PUBLISHED',
+            order: 10_000 + index,
+            translations: {
+              create: [
+                { locale: 'EN', title },
+                { locale: 'KA', title },
+              ],
+            },
+          },
+        }),
+      ),
+    );
+
+    try {
+      expect((await revalidate()).ok()).toBeTruthy();
+      for (const variant of ['1', '2']) {
+        await page.goto(`/en?v=${variant}`);
+        // The last of them, the thirteenth or later, is there too.
+        await expect(page.locator('#services')).toContainText(titles.at(-1) ?? '');
+      }
+    } finally {
+      await prisma.service.deleteMany({ where: { slug: { startsWith: run } } });
+      await revalidate();
+    }
+  });
+});

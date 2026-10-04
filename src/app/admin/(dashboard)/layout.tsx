@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 
+import { CONTENT_ID } from '@/shared/components/skip-link';
 import { AdminNoAccess } from '@/widgets/admin-no-access/admin-no-access.module';
 import { AdminSidebar } from '@/widgets/admin-sidebar/admin-sidebar.module';
 import { getAdminAccess } from '@pkg/auth/admin-session';
@@ -40,7 +41,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="flex min-h-dvh flex-col lg:flex-row">
       <AdminSidebar email={session.email} name={session.name} role={session.role} />
-      <main className="px-gutter min-w-0 flex-1 py-6 lg:px-8 lg:py-8">
+      <main id={CONTENT_ID} tabIndex={-1} className="px-gutter min-w-0 flex-1 py-6 lg:px-8 lg:py-8">
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">{children}</div>
       </main>
     </div>

@@ -10,7 +10,8 @@
     "readMore": "Read more",
     "backToList": "Back to list",
     "notFound": "Page not found",
-    "backHome": "Go to the homepage"
+    "backHome": "Go to the homepage",
+    "skipToContent": "Skip to content"
   },
   "nav": {
     "home": "Home",

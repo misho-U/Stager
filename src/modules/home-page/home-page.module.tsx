@@ -5,6 +5,7 @@ import { OpenKitchen } from '@/modules/home-page/elements/open-kitchen/open-kitc
 import { HOME_VARIANT_PARAM, HOME_VARIANTS } from '@/modules/home-page/home-page.constants';
 import { loadHomePageData, parseHomeVariant } from '@/modules/home-page/home-page.service';
 import { ReadFailureNotice } from '@/shared/components/read-failure-notice';
+import { SkipLink } from '@/shared/components/skip-link';
 import type { DbLocale } from '@/shared/types/enums';
 import { DesignVariantSwitcher } from '@/widgets/design-variant-switcher/design-variant-switcher.module';
 
@@ -24,7 +25,11 @@ type HomePageModuleProps = {
  * appears in both.
  */
 export async function HomePageModule({ locale, variant: requested }: HomePageModuleProps) {
-  const [content, t] = await Promise.all([loadHomePageData(locale), getTranslations('home')]);
+  const [content, t, tCommon] = await Promise.all([
+    loadHomePageData(locale),
+    getTranslations('home'),
+    getTranslations('common'),
+  ]);
   const variant = parseHomeVariant(requested);
   const Composition = COMPOSITIONS[variant];
 
@@ -39,6 +44,7 @@ export async function HomePageModule({ locale, variant: requested }: HomePageMod
         data-home-variant={variant}
         className="bg-surface text-ink overflow-x-clip"
       >
+        <SkipLink label={tCommon('skipToContent')} />
         {content.readFailed ? <ReadFailureNotice message={t('readFailed')} /> : null}
         <Composition locale={locale} content={content} />
       </div>

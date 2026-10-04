@@ -10,7 +10,7 @@ import {
   useDeleteTeamMember,
 } from '@/entity/team-member/api/team-member.query';
 import type { AdminTeamMember } from '@/entity/team-member/model/team-member.model';
-import { Button } from '@/shared/components/button';
+import { ButtonLink } from '@/shared/components/button';
 import { ConfirmButton } from '@/shared/components/confirm-button';
 import { DataTable, type Column } from '@/shared/components/data-table';
 import { PageHeader } from '@/shared/components/page-header';
@@ -86,11 +86,7 @@ export function AdminTeamModule() {
       <PageHeader
         title={t('team.title')}
         description={t('team.description')}
-        actions={
-          <Link href="/admin/team/new">
-            <Button>{t('team.new')}</Button>
-          </Link>
-        }
+        actions={<ButtonLink href="/admin/team/new">{t('team.new')}</ButtonLink>}
       />
 
       {deleteError ? <ErrorNotice message={deleteError} /> : null}

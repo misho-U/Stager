@@ -90,6 +90,13 @@
     outline-offset: 2px;
   }
 
+  /* Where an in-page jump lands: <main> after a skip link, a section after a
+     menu link (focusable by script only, tabindex -1). The reading position
+     moves there; a ring around the whole of it would only look like a fault. */
+  [tabindex='-1']:focus {
+    outline: none;
+  }
+
   /* The brief asks for minimal animation. Honour the OS setting completely. */
   @media (prefers-reduced-motion: reduce) {
     *,

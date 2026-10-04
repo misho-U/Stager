@@ -2,11 +2,13 @@ import {
   adminContactInquiryListResponseSchema,
   adminContactInquirySchema,
   contactSubmissionResponseSchema,
+  unreadInquiriesSchema,
   type AdminContactInquiry,
+  type AdminContactInquiryList,
   type ContactSubmission,
   type InquiryStatusUpdate,
+  type InquiryView,
 } from '@/entity/contact-inquiry/model/contact-inquiry.model';
-import type { ListResponse } from '@/shared/types/api';
 import { clientFetch } from '@pkg/http/fetcher';
 
 /** Public endpoint — no session required. */
@@ -17,9 +19,14 @@ export async function submitContactInquiry(input: ContactSubmission) {
 
 const ADMIN_BASE = '/api/admin/inquiries';
 
-export async function fetchInquiries(): Promise<ListResponse<AdminContactInquiry>> {
-  const raw = await clientFetch<unknown>(ADMIN_BASE);
+export async function fetchInquiries(view: InquiryView): Promise<AdminContactInquiryList> {
+  const raw = await clientFetch<unknown>(`${ADMIN_BASE}?view=${view}`);
   return adminContactInquiryListResponseSchema.parse(raw);
+}
+
+export async function fetchUnreadInquiries(): Promise<number> {
+  const raw = await clientFetch<unknown>(`${ADMIN_BASE}/unread`);
+  return unreadInquiriesSchema.parse(raw).count;
 }
 
 export async function updateInquiryStatus(

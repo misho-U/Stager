@@ -74,11 +74,23 @@
   --color-surface-inverse: var(--color-brand-teal); /* dark bands */
   --color-ink: var(--color-brand-teal); /* text */
   --color-ink-muted: var(--color-brand-teal-soft); /* secondary text */
-  --color-ink-subtle: var(--color-brand-sage); /* captions, meta */
+  /* captions, meta: sage taken darker, because sage itself is 2.3:1 on the
+     page and these are the smallest words on it. Needs 4.5:1. */
+  --color-ink-subtle: color-mix(
+    in oklab,
+    var(--color-brand-teal-muted) 85%,
+    var(--color-brand-teal)
+  );
   --color-ink-inverse: var(--color-brand-cream); /* text on dark bands */
   --color-line: #dcdcd2; /* hairlines */
   --color-line-strong: var(--color-brand-sage); /* emphasised borders */
-  --color-line-input: var(--color-line); /* form control borders */
+  /* form control borders: a field's edge is all that shows where it is, so
+     3:1 against the card and the page (a hairline is 1.4:1). */
+  --color-line-input: color-mix(
+    in oklab,
+    var(--color-brand-sage) 40%,
+    var(--color-brand-teal-muted)
+  );
   --color-primary: var(--color-brand-teal); /* main buttons, selection */
   --color-primary-hover: var(--color-brand-teal-soft);
   --color-primary-disabled: var(--color-brand-sage);
@@ -263,6 +275,11 @@
     var(--color-brand-sage) 55%,
     var(--admin-dark-surface-raised)
   );
+  --admin-dark-line-input: color-mix(
+    in oklab,
+    var(--color-brand-sage) 70%,
+    var(--admin-dark-surface-raised)
+  );
   --admin-dark-primary: var(--color-brand-cream);
   --admin-dark-primary-hover: color-mix(
     in oklab,
@@ -307,7 +324,7 @@
   --color-ink-inverse: var(--admin-dark-surface);
   --color-line: var(--admin-dark-line);
   --color-line-strong: var(--admin-dark-line-strong);
-  --color-line-input: var(--admin-dark-line);
+  --color-line-input: var(--admin-dark-line-input);
   --color-primary: var(--admin-dark-primary);
   --color-primary-hover: var(--admin-dark-primary-hover);
   --color-primary-disabled: var(--admin-dark-primary-disabled);
@@ -334,7 +351,7 @@
     --color-ink-inverse: var(--admin-dark-surface);
     --color-line: var(--admin-dark-line);
     --color-line-strong: var(--admin-dark-line-strong);
-    --color-line-input: var(--admin-dark-line);
+    --color-line-input: var(--admin-dark-line-input);
     --color-primary: var(--admin-dark-primary);
     --color-primary-hover: var(--admin-dark-primary-hover);
     --color-primary-disabled: var(--admin-dark-primary-disabled);

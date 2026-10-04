@@ -75,10 +75,13 @@ export async function loadHomePageData(locale: DbLocale) {
       { items: [], total: 0 },
     ),
 
+    // Every published service, up to the API's maximum: they are the whole
+    // offering, not a selection (projects and videos show the latest few).
+    // At 12, a thirteenth service added in the dashboard never appeared here.
     read<ListResponse<PublicServiceListItem>>(
       'services',
       serverFetch<ListResponse<PublicServiceListItem>>(
-        `/api/public/services?locale=${locale}&limit=12`,
+        `/api/public/services?locale=${locale}&limit=100`,
         {
           tags: [collectionTag('service')],
           revalidate: PUBLIC_REVALIDATE_SECONDS,

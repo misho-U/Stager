@@ -34,8 +34,11 @@ function sync(lenis: Lenis) {
  * scrolling. An element lands its `scroll-margin-top` below the top, which
  * each design sets to clear its header: Lenis reads it, as the browser does
  * without Lenis, so no offset is added here (one was, and doubled it).
+ *
+ * `focus`: for a jump the visitor asked for (a menu link), the keyboard moves
+ * there too (see focusArrival).
  */
-export function glideTo(target: HTMLElement | number) {
+export function glideTo(target: HTMLElement | number, { focus = false } = {}) {
   const lenis = current;
   if (lenis) {
     sync(lenis);
@@ -45,6 +48,30 @@ export function glideTo(target: HTMLElement | number) {
   } else {
     target.scrollIntoView({ block: 'start' });
   }
+  if (focus && typeof target !== 'number') focusArrival(target);
+}
+
+const FOCUSABLE = 'a[href], button, input, select, textarea, summary, [tabindex]';
+
+/**
+ * Moves keyboard focus to where an in-page jump lands, without scrolling (the
+ * glide does that). The browser's own jump moves the reading position with
+ * it; Lenis cancels that jump to glide instead, and the next Tab used to go
+ * on from the link at the top of the page, scrolling back up to it. A section
+ * is made focusable by script only (tabindex -1), so Tab never stops on it.
+ */
+export function focusArrival(target: HTMLElement) {
+  if (!target.matches(FOCUSABLE)) target.setAttribute('tabindex', '-1');
+  target.focus({ preventScroll: true });
+}
+
+/** The element an in-page link points at, or null for a link elsewhere. */
+function inPageTarget(link: HTMLAnchorElement): HTMLElement | null {
+  const url = new URL(link.href, window.location.href);
+  const here = window.location;
+  if (url.origin !== here.origin || url.pathname !== here.pathname) return null;
+  if (url.search !== here.search || url.hash.length < 2) return null;
+  return document.getElementById(decodeURIComponent(url.hash.slice(1)));
 }
 
 /**
@@ -64,9 +91,14 @@ export function useSmoothScroll({ lerp }: { lerp: number }) {
 
     const lenis = new Lenis({ lerp, autoRaf: false, syncTouch: false, anchors: true });
     // Lenis hears in-page links on window, as the click bubbles up; this runs
-    // first, in the capture phase, so it measures from where the page is.
+    // first, in the capture phase, so it measures from where the page is, and
+    // takes the keyboard along to where the link leads.
     const onClick = (event: MouseEvent) => {
-      if ((event.target as Element | null)?.closest('a[href*="#"]')) sync(lenis);
+      const link = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[href*="#"]');
+      if (!link) return;
+      sync(lenis);
+      const target = inPageTarget(link);
+      if (target) focusArrival(target);
     };
     document.addEventListener('click', onClick, true);
     const onFrame = (time: number) => lenis.raf(time * 1000);

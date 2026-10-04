@@ -4,7 +4,7 @@ import { ArrowLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowLeft';
 import { ArrowRightIcon } from '@phosphor-icons/react/dist/csr/ArrowRight';
 import { PauseIcon } from '@phosphor-icons/react/dist/csr/Pause';
 import { PlayIcon } from '@phosphor-icons/react/dist/csr/Play';
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 
 import { useLiveBoard } from '@/modules/home-page/elements/open-kitchen/elements/live-board/live-board.service';
 import { OK_MOTION } from '@/modules/home-page/elements/open-kitchen/open-kitchen.constants';
@@ -43,16 +43,22 @@ const ROUND_BUTTON =
 export function LiveBoard({ cards, labels }: LiveBoardProps) {
   const count = cards.length;
   const { root, front, auto, paused, togglePause, next, previous, show } = useLiveBoard(count);
+  const titleId = useId();
 
   return (
     <div
       ref={root}
       role="region"
       aria-roledescription={labels.carousel}
-      aria-label={labels.title}
+      aria-labelledby={titleId}
       data-live-board
       className="flex flex-col gap-5"
     >
+      {/* Out of sight, for the outline: the cards' h3s sit under the page's
+          h1, and a screen reader's list of headings skipped a level. */}
+      <h2 id={titleId} className="sr-only">
+        {labels.title}
+      </h2>
       <div className="pt-(--ok-deck-pad)">
         {/* Every card in one grid cell: the deck is as tall as its tallest card. */}
         <div className="grid" aria-live={auto && !paused ? 'off' : 'polite'}>

@@ -42,6 +42,7 @@ import { SampleBadge } from '@/shared/components/sample-badge';
 import { hasServiceIcon, ServiceIcon } from '@/shared/components/service-icon';
 import { SocialLinks } from '@/shared/components/social-links';
 import { Wordmark } from '@/shared/components/wordmark';
+import { CONTENT_ID } from '@/shared/components/skip-link';
 import { cn } from '@/shared/lib/cn';
 import { ALL } from '@/shared/lib/motion/use-flip-filter';
 import { isBlankHtml, joinMeta, plainTextLength } from '@/shared/lib/content';
@@ -394,7 +395,7 @@ export async function OpenKitchen({ locale, content }: OpenKitchenProps) {
         labels={{ nav: t('home.sections'), menu: t('home.menu'), close: t('home.close') }}
       />
 
-      <main>
+      <main id={CONTENT_ID} tabIndex={-1}>
         {/* --- Hero: the promise on the left, what is happening now on the right --- */}
         <section
           id="top"

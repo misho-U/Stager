@@ -1,9 +1,4 @@
-import {
-  adminSessionSchema,
-  loginResponseSchema,
-  type AdminSessionView,
-  type LoginInput,
-} from '@/entity/session/model/session.model';
+import { loginResponseSchema, type LoginInput } from '@/entity/session/model/session.model';
 import { clientFetch } from '@pkg/http/fetcher';
 
 /**
@@ -20,9 +15,4 @@ export async function login(input: LoginInput) {
 
 export async function logout(): Promise<void> {
   await clientFetch<void>('/api/auth/logout', { method: 'POST' });
-}
-
-export async function fetchCurrentSession(): Promise<AdminSessionView> {
-  const raw = await clientFetch<unknown>('/api/auth/session');
-  return adminSessionSchema.parse(raw);
 }

@@ -12,7 +12,6 @@ export const IS_PRODUCTION = NODE_ENV === 'production';
 /** `nodejs` or `edge` on the server, unset in the browser: which runtime this code runs in. */
 export const NEXT_RUNTIME = process.env.NEXT_RUNTIME ?? null;
 export const IS_DEVELOPMENT = NODE_ENV === 'development';
-export const IS_TEST = NODE_ENV === 'test';
 
 /**
  * Host of the current Vercel deployment, without a scheme. Set automatically by

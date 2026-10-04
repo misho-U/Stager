@@ -336,6 +336,113 @@ for (const variant of VARIANTS) {
 }
 
 /**
+ * Text split into lines, words or letters for an entrance must still read
+ * whole, and once, to a screen reader: what assistive technology is given is
+ * compared with the same page under reduced motion, where nothing is split
+ * (shared/lib/motion/split.ts). The footer wordmarks are decoration, hidden
+ * either way.
+ */
+const SPLIT_TEXT: Record<string, string> = {
+  '1': '[data-ok-headline], [data-ok-lines]',
+  '2': '[data-ct-headline], [data-read-along]',
+};
+
+for (const variant of VARIANTS) {
+  test(`design ${variant.toUpperCase()}: split text still reads whole to a screen reader`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium', 'one browser is enough for motion');
+    const split = page.locator(SPLIT_TEXT[variant] ?? 'none');
+    // Each split element's surroundings, as a screen reader is given them, and
+    // how many elements it holds (splitting wraps every piece in one).
+    const readOut = async () =>
+      Promise.all(
+        (await split.all()).map(async (element) => ({
+          spoken: await element.locator('..').ariaSnapshot(),
+          pieces: await element.evaluate((node) => node.querySelectorAll('*').length),
+        })),
+      );
+
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(`/en?v=${variant}`);
+    const whole = await readOut();
+    expect(whole.length).toBeGreaterThan(0);
+
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto(`/en?v=${variant}`);
+    await expect(page.locator(`[data-home-variant="${variant}"]`)).toHaveAttribute(
+      'data-motion',
+      'on',
+    );
+    const animated = await readOut();
+    expect(animated).toHaveLength(whole.length);
+    animated.forEach(({ spoken, pieces }, index) => {
+      // Split…
+      expect(pieces).toBeGreaterThan(whole[index]?.pieces ?? 0);
+      // …and read exactly as it was whole.
+      expect(spoken).toBe(whole[index]?.spoken);
+    });
+  });
+}
+
+/**
+ * A screen reader user moves through a page by its headings: the outline must
+ * never jump a level (an h3 straight under the h1 reads as a section missing).
+ */
+for (const variant of VARIANTS) {
+  test(`design ${variant.toUpperCase()}: the headings never skip a level`, async ({ page }) => {
+    await page.goto(`/en?v=${variant}`);
+    await expect(page.locator(`[data-home-variant="${variant}"]`)).toBeVisible();
+    const skips = await page.evaluate(() => {
+      const headings = [
+        ...document.querySelectorAll<HTMLElement>(
+          '[data-home-variant] :is(h1, h2, h3, h4, h5, h6, [role="heading"])',
+        ),
+      ].filter(
+        (heading) =>
+          !heading.closest('[aria-hidden="true"], [hidden], dialog:not([open])') &&
+          getComputedStyle(heading).display !== 'none',
+      );
+      const found: string[] = [];
+      let previous = 0;
+      for (const heading of headings) {
+        const level = Number(heading.getAttribute('aria-level') ?? heading.tagName.slice(1));
+        if (level > previous + 1) {
+          found.push(
+            `h${previous} → h${level}: ${(heading.textContent ?? '').trim().slice(0, 40)}`,
+          );
+        }
+        previous = level;
+      }
+      return found;
+    });
+    expect(skips).toEqual([]);
+  });
+}
+
+test('design 2: intro text holding a link is left whole, so the link keeps its name', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium', 'one browser is enough for motion');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  // The dashboard's rich text may hold a link; put one in this page's intro.
+  await page.route(/\/en\?v=2$/, async (route) => {
+    const response = await route.fetch();
+    const html = (await response.text()).replace(
+      /(<div data-read-along[^>]*>\s*<div class="rich-text[^"]*">\s*<p>)/,
+      '$1<a href="#inquiry">Write to us</a> ',
+    );
+    await route.fulfill({ response, body: html });
+  });
+  await page.goto('/en?v=2');
+  await expect(page.locator('[data-home-variant="2"]')).toHaveAttribute('data-motion', 'on');
+
+  const intro = page.locator('[data-read-along]');
+  await expect(intro.getByRole('link', { name: 'Write to us' })).toBeVisible();
+  await expect(intro).not.toHaveAttribute('aria-hidden', 'true');
+});
+
+/**
  * With motion allowed, as most visitors see it: after the entrance and a
  * scroll to the bottom and back, nothing a visitor needs may be left hidden.
  * The motion starts things invisible and relies on its script to show them.

@@ -344,6 +344,18 @@ Non-negotiable. Each exists because of a specific failure mode.
   (the dashboard itself failed, e.g. the access check with the database down),
   `app/global-error.tsx` (bilingual, self-contained). The prop is `retry`, not
   `reset`, in Next 16.
+- **A keyboard reaches everything, once, and never loses its place.** Every
+  page starts with a `SkipLink` and has one `<main id={CONTENT_ID}
+  tabIndex={-1}>` (`shared/components/skip-link.tsx`). Anything that goes
+  somewhere is a `ButtonLink`, never a `<Button>` inside a `<Link>`: invalid,
+  and two Tab stops for one action. A control that replaces itself hands
+  focus to its successor (`ConfirmButton`: Delete → Confirm → back, and the
+  page's content once the row is gone), never to the top of the page.
+  `keyboard.spec.ts` walks every dashboard page for nested controls.
+- **Text reads at 4.5:1, a field's border at 3:1**, against the page and the
+  cards, in both dashboard themes: `admin-theme.spec.ts` asserts every pair,
+  `ink-subtle` (hints, captions, table headings) and `line-input` included.
+  Brand sage is 2.3:1 on cream, so it is never a text colour on its own.
 - **A database refusal is an answer, not a crash** (`pkg/db/errors.ts`,
   `handleRouteError`): P2025 → 404, P2003 → 409 `STALE_REFERENCE`, P2002 →
   409 (a slug clash only when the constraint names the slug), P2020 → 422.
@@ -352,7 +364,11 @@ Non-negotiable. Each exists because of a specific failure mode.
 - **The inquiry email is sent after the response** (`after()`,
   `app/api/_lib/notify-inquiry.ts`), with a 10 s limit and the inquiry id as
   Resend's idempotency key, so it can be retried safely. The visitor's answer
-  never waits on the mail provider.
+  never waits on the mail provider. Until email is set up, the inbox says so
+  once (`emailOn`), and the sidebar's count of new inquiries, checked every
+  minute, is how a lead gets noticed. Archive takes an inquiry out of the
+  inbox (`?view=inbox|archived`); a list shows the newest 500 and says how
+  many there are in all.
 - **Bilingual content is authored in both languages at once.** Translation
   tables, `@@unique([<parent>Id, locale])`, one ქართული | English toggle per
   admin form (§ Dashboard language).
@@ -429,15 +445,30 @@ Lenis. The dashboard has none.
   static and fully visible and Lenis is off. Pinned and sideways scenes run
   from `lg` up, cursor effects with a mouse only; below that, scenes stack.
 - **Nothing may be left hidden.** `data-enter` elements start invisible only
-  when scripts run and motion is allowed, and globals.css shows them anyway if
-  the script never takes over. The variant spec scrolls every design with
-  motion on and fails on a heading left invisible.
+  when scripts run and motion is allowed, and globals.css shows them anyway
+  after 1 s if the script has not taken over. The variant spec scrolls every
+  design with motion on and fails on a heading left invisible.
+- **The hero never waits for the script.** On a slow phone its text is the
+  page's Largest Contentful Paint. A script that arrives after the CSS
+  fallback has begun (`ENTRANCE_DEADLINE_MS`, `use-motion.ts`) gets
+  `entrance: false` and skips the hero's entrance, rather than hiding text
+  the visitor has already seen to play it again; everything else still runs.
+  The variant spec delays every script by 4 s and fails on any flicker.
 - **Drawers, menus and players are native `<dialog>`s** opened with
   `showModal()`: the browser makes the page inert, holds focus inside, closes
   on Escape and returns focus. Stop Lenis while one is open (globals.css
   stops the page scrolling).
 - **Decoration takes no pointer events** (`data-decorative`): a drawn frame
   over the hero once swallowed every click on its call to action.
+- **Text is split only through `splitReveal`** (`shared/lib/motion/split.ts`),
+  which keeps it readable to a screen reader, whole and once: a heading keeps
+  its words as its accessible name; anything else is hidden from assistive
+  technology and replaced, for it, by a visually hidden copy of its markup
+  just before it (on a paragraph a label is ignored, and the intro was read
+  as two empty paragraphs). Text holding a link or any other control is never
+  split, and shows whole: split, the link would be reachable by Tab with no
+  name. The variant spec compares what a screen reader is given with motion
+  on and off.
 - **SplitText masks are loosened** (`loosenMasks`, built into `splitReveal`):
   cut to the line box, a mask clips Georgian letters that reach below the
   baseline, during the entrance and for good after it. Loosen with a clip
@@ -464,6 +495,12 @@ Lenis. The dashboard has none.
   come from the flow (the stack's top plus the cards before it). Lenis
   glides every `#` link from the window and ignores `preventDefault()`: a
   handler that scrolls a link itself must also stop the click's propagation.
+- **An in-page jump takes the keyboard with it.** Lenis cancels the browser's
+  own jump, which would have moved the reading position, so "Start a Project"
+  left focus in the hero and the next Tab scrolled back up. The smooth-scroll
+  widget focuses every `#` link's target (`focusArrival`: tabindex -1, no
+  scroll), and a menu that scrolls by itself calls `glideTo(target, { focus:
+  true })`. `keyboard.spec.ts` follows the call to action by keyboard.
 - **A video's poster carries its title** (`VideoCaption`, by the client's
   request): over a scrim, receding once a mouse has rested on the frame
   (`.video-caption` in globals.css), gone once it plays. Touch keeps it, so
@@ -492,8 +529,8 @@ it be chosen, the light-only decision is revisited, not worked around.
   block and a line in BOTH wiring blocks. A role missing from them shows its
   light colour in dark mode.
 - `tests/e2e/admin-theme.spec.ts` covers the modes, checks the two wiring
-  blocks have not drifted, and asserts the main text pairs stay readable in
-  both themes.
+  blocks have not drifted, and asserts that every text role and the field
+  borders stay readable in both themes (§ 5, contrast).
 
 ### Dashboard language
 

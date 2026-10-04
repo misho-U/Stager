@@ -1,10 +1,9 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 
 import { useAdminCourseCategories } from '@/modules/admin-course-categories/admin-course-categories.service';
-import { Button } from '@/shared/components/button';
+import { Button, ButtonLink } from '@/shared/components/button';
 import { ConfirmButton } from '@/shared/components/confirm-button';
 import { DataTable, type Column } from '@/shared/components/data-table';
 import { TextField } from '@/shared/components/field';
@@ -82,9 +81,9 @@ export function AdminCourseCategoriesModule() {
         title={t('courseCategories.title')}
         description={t('courseCategories.description')}
         actions={
-          <Link href="/admin/courses">
-            <Button variant="ghost">{t('courseCategories.back')}</Button>
-          </Link>
+          <ButtonLink href="/admin/courses" variant="ghost">
+            {t('courseCategories.back')}
+          </ButtonLink>
         }
       />
 

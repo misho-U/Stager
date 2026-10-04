@@ -263,21 +263,63 @@ test.describe('content through the dashboard API', () => {
     }
   });
 
-  test('an inquiry is marked read, then deleted', async ({ page }) => {
+  test('a new inquiry is badged, read, archived out of the inbox, then deleted', async ({
+    page,
+  }) => {
+    type Inbox = {
+      items: Array<{ id: string }>;
+      total: number;
+      counts: { inbox: number; archived: number; unread: number };
+      emailOn: boolean;
+    };
+    const unread = async () =>
+      ((await (await page.request.get('/api/admin/inquiries/unread')).json()) as { count: number })
+        .count;
+    const list = async (view: 'inbox' | 'archived') =>
+      (await (await page.request.get(`/api/admin/inquiries?view=${view}`)).json()) as Inbox;
+
+    const before = await unread();
+    const email = `${run}@example.com`;
     const inquiry = await testPrisma().contactInquiry.create({
       data: {
         name: 'E2E Visitor',
-        email: `${run}@example.com`,
+        email,
         interest: 'OTHER',
         message: 'An inquiry made by an end-to-end test.',
         locale: 'EN',
       },
     });
 
+    // New: counted, and badged in the sidebar on every page.
+    expect(await unread()).toBe(before + 1);
+    await page.goto('/admin/inquiries');
+    await expect(page.getByTestId('unread-inquiries')).toContainText(String(before + 1));
+    await expect(page.getByText(email)).toBeVisible();
+    // With email not set up, the page says so once, and no inquiry claims a
+    // failed send.
+    if (!(await list('inbox')).emailOn) {
+      await expect(page.getByText(adminEn.inquiries.emailOff)).toBeVisible();
+      await expect(page.getByText(adminEn.inquiries.notNotified)).toHaveCount(0);
+    }
+
     const read = await patch(page.request, `/api/admin/inquiries/${inquiry.id}`, {
       status: 'READ',
     });
     expect(read.status).toBe('READ');
+    expect(await unread()).toBe(before);
+
+    // Archived: out of the inbox and into the archive, each counted in full.
+    await patch(page.request, `/api/admin/inquiries/${inquiry.id}`, { status: 'ARCHIVED' });
+    const [inbox, archived] = await Promise.all([list('inbox'), list('archived')]);
+    expect(inbox.items.map((item) => item.id)).not.toContain(inquiry.id);
+    expect(archived.items.map((item) => item.id)).toContain(inquiry.id);
+    expect(inbox.total).toBe(inbox.counts.inbox);
+    expect(archived.total).toBe(archived.counts.archived);
+
+    await page.reload();
+    await expect(page.getByText(email)).toHaveCount(0);
+    await page.getByRole('button', { name: adminEn.inquiries.views.archived }).click();
+    await expect(page.getByText(email)).toBeVisible();
 
     expect((await page.request.delete(`/api/admin/inquiries/${inquiry.id}`)).status()).toBe(204);
     expect((await page.request.delete(`/api/admin/inquiries/${inquiry.id}`)).status()).toBe(404);

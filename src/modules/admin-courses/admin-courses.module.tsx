@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { adminCourseCategoriesQuery } from '@/entity/course-category/api/course-category.query';
 import { adminCoursesQuery, useDeleteCourse } from '@/entity/course/api/course.query';
 import type { AdminCourse } from '@/entity/course/model/course.model';
-import { Button } from '@/shared/components/button';
+import { ButtonLink } from '@/shared/components/button';
 import { ConfirmButton } from '@/shared/components/confirm-button';
 import { DataTable, type Column } from '@/shared/components/data-table';
 import { PageHeader } from '@/shared/components/page-header';
@@ -112,12 +112,10 @@ export function AdminCoursesModule() {
         description={t('courses.description')}
         actions={
           <>
-            <Link href="/admin/courses/categories">
-              <Button variant="secondary">{t('courses.categoriesLink')}</Button>
-            </Link>
-            <Link href="/admin/courses/new">
-              <Button>{t('courses.new')}</Button>
-            </Link>
+            <ButtonLink href="/admin/courses/categories" variant="secondary">
+              {t('courses.categoriesLink')}
+            </ButtonLink>
+            <ButtonLink href="/admin/courses/new">{t('courses.new')}</ButtonLink>
           </>
         }
       />

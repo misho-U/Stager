@@ -192,19 +192,24 @@ test.describe('the public site is light-only', () => {
 });
 
 test.describe('contrast', () => {
-  // WCAG AA: 4.5:1 for text, 3:1 for the focus ring. A brand-colour edit in
-  // brandbook.css that breaks one of these fails here instead of shipping.
-  //
-  // Not asserted yet, because the light theme fails them today — design-phase
-  // work: ink-subtle (captions, helper text) is 2.3:1 on the page and 2.7:1 on
-  // cards, and input borders (line) are 1.4:1 against 3:1 for UI boundaries.
+  // WCAG AA: 4.5:1 for text, 3:1 for what marks out a control (a field's
+  // border, the focus ring). A brand-colour edit in brandbook.css that breaks
+  // one of these fails here instead of shipping.
   const PAIRS: Array<[foreground: string, background: string, minimum: number]> = [
     ['color-ink', 'color-surface', 4.5],
     ['color-ink', 'color-surface-raised', 4.5],
+    ['color-ink-muted', 'color-surface', 4.5],
     ['color-ink-muted', 'color-surface-raised', 4.5],
+    // Hints, captions and table headings: the smallest text there is.
+    ['color-ink-subtle', 'color-surface', 4.5],
+    ['color-ink-subtle', 'color-surface-raised', 4.5],
     ['color-on-primary', 'color-primary', 4.5],
     ['color-on-primary', 'color-primary-hover', 4.5],
     ['color-danger', 'color-surface-raised', 4.5],
+    ['color-warning', 'color-surface-raised', 4.5],
+    ['color-success', 'color-surface-raised', 4.5],
+    ['color-line-input', 'color-surface', 3],
+    ['color-line-input', 'color-surface-raised', 3],
     ['color-focus', 'color-surface', 3],
   ];
 

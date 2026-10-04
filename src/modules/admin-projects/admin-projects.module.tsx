@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 import { useAdminProjects } from '@/modules/admin-projects/admin-projects.service';
-import { Button } from '@/shared/components/button';
+import { ButtonLink } from '@/shared/components/button';
 import { ConfirmButton } from '@/shared/components/confirm-button';
 import { DataTable, type Column } from '@/shared/components/data-table';
 import { PageHeader } from '@/shared/components/page-header';
@@ -68,11 +68,7 @@ export function AdminProjectsModule() {
       <PageHeader
         title={t('projects.title')}
         description={t('projects.description')}
-        actions={
-          <Link href="/admin/projects/new">
-            <Button>{t('projects.new')}</Button>
-          </Link>
-        }
+        actions={<ButtonLink href="/admin/projects/new">{t('projects.new')}</ButtonLink>}
       />
 
       {deleteError ? <ErrorNotice message={deleteError} /> : null}

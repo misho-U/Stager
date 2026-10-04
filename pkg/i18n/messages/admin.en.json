@@ -24,7 +24,8 @@
       "inquiries": "Inquiries"
     },
     "signOut": "Sign out",
-    "viewSite": "View site"
+    "viewSite": "View site",
+    "unread": "{count} new"
   },
   "theme": {
     "label": "Colour theme",
@@ -54,7 +55,8 @@
     "unsavedChanges": "You have unsaved changes. Leave without saving?",
     "yes": "Yes",
     "close": "Close",
-    "no": "No"
+    "no": "No",
+    "skipToContent": "Skip to content"
   },
   "status": {
     "DRAFT": "draft",
@@ -612,7 +614,17 @@
     "notNotified": "The notification email could not be sent for this one — reply directly.",
     "markRead": "Mark read",
     "archive": "Archive",
-    "restore": "Restore"
+    "restore": "Restore",
+    "views": {
+      "label": "Show",
+      "inbox": "Inbox",
+      "archived": "Archived"
+    },
+    "unread": "{count} new",
+    "showingNewest": "Showing the newest {shown} of {total}.",
+    "archivedEmptyTitle": "Nothing archived",
+    "archivedEmptyDescription": "Archive moves an inquiry here, out of the inbox; Restore brings it back.",
+    "emailOff": "Email notifications are not set up yet: new inquiries arrive only here."
   },
   "email": {
     "subject": "New inquiry — {name}",

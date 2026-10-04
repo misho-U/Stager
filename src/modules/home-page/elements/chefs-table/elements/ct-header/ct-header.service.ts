@@ -57,8 +57,9 @@ export function useMenu() {
     close();
     const target = document.querySelector<HTMLElement>(href);
     if (!target) return;
-    // The section's scroll-margin keeps it clear of the header.
-    window.requestAnimationFrame(() => glideTo(target));
+    // The section's scroll-margin keeps it clear of the header. Focus goes
+    // there too, once the closing menu has handed it back to its button.
+    window.requestAnimationFrame(() => glideTo(target, { focus: true }));
   };
 
   return { dialog, open, close, onClose, follow };
