@@ -64,4 +64,3 @@ export function toFormValues(project: AdminProject): ProjectFormValues {
     galleryMediaIds: project.gallery.map((item) => item.id),
   };
 }
-

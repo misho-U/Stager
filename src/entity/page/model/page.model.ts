@@ -76,6 +76,22 @@ export type PublicPage = z.infer<typeof publicPageSchema>;
 
 // --- Input ---
 
+/**
+ * Where a section's button points: a page on this site ("/ka/projects"), a
+ * section of this page ("#inquiry"), a web address, or an email or phone link.
+ * Blank means no button. Nothing that runs (`javascript:`, `data:`), and no
+ * "//host" that only looks like a path.
+ */
+const SECTION_LINK =
+  /^(?:https?:\/\/[^\s]+|mailto:[^\s]+|tel:[+\d][\d\s()-]*|\/(?!\/)[^\s]*|#[^\s]*)$/i;
+
+export const pageSectionLinkInput = () =>
+  z
+    .string()
+    .trim()
+    .max(300)
+    .refine((value) => value === '' || SECTION_LINK.test(value), { params: { key: 'link' } });
+
 export const pageSectionInputSchema = z.object({
   id: z.string().min(1),
   isVisible: z.boolean().optional(),
@@ -86,7 +102,7 @@ export const pageSectionInputSchema = z.object({
       subheading: z.string().trim().max(1000).default(''),
       body: z.string().trim().max(40_000).default(''),
       ctaLabel: z.string().trim().max(80).default(''),
-      ctaHref: z.string().trim().max(300).default(''),
+      ctaHref: pageSectionLinkInput().default(''),
     }),
   ),
 });
@@ -99,3 +115,40 @@ export const pageUpdateInputSchema = z.object({
 });
 
 export type PageUpdateInput = z.infer<typeof pageUpdateInputSchema>;
+
+// --- Home page structure ---
+
+/**
+ * The home page's sections by role, keyed as the seed creates them
+ * (prisma/seed.ts). A design looks sections up through these names, never
+ * through the raw keys, so a renamed key is one edit here.
+ */
+export const HOME_SECTION_KEYS = {
+  hero: 'hero',
+  intro: 'intro',
+  services: 'what-we-do',
+  projects: 'selected-projects',
+  why: 'why-stager',
+  insights: 'insights',
+  cta: 'cta',
+} as const;
+
+export type HomeSections = Record<keyof typeof HOME_SECTION_KEYS, PublicPageSection | undefined>;
+
+/**
+ * Every home section by role. A section hidden in the dashboard is left out
+ * of the public read, so it comes back undefined here, as does everything
+ * when the page read failed (`page` is null).
+ */
+export function homeSections(page: PublicPage | null): HomeSections {
+  const find = (key: string) => page?.sections.find((section) => section.key === key);
+  return {
+    hero: find(HOME_SECTION_KEYS.hero),
+    intro: find(HOME_SECTION_KEYS.intro),
+    services: find(HOME_SECTION_KEYS.services),
+    projects: find(HOME_SECTION_KEYS.projects),
+    why: find(HOME_SECTION_KEYS.why),
+    insights: find(HOME_SECTION_KEYS.insights),
+    cta: find(HOME_SECTION_KEYS.cta),
+  };
+}

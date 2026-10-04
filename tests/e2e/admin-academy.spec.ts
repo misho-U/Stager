@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import { ADMIN_SESSION, CREDENTIALS_PRESENT } from './admin-session';
+import { DB_WRITES_ALLOWED, DB_WRITES_SKIP_REASON } from './db-guard';
 import {
   courseInputSchema,
   relatedCourses,
@@ -80,6 +81,7 @@ test.describe('courses and videos in the dashboard', () => {
     !CREDENTIALS_PRESENT,
     'Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD to run the authenticated flow.',
   );
+  test.skip(!DB_WRITES_ALLOWED, DB_WRITES_SKIP_REASON);
   test.use({ storageState: ADMIN_SESSION });
 
   // One category, one course and one video, created, changed and deleted in order.
@@ -139,9 +141,7 @@ test.describe('courses and videos in the dashboard', () => {
     await expect(page.getByRole('link', { name: course.ka })).toBeVisible();
   });
 
-  test('the course appears on the site with its category, without a redeploy', async ({
-    page,
-  }) => {
+  test('the course appears on the site with its category, without a redeploy', async ({ page }) => {
     await page.goto('/en');
     const listed = page.getByTestId('course-list').locator('li', { hasText: course.en });
     await expect(listed).toBeVisible();
@@ -207,8 +207,10 @@ test.describe('courses and videos in the dashboard', () => {
     const row = page.locator('tr', { hasText: video.ka });
     await expect(row.getByText(adminEn.videos.noLink)).toBeVisible();
 
+    // Both designs show the newest video in their #videos section, some of
+    // its titles only on hover, so the section's text is what is checked.
     await page.goto('/ka');
-    await expect(page.getByTestId('video-list').getByText(video.ka)).toBeVisible();
+    await expect(page.locator('#videos')).toContainText(video.ka);
   });
 
   test("a video's YouTube link can be added, and removed again", async ({ page }) => {

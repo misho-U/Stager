@@ -1,11 +1,12 @@
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
-import { Panel } from '@/shared/components/panel';
+import { ErrorNotice, Panel } from '@/shared/components/panel';
 import { DASHBOARD_SHORTCUTS } from '@/modules/admin-dashboard/admin-dashboard.constants';
 
 type AdminDashboardModuleProps = {
   name: string | null;
+  /** Null when they could not be loaded. */
   counts: {
     projects: number;
     insights: number;
@@ -14,8 +15,11 @@ type AdminDashboardModuleProps = {
     videos: number;
     teamMembers: number;
     newInquiries: number;
-  };
+  } | null;
 };
+
+/** A count that could not be loaded reads as unknown, never as zero. */
+const UNKNOWN = '—';
 
 /**
  * Dashboard landing page.
@@ -29,12 +33,12 @@ export function AdminDashboardModule({ name, counts }: AdminDashboardModuleProps
 
   // The same words as the sidebar, so a count and its screen match.
   const stats = [
-    { label: t('sidebar.nav.projects'), value: counts.projects, href: '/admin/projects' },
-    { label: t('sidebar.nav.insights'), value: counts.insights, href: '/admin/insights' },
-    { label: t('sidebar.nav.services'), value: counts.services, href: '/admin/services' },
-    { label: t('sidebar.nav.courses'), value: counts.courses, href: '/admin/courses' },
-    { label: t('sidebar.nav.videos'), value: counts.videos, href: '/admin/videos' },
-    { label: t('sidebar.nav.team'), value: counts.teamMembers, href: '/admin/team' },
+    { label: t('sidebar.nav.projects'), value: counts?.projects, href: '/admin/projects' },
+    { label: t('sidebar.nav.insights'), value: counts?.insights, href: '/admin/insights' },
+    { label: t('sidebar.nav.services'), value: counts?.services, href: '/admin/services' },
+    { label: t('sidebar.nav.courses'), value: counts?.courses, href: '/admin/courses' },
+    { label: t('sidebar.nav.videos'), value: counts?.videos, href: '/admin/videos' },
+    { label: t('sidebar.nav.team'), value: counts?.teamMembers, href: '/admin/team' },
   ];
 
   return (
@@ -46,12 +50,14 @@ export function AdminDashboardModule({ name, counts }: AdminDashboardModuleProps
         <p className="text-body-sm text-ink-muted">{t('dashboard.intro')}</p>
       </header>
 
-      {counts.newInquiries > 0 ? (
+      {counts ? null : <ErrorNotice message={t('dashboard.countsFailed')} />}
+
+      {counts && counts.newInquiries > 0 ? (
         <Link
           href="/admin/inquiries"
-          className="rounded-lg border border-primary/30 bg-primary/8 px-5 py-4 transition-colors hover:bg-primary/12"
+          className="border-primary/30 bg-primary/8 hover:bg-primary/12 rounded-lg border px-5 py-4 transition-colors"
         >
-          <p className="text-body-sm font-medium text-primary">
+          <p className="text-body-sm text-primary font-medium">
             {t('dashboard.newInquiries', { count: counts.newInquiries })}
           </p>
           <p className="text-caption text-ink-muted">{t('dashboard.openInbox')}</p>
@@ -63,9 +69,9 @@ export function AdminDashboardModule({ name, counts }: AdminDashboardModuleProps
           <Link
             key={stat.label}
             href={stat.href}
-            className="rounded-lg border border-line bg-surface-raised px-4 py-3 transition-colors hover:border-line-strong"
+            className="border-line bg-surface-raised hover:border-line-strong rounded-lg border px-4 py-3 transition-colors"
           >
-            <p className="text-title font-semibold text-ink">{stat.value}</p>
+            <p className="text-title text-ink font-semibold">{stat.value ?? UNKNOWN}</p>
             <p className="text-caption text-ink-subtle">{stat.label}</p>
           </Link>
         ))}
@@ -77,7 +83,7 @@ export function AdminDashboardModule({ name, counts }: AdminDashboardModuleProps
             <li key={shortcut.href}>
               <Link
                 href={shortcut.href}
-                className="flex flex-col rounded-md px-2 py-2 transition-colors hover:bg-surface-muted"
+                className="hover:bg-surface-muted flex flex-col rounded-md px-2 py-2 transition-colors"
               >
                 <span className="text-body-sm text-ink">
                   {t(`dashboard.shortcuts.${shortcut.key}.label`)}

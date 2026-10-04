@@ -21,6 +21,8 @@ export const serviceTranslationSchema = seoFieldsSchema.extend({
 
 export const adminServiceSchema = z.object({
   id: z.string(),
+  /** What links to it and would lose the link if it were deleted. */
+  linkedCount: z.number().int(),
   slug: z.string(),
   icon: z.string().nullable(),
   coverMediaId: z.string().nullable(),
@@ -50,7 +52,12 @@ export const publicServiceSchema = z.object({
 
 export type PublicService = z.infer<typeof publicServiceSchema>;
 
-export const publicServiceListResponseSchema = listResponseSchema(publicServiceSchema);
+/** A service in a list: everything but the body, which only its own page shows. */
+export const publicServiceListItemSchema = publicServiceSchema.omit({ body: true });
+
+export type PublicServiceListItem = z.infer<typeof publicServiceListItemSchema>;
+
+export const publicServiceListResponseSchema = listResponseSchema(publicServiceListItemSchema);
 
 export const serviceTranslationInputSchema = seoInputSchema.extend({
   title: z.string().trim().min(1).max(200),
@@ -63,7 +70,7 @@ export const serviceInputSchema = z.object({
   icon: z.string().trim().max(60).nullish(),
   coverMediaId: mediaIdSchema,
   status: contentStatusSchema.default('DRAFT'),
-  order: z.number().int().min(0).default(0),
+  order: z.number().int().min(0).max(100_000).default(0),
   translations: bothLocales(serviceTranslationInputSchema),
 });
 

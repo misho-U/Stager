@@ -3,7 +3,11 @@ import 'server-only';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
+import { AuthUnavailableError } from '@pkg/auth/errors';
 import { clientEnv } from '@pkg/config/env.client';
+import { logger } from '@pkg/logger';
+import { SESSION_COOKIE_OPTIONS } from '@pkg/supabase/cookie-options';
+import { isAuthOutage } from '@pkg/supabase/outage';
 
 /**
  * Supabase client for server components, route handlers and server actions.
@@ -18,6 +22,7 @@ export async function createSupabaseServerClient() {
     clientEnv.NEXT_PUBLIC_SUPABASE_URL,
     clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
+      cookieOptions: SESSION_COOKIE_OPTIONS,
       cookies: {
         getAll() {
           return cookieStore.getAll();
@@ -52,6 +57,19 @@ export async function getSupabaseUser() {
     error,
   } = await supabase.auth.getUser();
 
-  if (error) return null;
+  if (error) {
+    // Supabase could not be asked: an outage, not a signed-out visitor.
+    if (isAuthOutage(error)) {
+      logger.error('auth.unreachable', { name: error.name, status: error.status ?? null });
+      throw new AuthUnavailableError();
+    }
+    // No session at all is the ordinary signed-out case. A rejected token also
+    // reads as signed out, but is worth a line in the log: "I keep getting
+    // logged out" starts here.
+    if (error.name !== 'AuthSessionMissingError') {
+      logger.warn('auth.get_user_failed', { name: error.name, status: error.status ?? null });
+    }
+    return null;
+  }
   return user;
 }

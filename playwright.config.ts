@@ -11,6 +11,8 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : [['list']],
+  // Removes rows a killed run left behind; a no-op unless tests may write.
+  globalTeardown: './tests/e2e/global-teardown.ts',
 
   use: {
     baseURL,

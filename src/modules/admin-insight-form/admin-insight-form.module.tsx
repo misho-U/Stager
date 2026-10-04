@@ -1,11 +1,10 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import { Controller } from 'react-hook-form';
 
 import { useAdminInsightForm } from '@/modules/admin-insight-form/admin-insight-form.service';
-import { Button } from '@/shared/components/button';
+import { Button, ButtonLink } from '@/shared/components/button';
 import {
   ContentLocaleProvider,
   ContentLocaleToggle,
@@ -13,11 +12,12 @@ import {
 } from '@/shared/components/content-locale';
 import { CheckboxField, SelectField, TextAreaField, TextField } from '@/shared/components/field';
 import { PageHeader } from '@/shared/components/page-header';
-import { ErrorNotice, Panel } from '@/shared/components/panel';
+import { ErrorNotice, LoadFailed, Panel } from '@/shared/components/panel';
 import { SeoFields } from '@/shared/components/seo-fields';
 import { toOptionalNumber } from '@/shared/lib/form-values';
 import { useStatusOptions } from '@/shared/lib/use-enum-options';
 import type { DbLocale } from '@/shared/types/enums';
+import { useUnsavedChangesGuard } from '@/shared/lib/use-unsaved-changes-guard';
 import { MediaPicker } from '@/widgets/media-picker/media-picker.module';
 
 export function AdminInsightFormModule({ insightId }: { insightId?: string }) {
@@ -28,6 +28,8 @@ export function AdminInsightFormModule({ insightId }: { insightId?: string }) {
     onSubmit,
     isEdit,
     isLoading,
+    loadError,
+    retry,
     isSubmitting,
     submitError,
     categoryOptions,
@@ -35,9 +37,12 @@ export function AdminInsightFormModule({ insightId }: { insightId?: string }) {
     slugAutofill,
   } = useAdminInsightForm({ insightId });
 
-  const { errors, submitCount } = form.formState;
+  const { errors, submitCount, isDirty } = form.formState;
+  useUnsavedChangesGuard(isDirty, t('common.unsavedChanges'));
 
   if (isLoading) return <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>;
+  // Its blank fields would be saved over the record: no form until it loads.
+  if (loadError) return <LoadFailed message={loadError} onRetry={retry} />;
 
   return (
     <ContentLocaleProvider errors={errors} submitCount={submitCount}>
@@ -46,9 +51,9 @@ export function AdminInsightFormModule({ insightId }: { insightId?: string }) {
           title={isEdit ? t('insights.form.titleEdit') : t('insights.form.titleNew')}
           actions={
             <>
-              <Link href="/admin/insights">
-                <Button variant="ghost">{t('common.cancel')}</Button>
-              </Link>
+              <ButtonLink href="/admin/insights" variant="ghost">
+                {t('common.cancel')}
+              </ButtonLink>
               <Button type="submit" loading={isSubmitting}>
                 {t('common.save')}
               </Button>
@@ -163,9 +168,9 @@ export function AdminInsightFormModule({ insightId }: { insightId?: string }) {
         </Panel>
 
         <div className="flex justify-end gap-2">
-          <Link href="/admin/insights">
-            <Button variant="ghost">{t('common.cancel')}</Button>
-          </Link>
+          <ButtonLink href="/admin/insights" variant="ghost">
+            {t('common.cancel')}
+          </ButtonLink>
           <Button type="submit" loading={isSubmitting}>
             {t('insights.form.submit')}
           </Button>

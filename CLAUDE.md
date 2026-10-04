@@ -15,7 +15,8 @@ drift.
 
 Next.js 16 · React 19 · TypeScript strict · Tailwind 4 · TanStack Query ·
 Zustand · react-hook-form · zod 4 · Prisma 7 · Supabase · Vercel Blob · Resend ·
-next-intl · sanitize-html · Phosphor icons · Playwright · pnpm.
+next-intl · sanitize-html · Phosphor icons · GSAP · Lenis · Sentry · Playwright ·
+pnpm.
 
 Do not add a library outside this list without raising it first.
 
@@ -99,6 +100,19 @@ Do not add a library outside this list without raising it first.
 - **The design skill (`design-taste-frontend`) is direction only.** AGENTS.md
   § Design skill lists what it may not change — dependencies, tokens, images
   and the CSP, folder structure, CMS copy — and the Georgian checks.
+- **Motion (GSAP + Lenis) lives in one client leaf per design, never leaves
+  content hidden, and does nothing under reduced motion.** Decoration takes no
+  clicks, SplitText masks are loosened or they clip Georgian letters, text is
+  split only through `splitReveal` (or a screen reader hears nothing), and the
+  hero never waits for the script. AGENTS.md § Motion has the rules and the
+  traps behind them.
+- **Never a `<Button>` inside a `<Link>`**: use `ButtonLink`. Every page has a
+  `SkipLink` and one `<main id={CONTENT_ID}>`; `keyboard.spec.ts` checks.
+- **Test accounts never touch the live project.** The test admin exists only
+  in CI's throwaway auth server and database, or a local one:
+  `scripts/test-auth.ts` refuses a Supabase that is not on this machine, and
+  writing tests and the `db:*` scripts refuse a remote database. Production
+  has one admin, the owner. Never seed, sign up or write test data there.
 
 ## Sign-in needs two systems to agree
 
@@ -114,8 +128,17 @@ mismatch between `NEXT_PUBLIC_SUPABASE_URL` and `DATABASE_URL`.
 pnpm lint && pnpm typecheck && pnpm build && pnpm test:e2e
 ```
 
-## What is not built yet
+CI (`.github/workflows/ci.yml`) runs the same on every push, signed-in tests
+included, against a throwaway Postgres and Supabase Auth, with no secrets.
+For the signed-in tests on a laptop, see AGENTS.md § Credential-gated tests.
 
-The public site design. `src/app/[locale]/page.tsx` is an intentionally unstyled
-scaffold proving that dashboard edits reach the site. Its API endpoints already
-exist — the design phase is frontend work only.
+## Where things stand
+
+The October 2026 audit is recorded in `docs/AUDIT-HANDOFF.md`: what changed,
+what was verified in production, what is still open, and what only the owner
+can do in Vercel and Supabase. Read it before planning operations, security
+or test work.
+
+Two home page designs are under comparison (`?v=1`, `?v=2`). Once the client
+picks one, AGENTS.md § 7 lists what follows: the other design and the switch
+go, and the home page is rendered statically.

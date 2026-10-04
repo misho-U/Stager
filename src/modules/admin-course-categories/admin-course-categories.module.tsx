@@ -1,15 +1,14 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 
 import { useAdminCourseCategories } from '@/modules/admin-course-categories/admin-course-categories.service';
-import { Button } from '@/shared/components/button';
+import { Button, ButtonLink } from '@/shared/components/button';
 import { ConfirmButton } from '@/shared/components/confirm-button';
 import { DataTable, type Column } from '@/shared/components/data-table';
 import { TextField } from '@/shared/components/field';
 import { PageHeader } from '@/shared/components/page-header';
-import { ErrorNotice, Panel } from '@/shared/components/panel';
+import { ErrorNotice, LoadFailed, Panel } from '@/shared/components/panel';
 import type { AdminCourseCategory } from '@/entity/course-category/model/course-category.model';
 
 export function AdminCourseCategoriesModule() {
@@ -18,6 +17,7 @@ export function AdminCourseCategoriesModule() {
     categories,
     isLoading,
     loadError,
+    retry,
     form,
     onSubmit,
     editingId,
@@ -38,7 +38,7 @@ export function AdminCourseCategoriesModule() {
       key: 'name',
       header: t('categories.columns.nameKa'),
       render: (category) => (
-        <span className="font-medium text-ink">{category.translations.KA.name || '—'}</span>
+        <span className="text-ink font-medium">{category.translations.KA.name || '—'}</span>
       ),
     },
     {
@@ -81,13 +81,11 @@ export function AdminCourseCategoriesModule() {
         title={t('courseCategories.title')}
         description={t('courseCategories.description')}
         actions={
-          <Link href="/admin/courses">
-            <Button variant="ghost">{t('courseCategories.back')}</Button>
-          </Link>
+          <ButtonLink href="/admin/courses" variant="ghost">
+            {t('courseCategories.back')}
+          </ButtonLink>
         }
       />
-
-      {loadError ? <ErrorNotice message={loadError} /> : null}
 
       <Panel
         title={editingId ? t('courseCategories.editTitle') : t('courseCategories.addTitle')}
@@ -145,7 +143,9 @@ export function AdminCourseCategoriesModule() {
       </Panel>
 
       <Panel title={t('courseCategories.allTitle')}>
-        {isLoading ? (
+        {loadError ? (
+          <LoadFailed message={loadError} onRetry={retry} />
+        ) : isLoading ? (
           <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
         ) : (
           <DataTable

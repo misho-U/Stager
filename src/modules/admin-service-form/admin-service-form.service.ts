@@ -88,7 +88,10 @@ export function useAdminServiceForm({ serviceId }: { serviceId?: string }) {
   // was tried, so an empty title does not flag the slug mid-typing.
   const setSlug = useCallback(
     (slug: string) =>
-      form.setValue('slug', slug, { shouldDirty: true, shouldValidate: form.formState.isSubmitted }),
+      form.setValue('slug', slug, {
+        shouldDirty: true,
+        shouldValidate: form.formState.isSubmitted,
+      }),
     [form],
   );
   const slugAutofill = useSlugAutofill({ enabled: !isEdit, setSlug });
@@ -99,23 +102,29 @@ export function useAdminServiceForm({ serviceId }: { serviceId?: string }) {
     if (serviceQuery.data) reset(toFormValues(serviceQuery.data));
   }, [serviceQuery.data, reset]);
 
-  const onSubmit = form.handleSubmit(async (values) => {
-    setSubmitError(null);
-    try {
-      if (serviceId) {
-        await updateService.mutateAsync({ id: serviceId, input: values });
-      } else {
-        await createService.mutateAsync(values);
+  const onSubmit = form.handleSubmit(
+    async (values) => {
+      setSubmitError(null);
+      try {
+        if (serviceId) {
+          await updateService.mutateAsync({ id: serviceId, input: values });
+        } else {
+          await createService.mutateAsync(values);
+        }
+        router.push('/admin/services');
+        router.refresh();
+      } catch (caught) {
+        setSubmitError(formErrors.message(caught));
+        for (const [field, message] of Object.entries(formErrors.fields(caught))) {
+          form.setError(field as keyof ServiceFormValues, { type: 'server', message });
+        }
       }
-      router.push('/admin/services');
-      router.refresh();
-    } catch (caught) {
-      setSubmitError(formErrors.message(caught));
-      for (const [field, message] of Object.entries(formErrors.fields(caught))) {
-        form.setError(field as keyof ServiceFormValues, { type: 'server', message });
-      }
-    }
-  });
+    },
+    // The form's own checks stopped the save. A field may have no message in
+    // view (a dropdown, a field on the other language's tab), so say it here
+    // rather than leave Save looking dead.
+    () => setSubmitError(formErrors.invalid()),
+  );
 
   return {
     form,
@@ -123,6 +132,12 @@ export function useAdminServiceForm({ serviceId }: { serviceId?: string }) {
     isEdit,
     slugAutofill,
     isLoading: isEdit && serviceQuery.isLoading,
+    // A record that failed to load gets no form (LoadFailed), but only while
+    // nothing has loaded: a failed background refresh must not
+    // take away a form someone is typing in.
+    loadError:
+      serviceQuery.error && !serviceQuery.data ? formErrors.message(serviceQuery.error) : null,
+    retry: () => void serviceQuery.refetch(),
     isSubmitting: createService.isPending || updateService.isPending,
     submitError,
   };

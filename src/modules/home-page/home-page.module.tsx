@@ -1,174 +1,59 @@
-import Image from 'next/image';
+import { getTranslations } from 'next-intl/server';
 
-import { loadHomePageData } from '@/modules/home-page/home-page.service';
+import { ChefsTable } from '@/modules/home-page/elements/chefs-table/chefs-table.module';
+import { OpenKitchen } from '@/modules/home-page/elements/open-kitchen/open-kitchen.module';
+import { HOME_VARIANT_PARAM, HOME_VARIANTS } from '@/modules/home-page/home-page.constants';
+import { loadHomePageData, parseHomeVariant } from '@/modules/home-page/home-page.service';
+import { ReadFailureNotice } from '@/shared/components/read-failure-notice';
+import { SkipLink } from '@/shared/components/skip-link';
 import type { DbLocale } from '@/shared/types/enums';
+import { DesignVariantSwitcher } from '@/widgets/design-variant-switcher/design-variant-switcher.module';
+
+/** TEMPORARY — one composition per design under comparison. */
+const COMPOSITIONS = { '1': OpenKitchen, '2': ChefsTable } as const;
+
+type HomePageModuleProps = {
+  locale: DbLocale;
+  /** TEMPORARY — the raw `?v=` value, see home-page.constants.ts. */
+  variant?: string | string[] | undefined;
+};
 
 /**
- * SCAFFOLD — replaced in the design phase.
- *
- * This page exists to prove one thing end to end: content edited in /admin is
- * visible here without a redeploy. It renders live database values with no
- * design applied, and the Playwright suite asserts exactly that loop. Delete it
- * once the real homepage is built; keep the data-loading pattern in
- * home-page.service.ts, which is the part worth copying.
+ * The home page. Both designs render the same data from the same reads; they
+ * differ in tokens (src/shared/brandbook/variants/), composition and motion
+ * (./elements/open-kitchen, ./elements/chefs-table). Content edited in /admin
+ * appears in both.
  */
-export async function HomePageModule({ locale }: { locale: DbLocale }) {
-  const { layout, page, projects, courses, videos, readFailed } = await loadHomePageData(locale);
-
-  const hero = page?.sections.find((section) => section.key === 'hero');
+export async function HomePageModule({ locale, variant: requested }: HomePageModuleProps) {
+  const [content, t, tCommon] = await Promise.all([
+    loadHomePageData(locale),
+    getTranslations('home'),
+    getTranslations('common'),
+  ]);
+  const variant = parseHomeVariant(requested);
+  const Composition = COMPOSITIONS[variant];
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-10 px-gutter py-16">
-      <div className="rounded-md border border-dashed border-line-strong bg-surface-muted px-4 py-3">
-        <p className="text-caption text-ink-muted">
-          <strong>Scaffold page.</strong> No design has been applied yet — this renders live
-          database content to prove that dashboard edits reach the site.
-        </p>
+    <>
+      {/* The design's tokens apply inside this element only. `key` gives each
+          design a fresh element, so no motion state carries across a switch.
+          `overflow-x-clip`: a card thrown off the board must never widen the
+          page; unlike `hidden` it keeps sticky and pinned scenes working. */}
+      <div
+        key={variant}
+        data-home-variant={variant}
+        className="bg-surface text-ink overflow-x-clip"
+      >
+        <SkipLink label={tCommon('skipToContent')} />
+        {content.readFailed ? <ReadFailureNotice message={t('readFailed')} /> : null}
+        <Composition locale={locale} content={content} />
       </div>
 
-      {readFailed ? (
-        <div
-          className="rounded-md border border-danger px-4 py-3"
-          role="alert"
-          data-testid="read-failure"
-        >
-          <p className="text-caption text-danger">
-            <strong>Content failed to load.</strong> This page is showing placeholders, not real
-            data. Check the server log for <code>public.read_failed</code>.
-          </p>
-        </div>
-      ) : null}
-
-      <section className="flex flex-col gap-3">
-        <p className="text-caption tracking-label text-ink-subtle uppercase">
-          {layout?.siteName ?? 'STAGER'}
-        </p>
-        {/*
-          No brand-shaped fallback string here, deliberately. This used to read
-          `|| 'Building Better Food Businesses.'` — the exact text the seed puts
-          in the KA hero — so when the fetch died the page still looked correct,
-          and "my edits do not show up" was indistinguishable from "the site is
-          fine". A placeholder must never be mistakable for content.
-        */}
-        <h1 className="text-headline font-semibold" data-testid="hero-heading">
-          {hero?.heading || <span className="text-ink-subtle italic">[no hero heading set]</span>}
-        </h1>
-        {hero?.subheading ? (
-          <p className="text-body-lg text-ink-muted">{hero.subheading}</p>
-        ) : null}
-      </section>
-
-      <section className="flex flex-col gap-4">
-        <h2 className="text-title font-semibold">
-          {page?.sections.find((section) => section.key === 'selected-projects')?.heading ??
-            'Selected Projects'}
-        </h2>
-
-        {projects.items.length === 0 ? (
-          <p className="text-body-sm text-ink-subtle">
-            No published projects yet. Add one in the dashboard and it will appear here.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-6" data-testid="project-list">
-            {projects.items.map((project) => (
-              <li key={project.id} className="flex flex-col gap-2">
-                {project.cover ? (
-                  <div className="relative aspect-3/2 w-full overflow-hidden rounded-md bg-surface-muted">
-                    <Image
-                      src={project.cover.url}
-                      alt={project.cover.alt}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 768px"
-                      className="object-cover"
-                      {...(project.cover.blurDataUrl
-                        ? {
-                            placeholder: 'blur' as const,
-                            blurDataURL: project.cover.blurDataUrl,
-                          }
-                        : {})}
-                    />
-                  </div>
-                ) : null}
-                <h3 className="text-title-sm font-medium" data-testid="project-title">
-                  {project.title}
-                </h3>
-                {project.summary ? (
-                  <p className="text-body-sm text-ink-muted">{project.summary}</p>
-                ) : null}
-                <p className="text-caption text-ink-subtle">
-                  {[project.client, project.location, project.year].filter(Boolean).join(' · ')}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className="flex flex-col gap-4">
-        <h2 className="text-title font-semibold">Academy</h2>
-
-        {courses.items.length === 0 ? (
-          <p className="text-body-sm text-ink-subtle">
-            No upcoming courses yet. Add one in the dashboard and it will appear here.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-3" data-testid="course-list">
-            {courses.items.map((course) => (
-              <li key={course.id} className="flex flex-col gap-1">
-                <h3 className="text-title-sm font-medium" data-testid="course-title">
-                  {course.title}
-                </h3>
-                <p className="text-caption text-ink-subtle">
-                  {[course.startsAt, course.category?.name, course.duration, course.location]
-                    .filter(Boolean)
-                    .join(' · ')}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className="flex flex-col gap-4">
-        <h2 className="text-title font-semibold">Videos</h2>
-
-        {videos.items.length === 0 ? (
-          <p className="text-body-sm text-ink-subtle">
-            No published videos yet. Add one in the dashboard and it will appear here.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-3" data-testid="video-list">
-            {videos.items.map((video) => (
-              <li key={video.id} className="flex flex-col gap-1">
-                <h3 className="text-title-sm font-medium" data-testid="video-title">
-                  {video.title}
-                </h3>
-                <p className="text-caption text-ink-subtle">
-                  {[video.publishedAt, video.youtubeUrl ? 'YouTube' : 'no link yet']
-                    .filter(Boolean)
-                    .join(' · ')}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {layout?.socialLinks.length ? (
-        <section className="flex flex-wrap gap-3 border-t border-line pt-6">
-          {layout.socialLinks.map((link) => (
-            <a
-              key={link.id}
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-caption text-ink-muted underline underline-offset-4"
-            >
-              {link.label ?? link.platform}
-            </a>
-          ))}
-        </section>
-      ) : null}
-    </div>
+      <DesignVariantSwitcher
+        current={variant}
+        variants={HOME_VARIANTS}
+        param={HOME_VARIANT_PARAM}
+      />
+    </>
   );
 }

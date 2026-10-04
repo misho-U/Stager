@@ -1,27 +1,12 @@
-import { queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { fetchCurrentSession, login, logout } from '@/entity/session/api/session.api';
+import { login, logout } from '@/entity/session/api/session.api';
 import type { LoginInput } from '@/entity/session/model/session.model';
 
-export const sessionKeys = {
-  current: ['session', 'current'] as const,
-};
-
-export const currentSessionQuery = () =>
-  queryOptions({
-    queryKey: sessionKeys.current,
-    queryFn: fetchCurrentSession,
-    // A stale session shows the wrong name in the header at worst; refetching
-    // it on every focus is noise.
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  });
-
+/** The dashboard reads who is signed in on the server (its layout), not here. */
 export function useLogin() {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: LoginInput) => login(input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: sessionKeys.current }),
   });
 }
 

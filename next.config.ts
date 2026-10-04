@@ -1,7 +1,17 @@
+import { withSentryConfig } from '@sentry/nextjs/config';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 
+import { storeHostFromToken } from './pkg/blob/store-host';
+
 const withNextIntl = createNextIntlPlugin('./pkg/i18n/request.ts');
+
+/**
+ * This project's own blob store: the only images the optimizer will fetch.
+ * With the old `*.public.blob.vercel-storage.com`, anyone could have pointed
+ * /_next/image at their own store and spent this plan's image quota.
+ */
+const blobStoreHost = storeHostFromToken(process.env.BLOB_READ_WRITE_TOKEN);
 
 /**
  * Static security headers.
@@ -39,13 +49,16 @@ const nextConfig: NextConfig = {
   images: {
     // Modern formats first; next/image negotiates per browser.
     formats: ['image/avif', 'image/webp'],
-    remotePatterns: [
-      // Vercel Blob — the only place our own images are served from.
-      { protocol: 'https', hostname: '*.public.blob.vercel-storage.com' },
-      // YouTube poster frames for video facades.
-      { protocol: 'https', hostname: 'i.ytimg.com' },
-      { protocol: 'https', hostname: 'img.youtube.com' },
-    ],
+    // An upload never changes once stored (each gets a random suffix), so a
+    // resized copy can be kept for a month instead of being remade every four
+    // hours against the quota. A deleted image's resized copies can live that
+    // long too: purge the image cache in Vercel if one must vanish sooner.
+    minimumCacheTTL: 2_678_400,
+    // Uploads only, under media/. YouTube posters are not optimized: any video
+    // id would do, so they load straight from YouTube (VideoPoster).
+    remotePatterns: blobStoreHost
+      ? [{ protocol: 'https', hostname: blobStoreHost, pathname: '/media/**' }]
+      : [],
   },
 
   async headers() {
@@ -53,4 +66,22 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+/**
+ * Sentry, only when its DSN is set (pkg/monitoring): without one the build is
+ * exactly what it was. Browser events go through /monitoring on this site,
+ * which ad blockers leave alone (the proxy skips that path). Source maps are
+ * uploaded only when SENTRY_AUTH_TOKEN, SENTRY_ORG and SENTRY_PROJECT are set;
+ * without them stack traces read minified, and the build still succeeds.
+ */
+export default process.env.NEXT_PUBLIC_SENTRY_DSN?.trim()
+  ? withSentryConfig(withNextIntl(nextConfig), {
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      tunnelRoute: '/monitoring',
+      silent: !process.env.CI,
+      telemetry: false,
+      // No performance tracing (pkg/monitoring/options.ts), so no router spans.
+      suppressOnRouterTransitionStartWarning: true,
+    })
+  : withNextIntl(nextConfig);

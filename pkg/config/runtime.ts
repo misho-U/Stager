@@ -8,8 +8,10 @@
 export const NODE_ENV = process.env.NODE_ENV ?? 'development';
 
 export const IS_PRODUCTION = NODE_ENV === 'production';
+
+/** `nodejs` or `edge` on the server, unset in the browser: which runtime this code runs in. */
+export const NEXT_RUNTIME = process.env.NEXT_RUNTIME ?? null;
 export const IS_DEVELOPMENT = NODE_ENV === 'development';
-export const IS_TEST = NODE_ENV === 'test';
 
 /**
  * Host of the current Vercel deployment, without a scheme. Set automatically by
@@ -38,3 +40,11 @@ export const VERCEL_URL = process.env.VERCEL_URL ?? null;
  * the browser, where nothing needs it — client fetches use relative paths.
  */
 export const INTERNAL_API_ORIGIN = process.env.INTERNAL_API_ORIGIN ?? null;
+
+/**
+ * Set by Vercel when the project's "Protection Bypass for Automation" is on.
+ * With Deployment Protection, Vercel answers 401 to a deployment fetching its
+ * own URL unless the request carries this, and every public read would fail.
+ * Server-side only: it is not NEXT_PUBLIC, so client bundles see undefined.
+ */
+export const VERCEL_AUTOMATION_BYPASS_SECRET = process.env.VERCEL_AUTOMATION_BYPASS_SECRET ?? null;

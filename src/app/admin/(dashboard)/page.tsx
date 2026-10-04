@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { AdminDashboardModule } from '@/modules/admin-dashboard/admin-dashboard.module';
 import { getAdminSession } from '@pkg/auth/admin-session';
 import { serverFetchAuthed } from '@pkg/http/fetcher';
+import { logger, serialiseError } from '@pkg/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,16 +17,6 @@ type Stats = {
   newInquiries: number;
 };
 
-const EMPTY_STATS: Stats = {
-  projects: 0,
-  insights: 0,
-  services: 0,
-  courses: 0,
-  videos: 0,
-  teamMembers: 0,
-  newInquiries: 0,
-};
-
 export default async function AdminDashboardPage() {
   const session = await getAdminSession();
 
@@ -35,12 +26,14 @@ export default async function AdminDashboardPage() {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
 
-  let stats = EMPTY_STATS;
+  let stats: Stats | null = null;
   try {
     stats = await serverFetchAuthed<Stats>('/api/admin/stats', cookieHeader);
-  } catch {
-    // A stats failure must not take down the whole dashboard; zeroes are
-    // obviously wrong rather than misleading, and every other screen still works.
+  } catch (error) {
+    // A stats failure must not take down the whole dashboard, and every other
+    // screen still works. The counts show as unknown: zeroes read as "all your
+    // content is gone".
+    logger.error('admin.stats_failed', serialiseError(error));
   }
 
   return <AdminDashboardModule name={session?.name ?? null} counts={stats} />;

@@ -3,21 +3,38 @@ import { queryOptions, useMutation, useQueryClient } from '@tanstack/react-query
 import {
   deleteInquiry,
   fetchInquiries,
+  fetchUnreadInquiries,
   submitContactInquiry,
   updateInquiryStatus,
 } from '@/entity/contact-inquiry/api/contact-inquiry.api';
 import type {
   ContactSubmission,
   InquiryStatusUpdate,
+  InquiryView,
 } from '@/entity/contact-inquiry/model/contact-inquiry.model';
 
 export const inquiryKeys = {
   all: ['inquiries'] as const,
-  lists: () => ['inquiries', 'list'] as const,
+  list: (view: InquiryView) => ['inquiries', 'list', view] as const,
+  unread: () => ['inquiries', 'unread'] as const,
 };
 
-export const inquiriesQuery = () =>
-  queryOptions({ queryKey: inquiryKeys.lists(), queryFn: fetchInquiries });
+export const inquiriesQuery = (view: InquiryView) =>
+  queryOptions({ queryKey: inquiryKeys.list(view), queryFn: () => fetchInquiries(view) });
+
+/**
+ * The sidebar's count of new inquiries, so a lead shows on every dashboard
+ * page, not only in the inbox. Checked again every minute and when the window
+ * regains focus.
+ */
+export const unreadInquiriesQuery = () =>
+  queryOptions({
+    queryKey: inquiryKeys.unread(),
+    queryFn: fetchUnreadInquiries,
+    refetchInterval: 60_000,
+    // One count, so unlike the lists it is worth asking again on return.
+    refetchOnWindowFocus: true,
+  });
 
 /** Used by the public contact form. */
 export function useSubmitContactInquiry() {

@@ -3,6 +3,7 @@ import 'server-only';
 import { Resend } from 'resend';
 
 import { serverEnv } from '@pkg/config/env.server';
+import { withTimeout } from '@pkg/http/timeout';
 import { logger, serialiseError } from '@pkg/logger';
 
 let client: Resend | null = null;
@@ -15,8 +16,18 @@ function getResend(apiKey: string): Resend {
   return client;
 }
 
+/** Long enough for a slow day at the provider, short enough to give up cleanly. */
+const SEND_TIMEOUT_MS = 10_000;
+
 type SendEmailInput = {
   to: string | string[];
+  /**
+   * What the email is for, e.g. `inquiry:<id>`, for the log. The subject is
+   * never logged: an inquiry's carries the visitor's name and company.
+   */
+  purpose: string;
+  /** Resend sends one email per key, however often it is asked: safe retries. */
+  idempotencyKey?: string;
   subject: string;
   html: string;
   text: string;
@@ -43,30 +54,39 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
   // the deployment log rather than silently forgotten.
   if (!apiKey || !from) {
     logger.warn('mail.not_configured', {
-      subject: input.subject,
+      purpose: input.purpose,
       detail: 'RESEND_API_KEY/MAIL_FROM are unset — the inquiry is stored but no email was sent.',
     });
     return { ok: false, error: 'Email is not configured' };
   }
 
   try {
-    const { data, error } = await getResend(apiKey).emails.send({
-      from,
-      to: input.to,
-      subject: input.subject,
-      html: input.html,
-      text: input.text,
-      ...(input.replyTo ? { replyTo: input.replyTo } : {}),
-    });
+    // The SDK sets no time limit of its own; a hung request would hold the
+    // function until the platform killed it.
+    const { data, error } = await withTimeout(
+      getResend(apiKey).emails.send(
+        {
+          from,
+          to: input.to,
+          subject: input.subject,
+          html: input.html,
+          text: input.text,
+          ...(input.replyTo ? { replyTo: input.replyTo } : {}),
+        },
+        input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : undefined,
+      ),
+      SEND_TIMEOUT_MS,
+      'Mail send',
+    );
 
     if (error) {
-      logger.error('mail.send_rejected', { subject: input.subject, reason: error.message });
+      logger.error('mail.send_rejected', { purpose: input.purpose, reason: error.message });
       return { ok: false, error: error.message };
     }
 
     return { ok: true, id: data?.id ?? null };
   } catch (error) {
-    logger.error('mail.send_failed', { subject: input.subject, ...serialiseError(error) });
+    logger.error('mail.send_failed', { purpose: input.purpose, ...serialiseError(error) });
     return { ok: false, error: 'Mail transport failed' };
   }
 }

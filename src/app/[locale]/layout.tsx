@@ -1,15 +1,14 @@
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { notFound } from 'next/navigation';
 
-import { LanguageSwitcher } from '@/widgets/language-switcher/language-switcher.module';
 import { routing } from '@pkg/i18n/routing';
 
 /**
- * Public site shell.
+ * Public site shell: validates the locale and mounts the i18n provider.
  *
- * Intentionally unstyled beyond the brand tokens — the real header, footer and
- * navigation are part of the design phase. What matters here is that the locale
- * is validated, the i18n provider is mounted, and the language switcher works.
+ * Header, navigation and footer belong to each page's design (the home page
+ * renders its own), so a page supplies its own <header>, <main> and <footer>
+ * landmarks.
  */
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -30,22 +29,5 @@ export default async function PublicLayout({
     notFound();
   }
 
-  return (
-    <NextIntlClientProvider>
-      <div className="flex min-h-dvh flex-col">
-        <header className="flex items-center justify-between border-b border-line px-gutter py-4">
-          <span className="text-body-lg font-semibold tracking-wordmark" data-testid="wordmark">
-            STAGER
-          </span>
-          <LanguageSwitcher />
-        </header>
-
-        <main className="flex-1">{children}</main>
-
-        <footer className="border-t border-line px-gutter py-6 text-caption text-ink-subtle">
-          © {new Date().getFullYear()} STAGER — Culinary &amp; Foodservice Development
-        </footer>
-      </div>
-    </NextIntlClientProvider>
-  );
+  return <NextIntlClientProvider>{children}</NextIntlClientProvider>;
 }

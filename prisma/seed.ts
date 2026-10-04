@@ -1,11 +1,12 @@
 /**
  * Database seed.
  *
- * Idempotent: every write is an upsert keyed on a natural identifier, so
- * running `pnpm db:seed` twice changes nothing the second time. Safe to run
- * against production to (re)install the baseline structure — it never deletes
- * and never overwrites editorial copy that already exists beyond the fields it
- * owns.
+ * Safe to re-run: every write is an upsert keyed on a natural identifier that
+ * creates what is missing and changes nothing the admin can edit, and the
+ * example content goes only into an empty site, so a second run changes
+ * nothing. It never deletes. Even so, `pnpm db:seed` refuses a database that is
+ * not on this machine unless asked by name (ALLOW_REMOTE_DB=1,
+ * scripts/db-guard.ts).
  *
  * This script deliberately builds its own PrismaClient rather than importing
  * pkg/db: that module is marked `server-only`, which throws outside a React
@@ -198,7 +199,8 @@ async function seedServices() {
   for (const service of SERVICES) {
     const record = await prisma.service.upsert({
       where: { slug: service.slug },
-      update: { icon: service.icon, order: service.order },
+      // Never overwrite: the icon and order are the admin's to change.
+      update: {},
       create: {
         slug: service.slug,
         icon: service.icon,
@@ -419,7 +421,8 @@ async function seedCategories() {
   for (const category of CATEGORIES) {
     const record = await prisma.category.upsert({
       where: { slug: category.slug },
-      update: { order: category.order },
+      // Never overwrite: the order is the admin's to change.
+      update: {},
       create: { slug: category.slug, order: category.order },
     });
 
@@ -465,6 +468,13 @@ async function seedSocialLinks() {
 // ---------------------------------------------------------------------------
 
 async function seedExampleContent() {
+  // Only into an empty site: once there is real content, an example that was
+  // deleted from the dashboard must stay deleted.
+  if ((await prisma.project.count()) > 0 || (await prisma.teamMember.count()) > 0) {
+    console.warn('[seed] projects or team members already present, no example added');
+    return;
+  }
+
   const project = await prisma.project.upsert({
     where: { slug: 'example-case-study' },
     update: {},

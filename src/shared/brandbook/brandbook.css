@@ -16,6 +16,7 @@
      - Motion                  --ease-*, --duration-*
      - Admin dark theme        --admin-dark-*  (mostly mixes of the brand
                                palette, so it follows a brand edit by itself)
+     - Dark bands              the percentages in "Dark bands" below
 
    EDIT ONLY WHEN SWAPPING THE TYPEFACE — the @font-face block at the bottom.
 
@@ -30,6 +31,14 @@
    GENERATED FROM THIS FILE — never edit these by hand:
      - pkg/brand/hex.generated.ts — hex copies of --color-brand-* for the email
        and the browser-bar colour, which cannot read CSS.
+
+   TEMPORARY EXCEPTION — the home page design comparison (round 4):
+     - ./variants/open-kitchen.css (light) and ./variants/chefs-table.css
+       (dark) override these tokens, each inside its own design on the home
+       page only, and hold the CSS that only that design draws. Once one
+       design is chosen, its values move into this file and the folder is
+       deleted. (The dark one is an exception to "light-only" below until
+       then.)
 
    HOW A CHANGE GOES LIVE — there is nothing to run:
      - Locally: save, and `pnpm dev` reloads the page.
@@ -65,20 +74,35 @@
   --color-surface-inverse: var(--color-brand-teal); /* dark bands */
   --color-ink: var(--color-brand-teal); /* text */
   --color-ink-muted: var(--color-brand-teal-soft); /* secondary text */
-  --color-ink-subtle: var(--color-brand-sage); /* captions, meta */
+  /* captions, meta: sage taken darker, because sage itself is 2.3:1 on the
+     page and these are the smallest words on it. Needs 4.5:1. */
+  --color-ink-subtle: color-mix(
+    in oklab,
+    var(--color-brand-teal-muted) 85%,
+    var(--color-brand-teal)
+  );
   --color-ink-inverse: var(--color-brand-cream); /* text on dark bands */
-  --color-line: #dcdcd2; /* hairlines, input borders */
+  --color-line: #dcdcd2; /* hairlines */
   --color-line-strong: var(--color-brand-sage); /* emphasised borders */
+  /* form control borders: a field's edge is all that shows where it is, so
+     3:1 against the card and the page (a hairline is 1.4:1). */
+  --color-line-input: color-mix(
+    in oklab,
+    var(--color-brand-sage) 40%,
+    var(--color-brand-teal-muted)
+  );
   --color-primary: var(--color-brand-teal); /* main buttons, selection */
   --color-primary-hover: var(--color-brand-teal-soft);
   --color-primary-disabled: var(--color-brand-sage);
   --color-on-primary: var(--color-brand-cream); /* text on primary */
   --color-focus: var(--color-brand-teal); /* keyboard focus ring */
+  --color-accent: var(--color-brand-teal); /* small emphasis: an active state, a highlight */
 
   /* --- Status --- */
   --color-success: #2f6b4f;
   --color-warning: #8a6a1f;
   --color-danger: #8f2f2f;
+  --color-danger-on-dark: #f3b4b0; /* the same red, readable on a dark ground */
 
   /* --- Typeface ---
      Noto Sans Georgian covers Georgian and Latin in one design, so headlines
@@ -90,6 +114,16 @@
   --font-display: 'Noto Sans Georgian', ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
 
+  /* How heavy the two headline levels are: the hero headline, and section
+     headings. The font is variable, so any value from 100 to 900 works. */
+  --font-weight-hero: 600;
+  --font-weight-heading: 600;
+
+  /* How wide the same two levels are: 100% is the regular design, down to
+     62.5% extra-condensed. Used as `stretch-hero` / `stretch-heading`. */
+  --font-stretch-hero: 100%;
+  --font-stretch-heading: 100%;
+
   /* --- Editorial type scale --- */
   --text-caption: 0.75rem;
   --text-caption--line-height: 1.4;
@@ -99,12 +133,17 @@
   --text-body--line-height: 1.7;
   --text-body-lg: 1.125rem;
   --text-body-lg--line-height: 1.7;
+  --text-lead: 1.25rem; /* large running text: intros, statements */
+  --text-lead--line-height: 1.6;
   --text-title-sm: 1.375rem;
   --text-title-sm--line-height: 1.3;
   --text-title: 1.75rem;
   --text-title--line-height: 1.25;
+  --text-title-lg: 2.25rem; /* between a title and a section heading: a lead story */
+  --text-title-lg--line-height: 1.2;
   --text-headline: 2.5rem;
   --text-headline--line-height: 1.15;
+  --text-headline--letter-spacing: 0em;
   --text-display: 4rem;
   --text-display--line-height: 1.05;
   --text-display--letter-spacing: -0.02em;
@@ -119,7 +158,10 @@
   --spacing-gutter: 1.25rem;
   --spacing-section: 5rem;
   --spacing-section-lg: 8rem;
+  --container-page: 80rem; /* the widest a page's content runs */
 
+  /* One corner scale per design: sm for small marks (badges), md for controls
+     (buttons, inputs), lg for containers (cards, panels, photos). */
   --radius-sm: 2px;
   --radius-md: 4px;
   --radius-lg: 8px;
@@ -130,6 +172,62 @@
   --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
   --duration-fast: 150ms;
   --duration-base: 250ms;
+
+  /* The one entrance a page plays (`animate-rise`, see @keyframes rise below):
+     how long it takes, how far it travels, and how far apart its parts start
+     (`stagger`, with --i on each part). Off under reduced motion. */
+  --duration-entrance: 700ms;
+  --rise-distance: 0.75rem;
+  --stagger-step: 70ms;
+  --animate-rise: rise var(--duration-entrance) var(--ease-brand) both;
+}
+
+/* --- Stacking order. One scale, so no component invents a z-index; used as
+       `z-(--z-header)`. Outside Tailwind's namespaces, so `static` keeps
+       them emitted. --- */
+@theme static {
+  --z-raised: 10; /* an element lifted over its neighbours */
+  --z-header: 30; /* a header that stays in view */
+  --z-switcher: 35; /* the temporary design-comparison bar */
+  --z-overlay: 40; /* full-screen menus */
+}
+
+/* --- Drawers: the course registration sheet (widgets/course-registration).
+       A side sheet on a wide screen, a bottom sheet on a phone. --- */
+@theme static {
+  --drawer-width: 36rem;
+  --drawer-sheet-height: 88dvh; /* the phone sheet leaves a strip of page showing */
+  --duration-drawer: 450ms;
+  --color-backdrop: color-mix(in oklab, var(--color-brand-teal) 55%, transparent);
+  --shadow-drawer: 0 0 0 1px rgb(29 70 74 / 0.06), -24px 0 64px rgb(29 70 74 / 0.18);
+}
+
+/* --- Video frames: the title a poster carries gives way to the picture
+       when a pointer rests on it (`.video-caption` in globals.css). --- */
+@theme static {
+  --duration-caption-hold: 700ms; /* how long the pointer rests first */
+}
+
+/* Outside @theme so they are always emitted: utilities in globals.css use
+   them too. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rise-distance));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -177,6 +275,11 @@
     var(--color-brand-sage) 55%,
     var(--admin-dark-surface-raised)
   );
+  --admin-dark-line-input: color-mix(
+    in oklab,
+    var(--color-brand-sage) 70%,
+    var(--admin-dark-surface-raised)
+  );
   --admin-dark-primary: var(--color-brand-cream);
   --admin-dark-primary-hover: color-mix(
     in oklab,
@@ -190,6 +293,7 @@
   );
   --admin-dark-on-primary: var(--color-brand-teal);
   --admin-dark-focus: var(--color-brand-cream);
+  --admin-dark-accent: var(--color-brand-cream);
   --admin-dark-success: #6fbf94;
   --admin-dark-warning: #d9b45f;
   --admin-dark-danger: #e58b8b;
@@ -220,14 +324,17 @@
   --color-ink-inverse: var(--admin-dark-surface);
   --color-line: var(--admin-dark-line);
   --color-line-strong: var(--admin-dark-line-strong);
+  --color-line-input: var(--admin-dark-line-input);
   --color-primary: var(--admin-dark-primary);
   --color-primary-hover: var(--admin-dark-primary-hover);
   --color-primary-disabled: var(--admin-dark-primary-disabled);
   --color-on-primary: var(--admin-dark-on-primary);
   --color-focus: var(--admin-dark-focus);
+  --color-accent: var(--admin-dark-accent);
   --color-success: var(--admin-dark-success);
   --color-warning: var(--admin-dark-warning);
   --color-danger: var(--admin-dark-danger);
+  --color-danger-on-dark: var(--admin-dark-danger);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -244,14 +351,153 @@
     --color-ink-inverse: var(--admin-dark-surface);
     --color-line: var(--admin-dark-line);
     --color-line-strong: var(--admin-dark-line-strong);
+    --color-line-input: var(--admin-dark-line-input);
     --color-primary: var(--admin-dark-primary);
     --color-primary-hover: var(--admin-dark-primary-hover);
     --color-primary-disabled: var(--admin-dark-primary-disabled);
     --color-on-primary: var(--admin-dark-on-primary);
     --color-focus: var(--admin-dark-focus);
+    --color-accent: var(--admin-dark-accent);
     --color-success: var(--admin-dark-success);
     --color-warning: var(--admin-dark-warning);
     --color-danger: var(--admin-dark-danger);
+    --color-danger-on-dark: var(--admin-dark-danger);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Dark bands — wiring
+   ---------------------------------------------------------------------------
+   Anything inside [data-surface='inverse'] sits on the inverse surface (the
+   teal band). Every colour role re-points there, so text, lines, buttons,
+   form errors and focus rings stay readable without any component knowing
+   about bands. The percentages are design values; the home-page tests
+   measure the contrast they produce. The status colours are picked by hand,
+   like the admin dark ones: a mix of the light versions is too murky to read
+   as red, green or amber.
+--------------------------------------------------------------------------- */
+[data-surface='inverse'] {
+  --color-surface: var(--color-surface-inverse);
+  --color-surface-raised: color-mix(
+    in oklab,
+    var(--color-ink-inverse) 8%,
+    var(--color-surface-inverse)
+  );
+  --color-surface-muted: color-mix(
+    in oklab,
+    var(--color-ink-inverse) 12%,
+    var(--color-surface-inverse)
+  );
+  --color-surface-inset: color-mix(
+    in oklab,
+    var(--color-ink-inverse) 4%,
+    var(--color-surface-inverse)
+  );
+  --color-ink: var(--color-ink-inverse);
+  --color-ink-muted: color-mix(
+    in oklab,
+    var(--color-ink-inverse) 82%,
+    var(--color-surface-inverse)
+  );
+  --color-ink-subtle: color-mix(
+    in oklab,
+    var(--color-ink-inverse) 78%,
+    var(--color-surface-inverse)
+  );
+  --color-line: color-mix(in oklab, var(--color-ink-inverse) 30%, var(--color-surface-inverse));
+  --color-line-strong: color-mix(
+    in oklab,
+    var(--color-ink-inverse) 55%,
+    var(--color-surface-inverse)
+  );
+  --color-line-input: color-mix(
+    in oklab,
+    var(--color-ink-inverse) 55%,
+    var(--color-surface-inverse)
+  );
+  --color-primary: var(--color-ink-inverse);
+  --color-primary-hover: color-mix(
+    in oklab,
+    var(--color-ink-inverse) 85%,
+    var(--color-surface-inverse)
+  );
+  --color-primary-disabled: color-mix(
+    in oklab,
+    var(--color-ink-inverse) 45%,
+    var(--color-surface-inverse)
+  );
+  --color-on-primary: var(--color-surface-inverse);
+  --color-focus: var(--color-ink-inverse);
+  --color-accent: var(--color-ink-inverse);
+  --color-success: #a9d8bb;
+  --color-warning: #e6cd8f;
+  --color-danger: var(--color-danger-on-dark);
+}
+
+/* In the base layer, so a utility class on the band still wins. */
+@layer base {
+  [data-surface='inverse'] {
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+    /* Native parts of form controls (select menus, autofill) follow the band. */
+    color-scheme: dark;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Rich text — body copy written in the dashboard
+   ---------------------------------------------------------------------------
+   The CMS stores a small allowlist of tags (pkg/security/sanitize.ts). Sizes
+   and colours come from the tokens above, so each design's scale applies.
+   Emphasis is weight, not italic: the typeface is upright only, and a
+   browser-faked slant looks broken in Georgian.
+--------------------------------------------------------------------------- */
+@layer components {
+  .rich-text > * + * {
+    margin-top: 1em;
+  }
+  .rich-text > :first-child {
+    margin-top: 0;
+  }
+  .rich-text h2 {
+    margin-top: 1.5em;
+    font-size: var(--text-title);
+    line-height: var(--text-title--line-height);
+    font-weight: var(--font-weight-heading);
+  }
+  .rich-text h3,
+  .rich-text h4 {
+    margin-top: 1.25em;
+    font-size: var(--text-title-sm);
+    line-height: var(--text-title-sm--line-height);
+    font-weight: var(--font-weight-heading);
+  }
+  .rich-text ul {
+    list-style: disc;
+    padding-left: 1.25em;
+  }
+  .rich-text ol {
+    list-style: decimal;
+    padding-left: 1.25em;
+  }
+  .rich-text li + li {
+    margin-top: 0.4em;
+  }
+  .rich-text a {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .rich-text strong,
+  .rich-text b,
+  .rich-text em,
+  .rich-text i {
+    font-style: normal;
+    font-weight: 600;
+  }
+  .rich-text blockquote {
+    border-left: 2px solid var(--color-line-strong);
+    padding-left: 1em;
+    color: var(--color-ink-muted);
   }
 }
 
@@ -259,7 +505,8 @@
    Typeface files — edit only when swapping the typeface
    ---------------------------------------------------------------------------
    Noto Sans Georgian, self-hosted (SIL Open Font License 1.1, see
-   fonts/OFL.txt). Variable, so one file per script covers every weight.
+   fonts/OFL.txt). Variable in weight (100-900) and width (62.5%-100%), so
+   one file per script covers every weight and every width.
 
    The files are split by script exactly as Google serves them, each with its
    own unicode-range, so the browser downloads a file only when the page
@@ -285,6 +532,7 @@
   font-family: 'Noto Sans Georgian';
   font-style: normal;
   font-weight: 100 900;
+  font-stretch: 62.5% 100%;
   font-display: swap;
   src: url('./fonts/noto-sans-georgian-georgian.woff2') format('woff2');
   unicode-range: U+0589, U+10A0-10FF, U+1C90-1CBA, U+1CBD-1CBF, U+205A, U+2D00-2D2F, U+2E31;
@@ -295,6 +543,7 @@
   font-family: 'Noto Sans Georgian';
   font-style: normal;
   font-weight: 100 900;
+  font-stretch: 62.5% 100%;
   font-display: swap;
   src: url('./fonts/noto-sans-georgian-latin.woff2') format('woff2');
   unicode-range:
@@ -308,6 +557,7 @@
   font-family: 'Noto Sans Georgian';
   font-style: normal;
   font-weight: 100 900;
+  font-stretch: 62.5% 100%;
   font-display: swap;
   src: url('./fonts/noto-sans-georgian-latin-ext.woff2') format('woff2');
   unicode-range:

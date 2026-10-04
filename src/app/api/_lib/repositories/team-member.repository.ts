@@ -15,7 +15,12 @@ import type { DbLocale } from '@/shared/types/enums';
 import { prisma } from '@pkg/db/prisma';
 import { sanitizeRichText } from '@pkg/security/sanitize';
 
-const adminInclude = { photoMedia: mediaInclude, translations: true } as const;
+// How many articles name them as author: the delete confirmation says so.
+const adminInclude = {
+  photoMedia: mediaInclude,
+  translations: true,
+  _count: { select: { authoredInsight: true } },
+} as const;
 
 const EMPTY_TRANSLATION = { name: '', position: '', bio: '', expertise: '' };
 
@@ -26,6 +31,7 @@ type AdminRow = Awaited<
 function toAdminTeamMember(row: AdminRow): AdminTeamMember {
   return {
     id: row.id,
+    linkedCount: row._count.authoredInsight,
     slug: row.slug,
     photoMediaId: row.photoMediaId,
     photoMedia: toMediaSummary(row.photoMedia),

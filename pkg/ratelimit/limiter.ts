@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { after } from 'next/server';
+
 import { prisma } from '@pkg/db/prisma';
 import { logger, serialiseError } from '@pkg/logger';
 
@@ -48,12 +50,18 @@ export async function checkRateLimit({
     });
 
     // Sweep expired windows on roughly 1% of calls. Cheap enough to be
-    // invisible, frequent enough that the table never grows unbounded, and it
-    // avoids depending on a cron job that could quietly stop running.
+    // invisible, frequent enough that the table never grows unbounded. It runs
+    // in after(), which keeps the function alive until it finishes: a promise
+    // left dangling can be frozen mid-query once the response is sent. The
+    // daily cron prunes too, in case this never gets the chance.
     if (Math.random() < 0.01) {
-      void prisma.rateLimit
-        .deleteMany({ where: { windowStart: { lt: new Date(now - 24 * 60 * 60 * 1000) } } })
-        .catch(() => undefined);
+      after(async () => {
+        try {
+          await pruneRateLimits(now);
+        } catch (error) {
+          logger.warn('ratelimit.prune_failed', serialiseError(error));
+        }
+      });
     }
 
     return {
@@ -71,9 +79,24 @@ export async function checkRateLimit({
   }
 }
 
+/** Longer than the longest window below, so a pruned window never still counted. */
+const KEEP_WINDOWS_MS = 24 * 60 * 60 * 1000;
+
+/** Deletes windows that can no longer limit anyone; returns how many. */
+export async function pruneRateLimits(now = Date.now()): Promise<number> {
+  const { count } = await prisma.rateLimit.deleteMany({
+    where: { windowStart: { lt: new Date(now - KEEP_WINDOWS_MS) } },
+  });
+  return count;
+}
+
 /** Limits tuned for a low-traffic marketing site. */
 export const RATE_LIMITS = {
   contactForm: { limit: 5, windowSeconds: 60 * 60 },
   login: { limit: 10, windowSeconds: 15 * 60 },
+  // Per account, whatever the address: guessing one admin's password from
+  // many machines is capped too. High enough that the owner, retrying after a
+  // typo, never meets it.
+  loginAccount: { limit: 30, windowSeconds: 60 * 60 },
   upload: { limit: 60, windowSeconds: 60 * 60 },
 } as const;

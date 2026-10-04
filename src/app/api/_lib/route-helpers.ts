@@ -79,6 +79,13 @@ export function withPublic<TParams = Record<string, never>>(
 type ParseResult<T> = { ok: true; data: T } | { ok: false; response: Response };
 
 /**
+ * The largest JSON body a route reads by default: an article at its longest in
+ * both languages (2 × 200,000 characters, Georgian at three bytes each), with
+ * room to spare. Public routes pass a far smaller limit.
+ */
+const DEFAULT_MAX_BODY_BYTES = 2 * 1024 * 1024;
+
+/**
  * Read and validate a JSON body.
  *
  * Returns a discriminated result rather than throwing so the handler stays a
@@ -88,11 +95,24 @@ type ParseResult<T> = { ok: true; data: T } | { ok: false; response: Response };
 export async function readJson<TSchema extends z.ZodTypeAny>(
   request: NextRequest,
   schema: TSchema,
+  { maxBytes = DEFAULT_MAX_BODY_BYTES }: { maxBytes?: number } = {},
 ): Promise<ParseResult<z.infer<TSchema>>> {
+  const tooLarge = () => ({
+    ok: false as const,
+    response: apiFail('PAYLOAD_TOO_LARGE', 'Request body is too large'),
+  });
+
+  // Refused before reading when the size is declared, and checked again after,
+  // because a chunked body declares none.
+  const declared = Number(request.headers.get('content-length'));
+  if (Number.isFinite(declared) && declared > maxBytes) return tooLarge();
+
   let raw: unknown;
 
   try {
-    raw = await request.json();
+    const text = await request.text();
+    if (Buffer.byteLength(text) > maxBytes) return tooLarge();
+    raw = JSON.parse(text);
   } catch {
     return { ok: false, response: apiFail('BAD_REQUEST', 'Request body must be valid JSON') };
   }

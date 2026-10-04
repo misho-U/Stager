@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { ADMIN_SESSION, CREDENTIALS_PRESENT } from './admin-session';
+import { DB_WRITES_ALLOWED, DB_WRITES_SKIP_REASON } from './db-guard';
 
 /**
  * The whole point of the build: an admin edits content and the public site
@@ -11,8 +12,8 @@ import { ADMIN_SESSION, CREDENTIALS_PRESENT } from './admin-session';
  *
  *   E2E_ADMIN_EMAIL=you@stager.ge E2E_ADMIN_PASSWORD=… pnpm test:e2e
  *
- * It writes to whatever database .env.local points at, so never run it with
- * production settings. Every test starts signed in, from the session
+ * It writes to the database, so it runs only against a local one
+ * (db-guard.ts). Every test starts signed in, from the session
  * admin-session.setup.ts saved.
  */
 
@@ -21,6 +22,7 @@ test.describe('admin content flow', () => {
     !CREDENTIALS_PRESENT,
     'Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD to run the authenticated flow.',
   );
+  test.skip(!DB_WRITES_ALLOWED, DB_WRITES_SKIP_REASON);
   test.use({ storageState: ADMIN_SESSION });
 
   // The suite creates, publishes and deletes one project in order.

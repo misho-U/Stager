@@ -16,7 +16,9 @@ export type AdminSessionView = z.infer<typeof adminSessionSchema>;
 
 export const loginInputSchema = z.object({
   email: emailInput(),
-  password: z.string().min(8),
+  // Capped so a megabyte "password" is refused here rather than hashed by the
+  // provider. Never trimmed: spaces are part of a password.
+  password: z.string().min(8).max(256),
 });
 
 export type LoginInput = z.infer<typeof loginInputSchema>;

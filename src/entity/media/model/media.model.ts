@@ -59,14 +59,20 @@ export type MediaUpdateInput = z.infer<typeof mediaUpdateInputSchema>;
  * pathname come back from Blob itself and are recorded server-side, so this
  * payload cannot be used to point a Media row at an arbitrary host.
  */
+/**
+ * The blur placeholder is inlined into every page that shows the image, so it
+ * stays small, and it must be an image: it is used as an image source.
+ */
+const BLUR_DATA_URL = /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
+
 export const mediaRegisterInputSchema = z.object({
-  url: z.string().url(),
+  url: z.url({ protocol: /^https$/ }),
   pathname: z.string().min(1),
   contentType: z.string().min(1),
-  size: z.number().int().positive(),
-  width: z.number().int().positive().nullish(),
-  height: z.number().int().positive().nullish(),
-  blurDataUrl: z.string().nullish(),
+  size: z.number().int().positive().max(1_000_000_000),
+  width: z.number().int().positive().max(100_000).nullish(),
+  height: z.number().int().positive().max(100_000).nullish(),
+  blurDataUrl: z.string().max(4096).regex(BLUR_DATA_URL).nullish(),
   alt: z.string().trim().max(300).default(''),
 });
 

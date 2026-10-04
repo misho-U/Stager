@@ -18,9 +18,48 @@
 --------------------------------------------------------------------------- */
 @import '../shared/brandbook/brandbook.css';
 
+/* TEMPORARY — the home page design comparison. Each file only overrides
+   brandbook tokens, and adds the CSS only that design draws, inside its own
+   [data-home-variant] scope. Removed with the variants once one is chosen. */
+@import '../shared/brandbook/variants/open-kitchen.css';
+@import '../shared/brandbook/variants/chefs-table.css';
+
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+  }
+
+  /* In-page links ("start a project" → the inquiry form) glide rather than
+     jump, unless the visitor has asked for less motion. Where a design runs
+     Lenis, Lenis does the gliding and the browser's must stand down, or the
+     two fight over every frame. */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  html.lenis {
+    scroll-behavior: auto;
+  }
+
+  /* Lenis's own rules (lenis/dist/lenis.css), which it needs to measure and
+     to stop the page. */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+
+  .lenis:not(.lenis-autoToggle).lenis-stopped {
+    overflow: clip;
+  }
+
+  .lenis [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+
+  .lenis.lenis-smooth iframe {
+    pointer-events: none;
   }
 
   body {
@@ -33,10 +72,29 @@
     text-rendering: optimizeLegibility;
   }
 
+  /* Decoration (a glow, a perforation, a drawn line) never takes a click
+     meant for what lies under it. */
+  [data-decorative] {
+    pointer-events: none;
+  }
+
+  /* A modal dialog is open (a registration drawer, a video): the page
+     underneath stays put. */
+  :root:has(dialog:modal) {
+    overflow: hidden;
+  }
+
   /* Visible focus for keyboard users, suppressed for mouse clicks. */
   :focus-visible {
     outline: 2px solid var(--color-focus);
     outline-offset: 2px;
+  }
+
+  /* Where an in-page jump lands: <main> after a skip link, a section after a
+     menu link (focusable by script only, tabindex -1). The reading position
+     moves there; a ring around the whole of it would only look like a fault. */
+  [tabindex='-1']:focus {
+    outline: none;
   }
 
   /* The brief asks for minimal animation. Honour the OS setting completely. */
@@ -48,6 +106,115 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* How wide the two headline levels are set (brandbook: --font-stretch-*).
+   Tailwind has no theme namespace for font-stretch, so these name the tokens. */
+@utility stretch-hero {
+  font-stretch: var(--font-stretch-hero);
+}
+
+@utility stretch-heading {
+  font-stretch: var(--font-stretch-heading);
+}
+
+/* Fine diagonal lines: the mark of a slot reserved for a photo that has not
+   been uploaded yet, drawn in the design's own line colour. */
+@utility hatch {
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--color-line) 0 1px,
+    transparent 1px calc(var(--spacing) * 3)
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   Motion hand-over — the public designs (src/shared/lib/motion/use-motion.ts)
+   ---------------------------------------------------------------------------
+   `data-enter` marks an element a design animates in on load. It starts
+   hidden only where that can end well: the browser runs scripts and motion
+   is allowed. When the design's script takes over it sets
+   `data-motion="on"` on the design's wrapper and holds the starting state
+   itself. If the script is late, the fallback shows everything after 1s,
+   and the script, finding it waited past ENTRANCE_DEADLINE_MS
+   (use-motion.ts), skips the entrance instead of hiding it again: on a slow
+   phone the hero text is the page's Largest Contentful Paint, and it used
+   to wait seconds for the script.
+--------------------------------------------------------------------------- */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  [data-home-variant]:not([data-motion='on']) [data-enter] {
+    opacity: 0;
+    animation: motion-fallback-in var(--duration-base) ease-out 1s forwards;
+  }
+}
+
+@keyframes motion-fallback-in {
+  to {
+    opacity: 1;
+  }
+}
+
+@layer components {
+  /* The course registration drawer (widgets/course-registration). It slides
+     in from the right, or rises from the bottom on a phone; @starting-style
+     is the frame it opens from, so reduced motion (globals' 0.01ms
+     transitions) simply shows it. Colours come from the design it opens in. */
+  .registration-dialog {
+    margin: 0 0 0 auto;
+    width: 100%;
+    max-width: var(--drawer-width);
+    height: 100dvh;
+    max-height: 100dvh;
+    padding: 0;
+    border: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    box-shadow: var(--shadow-drawer);
+    translate: 0 0;
+    transition: translate var(--duration-drawer) var(--ease-brand);
+
+    &::backdrop {
+      background-color: var(--color-backdrop);
+    }
+
+    @starting-style {
+      &[open] {
+        translate: 100% 0;
+      }
+    }
+
+    @variant max-sm {
+      margin: auto 0 0;
+      max-width: none;
+      height: auto;
+      max-height: var(--drawer-sheet-height);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+
+      @starting-style {
+        &[open] {
+          translate: 0 100%;
+        }
+      }
+    }
+  }
+
+  /* The title a video's poster carries (widgets/video-player, VideoCaption)
+     gives way to the picture: with a mouse it recedes once the pointer has
+     rested on the frame a moment, or focus lands inside, and is back the
+     moment it leaves. A touch screen has no hover and keeps it; a screen
+     reader reads it either way. The design draws the text and its scrim. */
+  .video-caption {
+    transition:
+      opacity var(--duration-base) var(--ease-brand),
+      translate var(--duration-base) var(--ease-brand);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    [data-video-card]:is(:hover, :focus-within) .video-caption {
+      opacity: 0;
+      translate: 0 calc(var(--spacing) * 3);
+      transition-delay: var(--duration-caption-hold);
     }
   }
 }

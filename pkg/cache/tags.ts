@@ -41,6 +41,9 @@ export function detailTag(entity: ContentEntity, key: string): string {
  */
 export const LAYOUT_TAG = 'layout';
 
+/** Content that shows uploaded images: covers, galleries, photos, section media. */
+const MEDIA_EMBEDDERS = ['project', 'service', 'insight', 'teamMember', 'page', 'course'] as const;
+
 /**
  * Tags to invalidate when `entity` changes.
  *
@@ -68,6 +71,12 @@ export function tagsToRevalidate(entity: ContentEntity, key?: string | null): st
   // A course carries its category's name and its service's id, and deleting
   // either clears it from the course.
   if (entity === 'courseCategory' || entity === 'service') tags.push(collectionTag('course'));
+
+  // An image appears, with its alt text, wherever it is used: editing or
+  // deleting one refreshes every kind of content that embeds images.
+  if (entity === 'media') {
+    for (const embedding of MEDIA_EMBEDDERS) tags.push(collectionTag(embedding));
+  }
 
   return tags;
 }

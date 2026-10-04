@@ -59,11 +59,14 @@ async function handleAdmin(request: NextRequest) {
 
   // Must run against this exact response object — it writes the refreshed auth
   // cookies onto it.
-  const user = await refreshSupabaseSession(request, response);
+  const { user, unreachable } = await refreshSupabaseSession(request, response);
 
   const isLoginPage = pathname === LOGIN_PATH;
 
-  if (!user && !isLoginPage) {
+  // While Supabase cannot be asked, nobody is sent to the login page, which
+  // could not sign them in either: the page renders, and the dashboard's own
+  // check (Node runtime, the real boundary) reports the outage.
+  if (!user && !isLoginPage && !unreachable) {
     const loginUrl = new URL(LOGIN_PATH, request.url);
     // Send them back where they were heading once they are in. Only the path
     // and query are carried over, so this cannot become an open redirect.
@@ -92,8 +95,13 @@ async function handleAdmin(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Everything except Next's own assets and static files. Running middleware
-    // on those would add latency to every image and script for no benefit.
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)',
+    // Everything except Next's own assets and the few files served by name.
+    // Running middleware on those would add latency for no benefit. Not "any
+    // path ending in .png": that also let /admin/projects/x.png render a
+    // dashboard page with no CSP, and this app serves no such files itself
+    // (images come from the blob store, fonts from _next/static).
+    // /monitoring is Sentry's tunnel (next.config.ts): browser error reports on
+    // their way out, which need neither a locale nor a session.
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|monitoring).*)',
   ],
 };

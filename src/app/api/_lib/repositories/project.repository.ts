@@ -76,13 +76,29 @@ function toAdminProject(row: AdminRow): AdminProject {
 // Admin
 // ---------------------------------------------------------------------------
 
+/**
+ * The list leaves the bodies out: they are the long part, in both languages,
+ * and a list of them all would in time pass Vercel's 4.5 MB response limit.
+ * Nothing on the list shows them; the edit form loads its record whole.
+ */
 export async function listAdminProjects() {
   const rows = await prisma.project.findMany({
-    include: adminInclude,
+    include: {
+      ...adminInclude,
+      translations: { include: { ogMedia: mediaInclude }, omit: { body: true } },
+    },
     orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
   });
 
-  return { items: rows.map(toAdminProject), total: rows.length };
+  return {
+    items: rows.map((row) =>
+      toAdminProject({
+        ...row,
+        translations: row.translations.map((translation) => ({ ...translation, body: '' })),
+      }),
+    ),
+    total: rows.length,
+  };
 }
 
 export async function getAdminProject(id: string) {
@@ -237,7 +253,12 @@ const publicInclude = (locale: DbLocale) =>
     coverMedia: mediaInclude,
     translations: { where: { locale }, include: { ogMedia: mediaInclude } },
     gallery: { orderBy: { order: 'asc' }, include: { media: mediaInclude } },
-    services: { include: { service: { include: { translations: { where: { locale } } } } } },
+    // Only published services: a draft's title and slug must not reach the
+    // site through a project that links to it.
+    services: {
+      where: { service: { status: 'PUBLISHED' } },
+      include: { service: { include: { translations: { where: { locale } } } } },
+    },
   }) as const;
 
 export async function listPublicProjects(locale: DbLocale, limit: number, offset: number) {

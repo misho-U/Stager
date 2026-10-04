@@ -1,11 +1,10 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import { Controller } from 'react-hook-form';
 
 import { useAdminProjectForm } from '@/modules/admin-project-form/admin-project-form.service';
-import { Button } from '@/shared/components/button';
+import { Button, ButtonLink } from '@/shared/components/button';
 import {
   ContentLocaleProvider,
   ContentLocaleToggle,
@@ -13,11 +12,12 @@ import {
 } from '@/shared/components/content-locale';
 import { CheckboxField, SelectField, TextAreaField, TextField } from '@/shared/components/field';
 import { PageHeader } from '@/shared/components/page-header';
-import { ErrorNotice, Panel } from '@/shared/components/panel';
+import { ErrorNotice, LoadFailed, Panel } from '@/shared/components/panel';
 import { SeoFields } from '@/shared/components/seo-fields';
 import { toOptionalNumber } from '@/shared/lib/form-values';
 import { useStatusOptions } from '@/shared/lib/use-enum-options';
 import type { DbLocale } from '@/shared/types/enums';
+import { useUnsavedChangesGuard } from '@/shared/lib/use-unsaved-changes-guard';
 import { MediaGalleryPicker } from '@/widgets/media-gallery-picker/media-gallery-picker.module';
 import { MediaPicker } from '@/widgets/media-picker/media-picker.module';
 
@@ -30,17 +30,21 @@ export function AdminProjectFormModule({ projectId }: { projectId?: string }) {
     isEdit,
     isLoading,
     loadError,
+    retry,
     isSubmitting,
     submitError,
     services,
     slugAutofill,
   } = useAdminProjectForm({ projectId });
 
-  const { errors, submitCount } = form.formState;
+  const { errors, submitCount, isDirty } = form.formState;
+  useUnsavedChangesGuard(isDirty, t('common.unsavedChanges'));
 
   if (isLoading) {
     return <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>;
   }
+  // Its blank fields would be saved over the record: no form until it loads.
+  if (loadError) return <LoadFailed message={loadError} onRetry={retry} />;
 
   return (
     <ContentLocaleProvider errors={errors} submitCount={submitCount}>
@@ -50,9 +54,9 @@ export function AdminProjectFormModule({ projectId }: { projectId?: string }) {
           description={t('projects.form.description')}
           actions={
             <>
-              <Link href="/admin/projects">
-                <Button variant="ghost">{t('common.cancel')}</Button>
-              </Link>
+              <ButtonLink href="/admin/projects" variant="ghost">
+                {t('common.cancel')}
+              </ButtonLink>
               <Button type="submit" loading={isSubmitting}>
                 {isSubmitting ? t('common.saving') : t('common.save')}
               </Button>
@@ -62,7 +66,6 @@ export function AdminProjectFormModule({ projectId }: { projectId?: string }) {
 
         <ContentLocaleToggle />
 
-        {loadError ? <ErrorNotice message={loadError} /> : null}
         {submitError ? <ErrorNotice message={submitError} /> : null}
 
         <Panel title={t('fields.contentPanel')} description={t('fields.bothLanguages')}>
@@ -235,9 +238,9 @@ export function AdminProjectFormModule({ projectId }: { projectId?: string }) {
         </Panel>
 
         <div className="flex justify-end gap-2">
-          <Link href="/admin/projects">
-            <Button variant="ghost">{t('common.cancel')}</Button>
-          </Link>
+          <ButtonLink href="/admin/projects" variant="ghost">
+            {t('common.cancel')}
+          </ButtonLink>
           <Button type="submit" loading={isSubmitting}>
             {isSubmitting ? t('common.saving') : t('projects.form.submit')}
           </Button>

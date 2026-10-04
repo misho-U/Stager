@@ -76,7 +76,9 @@ export function toFieldErrors(error: unknown, t: Translate): Record<string, stri
 
   // A clash on a unique field: today only ever the slug.
   if (error.code === 'CONFLICT' && error.fields) {
-    return Object.fromEntries(Object.keys(error.fields).map((field) => [field, t('errors.slugTaken')]));
+    return Object.fromEntries(
+      Object.keys(error.fields).map((field) => [field, t('errors.slugTaken')]),
+    );
   }
 
   // The server's checks are the form's own schema, so word them the same way.
@@ -100,6 +102,8 @@ export function useFormErrors(context: ErrorContext = 'dashboard') {
     () => ({
       message: (error: unknown) => toFormErrorMessage(error, t, context),
       fields: (error: unknown) => toFieldErrors(error, t),
+      /** The form's own checks stopped a save: said above the form. */
+      invalid: () => t('errors.validationFailed'),
     }),
     [t, context],
   );

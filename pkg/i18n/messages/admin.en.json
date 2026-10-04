@@ -24,7 +24,8 @@
       "inquiries": "Inquiries"
     },
     "signOut": "Sign out",
-    "viewSite": "View site"
+    "viewSite": "View site",
+    "unread": "{count} new"
   },
   "theme": {
     "label": "Colour theme",
@@ -50,9 +51,12 @@
     "confirm": "Confirm",
     "remove": "Remove",
     "loading": "Loading…",
+    "retry": "Try again",
+    "unsavedChanges": "You have unsaved changes. Leave without saving?",
     "yes": "Yes",
     "close": "Close",
-    "no": "No"
+    "no": "No",
+    "skipToContent": "Skip to content"
   },
   "status": {
     "DRAFT": "draft",
@@ -68,6 +72,12 @@
     "submit": "Sign in",
     "submitting": "Signing in…",
     "restricted": "Access is limited to approved accounts."
+  },
+  "noAccess": {
+    "title": "No access",
+    "body": "You are signed in as {email}, but this account may not use the dashboard. Sign out, then sign in with an account that may.",
+    "bodyNoEmail": "This account may not use the dashboard. Sign out, then sign in with an account that may.",
+    "signOut": "Sign out"
   },
   "seo": {
     "caption": "Search & social",
@@ -91,6 +101,7 @@
     "url": "Enter a full web address, starting with https://",
     "slug": "Use lowercase letters, numbers and hyphens only (e.g. kitchen-operations).",
     "youtube": "Must be a youtube.com or youtu.be link.",
+    "link": "Use a page path like /ka/projects, a section like #inquiry, or a full https://, mailto: or tel: link.",
     "seatsLeftOverTotal": "Seats left can't be more than the seats in total.",
     "invalid": "Check this value."
   },
@@ -110,12 +121,13 @@
     "reasons": {
       "INVALID_CREDENTIALS": "Email or password is incorrect. Run `pnpm setup:check` to check the account, or `pnpm admin:set-password` to set a known one.",
       "EMAIL_NOT_CONFIRMED": "This account exists but its email is not confirmed. Tick \"Auto Confirm User\" when creating it, or run `pnpm admin:set-password`.",
-      "AUTH_UNREACHABLE": "Could not reach the authentication service. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local.",
+      "AUTH_UNREACHABLE": "Could not reach the sign-in service. Try again in a few minutes; if it keeps happening, contact whoever maintains the site.",
       "AUTH_MISCONFIGURED": "The authentication service rejected the request path, which means NEXT_PUBLIC_SUPABASE_URL is wrong. It must be the bare origin, https://PROJECT-REF.supabase.co, with no /rest/v1 or other path. Run `pnpm setup:check`.",
       "NOT_ALLOWED": "This account is not permitted to use the dashboard.",
       "RATE_LIMITED": "Too many sign-in attempts. Please try again later.",
       "PROVIDER_RATE_LIMITED": "Supabase is throttling sign-in attempts. Wait a minute.",
-      "MEDIA_IN_USE": "This image is still used by other content. Remove it there first, then delete it here."
+      "MEDIA_IN_USE": "This image is still used by other content. Remove it there first, then delete it here.",
+      "STALE_REFERENCE": "Something this links to no longer exists (deleted meanwhile, perhaps). Reload the page and choose again."
     },
     "uploadStalled": "The upload stopped making progress, so it was cancelled. Check the connection and try again. If it keeps happening, uploads are being blocked: contact whoever maintains the site.",
     "fileTooBig": "Images must be under {max} MB."
@@ -124,6 +136,7 @@
     "title": "Dashboard",
     "greeting": "Hello, {name}",
     "intro": "Edits here appear on the public site as soon as you save.",
+    "countsFailed": "The counts could not be loaded. Every other screen works as usual; try refreshing the page.",
     "newInquiries": "{count, plural, one {# new inquiry waiting} other {# new inquiries waiting}}",
     "openInbox": "Open the inbox →",
     "shortcutsTitle": "Common tasks",
@@ -280,7 +293,8 @@
     "columns": {
       "nameKa": "Name (KA)",
       "nameEn": "Name (EN)"
-    }
+    },
+    "deleteLinked": "{count, plural, one {# article uses this category and will be left without one.} other {# articles use this category and will be left without one.}}"
   },
   "services": {
     "title": "Services",
@@ -302,7 +316,8 @@
         "hint": "Matches an icon component in the codebase. Leave blank for none."
       },
       "submit": "Save service"
-    }
+    },
+    "deleteLinked": "{count, plural, one {# project or course links to this service and will lose the link.} other {# projects and courses link to this service and will lose the link.}}"
   },
   "courses": {
     "title": "Courses",
@@ -438,7 +453,8 @@
       "linkedin": "LinkedIn URL",
       "photo": "Photo",
       "submit": "Save member"
-    }
+    },
+    "deleteLinked": "{count, plural, one {# article names this person as its author and will show no author.} other {# articles name this person as their author and will show no author.}}"
   },
   "units": {
     "bytes": "{size} B",
@@ -577,6 +593,13 @@
       "label": "Inquiry inbox",
       "hint": "Where contact-form messages are sent. Leave blank to use the address configured in the environment."
     },
+    "errorReporting": {
+      "title": "Error reporting",
+      "description": "Errors on the site and in the dashboard are sent to Sentry, where whoever maintains the site sees them. Send a test error to check that it works.",
+      "send": "Send a test error",
+      "sent": "Sent. It should appear in Sentry within a minute.",
+      "off": "Error reporting is off: no Sentry address is set for this site. Whoever maintains the site can turn it on."
+    },
     "submit": "Save settings"
   },
   "inquiries": {
@@ -591,7 +614,16 @@
     "notNotified": "The notification email could not be sent for this one — reply directly.",
     "markRead": "Mark read",
     "archive": "Archive",
-    "restore": "Restore"
+    "restore": "Restore",
+    "views": {
+      "label": "Show",
+      "inbox": "Inbox",
+      "archived": "Archived"
+    },
+    "unread": "{count} new",
+    "showingNewest": "Showing the newest {shown} of {total}.",
+    "archivedEmptyTitle": "Nothing archived",
+    "archivedEmptyDescription": "Archive moves an inquiry here, out of the inbox; Restore brings it back."
   },
   "email": {
     "subject": "New inquiry — {name}",

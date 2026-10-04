@@ -33,7 +33,21 @@ export const POST = withAdmin(async ({ request, session }) => {
     });
   }
 
-  const body = (await request.json()) as HandleUploadBody;
+  let body: HandleUploadBody;
+  try {
+    body = (await request.json()) as HandleUploadBody;
+  } catch {
+    return apiFail('BAD_REQUEST', 'Request body must be valid JSON');
+  }
+
+  // Uploads go under media/, where the library and its clean-up look. The
+  // browser asks for the path, so the path is checked here, not only there.
+  if (
+    body.type === 'blob.generate-client-token' &&
+    !body.payload.pathname.startsWith(`${BLOB_PATH_PREFIX}/`)
+  ) {
+    return apiFail('BAD_REQUEST', `Uploads must go under ${BLOB_PATH_PREFIX}/`);
+  }
 
   const result = await handleUpload({
     body,
@@ -62,6 +76,3 @@ export const POST = withAdmin(async ({ request, session }) => {
 
   return apiOk(result);
 });
-
-/** Exported for the client uploader so both sides agree on the prefix. */
-export const UPLOAD_PATH_PREFIX = BLOB_PATH_PREFIX;

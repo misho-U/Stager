@@ -3,7 +3,7 @@ import 'server-only';
 import { NextResponse } from 'next/server';
 import type { ZodError } from 'zod';
 
-import { ForbiddenError, UnauthenticatedError } from '@pkg/auth/errors';
+import { AuthUnavailableError, ForbiddenError, UnauthenticatedError } from '@pkg/auth/errors';
 import type {
   ApiErrorBody,
   ApiErrorCode,
@@ -11,7 +11,9 @@ import type {
   ApiValidationIssue,
 } from '@pkg/http/api-error';
 import { toValidationIssue } from '@pkg/http/validation-issue';
+import { describeDbError } from '@pkg/db/errors';
 import { logger, serialiseError } from '@pkg/logger';
+import { reportServerError } from '@pkg/monitoring/server';
 
 const STATUS_BY_CODE: Record<ApiErrorCode, number> = {
   BAD_REQUEST: 400,
@@ -24,6 +26,7 @@ const STATUS_BY_CODE: Record<ApiErrorCode, number> = {
   PAYLOAD_TOO_LARGE: 413,
   UNSUPPORTED_MEDIA_TYPE: 415,
   INTERNAL: 500,
+  UNAVAILABLE: 503,
 };
 
 export function apiOk<T>(data: T, init?: ResponseInit) {
@@ -99,6 +102,37 @@ export function handleRouteError(error: unknown, context: Record<string, unknown
     return apiFail('FORBIDDEN', error.message);
   }
 
-  logger.error('api.unhandled_error', { ...context, ...serialiseError(error) });
+  // Logged where it was found (getSupabaseUser). A 401 here would send the
+  // dashboard to the login page, which cannot sign anyone in either.
+  if (error instanceof AuthUnavailableError) {
+    return apiFail('UNAVAILABLE', error.message, { reason: 'AUTH_UNREACHABLE' });
+  }
+
+  // The database refusing a write because the data changed under it, or a
+  // value it cannot hold, is an answer for the caller, not a crash. Each used
+  // to come back as a bare 500.
+  const db = describeDbError(error);
+  const dbAnswer =
+    db?.code === 'P2025'
+      ? apiFail('NOT_FOUND', 'This item no longer exists')
+      : db?.code === 'P2003'
+        ? apiFail('CONFLICT', 'Something this links to no longer exists', {
+            reason: 'STALE_REFERENCE',
+          })
+        : db?.code === 'P2002'
+          ? apiFail('CONFLICT', 'This clashes with something that already exists')
+          : db?.code === 'P2020'
+            ? apiFail('VALIDATION_FAILED', 'A value is out of range')
+            : null;
+
+  if (db && dbAnswer) {
+    logger.warn('api.database_refused', { ...context, code: db.code, constraint: db.constraint });
+    return dbAnswer;
+  }
+
+  // Reported as the error itself, so Sentry groups it by its stack, not under
+  // one "unhandled error" heading.
+  logger.error('api.unhandled_error', { ...context, ...serialiseError(error) }, { report: false });
+  reportServerError(error, context);
   return apiFail('INTERNAL', 'Something went wrong');
 }

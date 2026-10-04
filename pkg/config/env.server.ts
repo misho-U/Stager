@@ -50,6 +50,14 @@ const serverEnvSchema = z.object({
   DATABASE_URL: postgresUrl('DATABASE_URL'),
   DIRECT_URL: postgresUrl('DIRECT_URL'),
 
+  // TLS to the database (pkg/db/prisma.ts). Supabase's CA certificate, from
+  // Database → Settings → SSL Configuration: with it the server's certificate
+  // is verified as well as the link encrypted. Optional; a pasted PEM may use
+  // literal "\n" for its line breaks.
+  DATABASE_SSL_CA: z.preprocess(blankAsUnset, z.string().optional()),
+  // `off` only for a remote database that refuses TLS. Nothing here needs it.
+  DATABASE_SSL: z.preprocess(blankAsUnset, z.enum(['on', 'off']).optional()),
+
   // Supabase privileged key. Never expose.
   //
   // Optional, because the DEPLOYED APP NEVER READS IT. Grep says so: the only
@@ -109,6 +117,15 @@ const serverEnvSchema = z.object({
   // guarantee the probe can never be switched on for the live site.
   VERCEL: z.string().optional(),
 
+  // Vercel sends it to /api/cron/daily as `Authorization: Bearer …`; any long
+  // random string. Optional, and any value is accepted (a rule that fails at
+  // build would take the site down): without it the daily job refuses to run.
+  CRON_SECRET: z.preprocess(blankAsUnset, z.string().optional()),
+
+  // Set by CI runners (GitHub Actions sets CI=true). Lets the probe run under
+  // `pnpm start` in CI, where NODE_ENV is production, and nowhere else that is.
+  CI: z.preprocess(blankAsUnset, z.string().optional()),
+
   // Set by Vercel: production, preview or development. Read only to tell a
   // preview apart (pkg/config/inquiry-delivery.ts), so any value is accepted.
   VERCEL_ENV: z.preprocess(blankAsUnset, z.string().optional()),
@@ -144,10 +161,15 @@ export const isDevelopment = serverEnv.NODE_ENV === 'development';
  *
  * Keying the second gate on VERCEL rather than NODE_ENV draws the line where
  * the risk actually is: the deployed site can never turn this on, however its
- * environment is configured.
+ * environment is configured. A third closes the one gap left, a production
+ * server somewhere else: there it runs only in CI.
  */
 export const isCacheProbeEnabled =
-  serverEnv.VERCEL === undefined && serverEnv.ENABLE_CACHE_PROBE === '1';
+  serverEnv.VERCEL === undefined &&
+  serverEnv.ENABLE_CACHE_PROBE === '1' &&
+  // And never a production server outside CI: a self-hosted `next start` with
+  // the flag left on would otherwise offer anyone an unauthenticated purge.
+  (!isProduction || serverEnv.CI !== undefined);
 
 /** Whether this deployment stores and emails contact submissions. */
 export const deliversInquiriesHere = deliversInquiries({

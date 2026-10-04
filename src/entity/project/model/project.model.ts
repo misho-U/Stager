@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { mediaSummarySchema } from '@/entity/media/model/media.model';
 import {
   bothLocales,
+  idList,
   isoDateTime,
   listResponseSchema,
   mediaIdSchema,
@@ -101,10 +102,10 @@ export const projectInputSchema = z.object({
   year: z.number().int().min(1900).max(2200).nullish(),
   status: contentStatusSchema.default('DRAFT'),
   featured: z.boolean().default(false),
-  order: z.number().int().min(0).default(0),
+  order: z.number().int().min(0).max(100_000).default(0),
   translations: bothLocales(projectTranslationInputSchema),
-  serviceIds: z.array(z.string().min(1)).default([]),
-  galleryMediaIds: z.array(z.string().min(1)).default([]),
+  serviceIds: idList().default([]),
+  galleryMediaIds: idList().default([]),
 });
 
 /** What the API receives and the repository writes (defaults applied). */

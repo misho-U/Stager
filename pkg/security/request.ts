@@ -20,6 +20,18 @@ export function hashIp(ip: string | null): string | null {
   return createHash('sha256').update(`${serverEnv.IP_HASH_SALT}:${ip}`).digest('hex');
 }
 
+/**
+ * Salted hash of an identifier such as an email address, for rate-limit keys
+ * and log lines: the same person maps to the same value, and the value says
+ * nothing about who that is.
+ */
+export function hashIdentifier(value: string): string {
+  return createHash('sha256')
+    .update(`${serverEnv.IP_HASH_SALT}:id:${value.trim().toLowerCase()}`)
+    .digest('hex')
+    .slice(0, 32);
+}
+
 /** Best-effort client IP from the proxy headers Vercel sets. */
 export function getClientIp(request: Request): string | null {
   const forwardedFor = request.headers.get('x-forwarded-for');

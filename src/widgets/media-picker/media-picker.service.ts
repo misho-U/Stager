@@ -7,7 +7,7 @@ import { useState } from 'react';
 
 import { mediaListQuery, useRegisterMedia } from '@/entity/media/api/media.query';
 import { useFormErrors } from '@/shared/lib/form-errors';
-import { readImageMetadata } from '@/widgets/media-picker/media-picker.utils';
+import { prepareImage } from '@/widgets/media-picker/media-picker.utils';
 import {
   BLOB_PATH_PREFIX,
   isAllowedImageType,
@@ -41,7 +41,7 @@ class UploadStalledError extends Error {}
 export function useMediaPicker() {
   const t = useTranslations('admin.errors');
   const formErrors = useFormErrors();
-  const { data, isLoading, error } = useQuery(mediaListQuery());
+  const { data, isLoading, error, refetch } = useQuery(mediaListQuery());
   const registerMedia = useRegisterMedia();
 
   const [isUploading, setIsUploading] = useState(false);
@@ -57,17 +57,12 @@ export function useMediaPicker() {
    * row is created in a second step rather than in a Blob completion webhook
    * (Vercel's callback carries no admin session, so it could never pass).
    */
-  const uploadFile = async (file: File, alt: string) => {
+  const uploadFile = async (picked: File, alt: string) => {
     setUploadError(null);
 
     // Checked again server-side; this is just to fail fast with a clear message.
-    if (!isAllowedImageType(file.type)) {
+    if (!isAllowedImageType(picked.type)) {
       setUploadError(t('unsupportedType'));
-      return null;
-    }
-
-    if (file.size > MAX_UPLOAD_BYTES) {
-      setUploadError(t('fileTooBig', { max: Math.floor(MAX_UPLOAD_BYTES / (1024 * 1024)) }));
       return null;
     }
 
@@ -95,7 +90,14 @@ export function useMediaPicker() {
     };
 
     try {
-      const metadata = await readImageMetadata(file);
+      // A smaller copy where one helps (see prepareImage), so the size limit
+      // applies to what is actually sent: a large camera photo now fits.
+      const { file, ...metadata } = await prepareImage(picked);
+
+      if (file.size > MAX_UPLOAD_BYTES) {
+        setUploadError(t('fileTooBig', { max: Math.floor(MAX_UPLOAD_BYTES / (1024 * 1024)) }));
+        return null;
+      }
 
       rearmWatchdog();
       const blob = await Promise.race([
@@ -142,7 +144,9 @@ export function useMediaPicker() {
   return {
     items: data?.items ?? [],
     isLoading,
-    loadError: error ? formErrors.message(error) : null,
+    // Only while nothing has loaded; a failed refresh keeps what is on screen.
+    loadError: error && !data ? formErrors.message(error) : null,
+    retry: () => void refetch(),
     uploadFile,
     isUploading,
     /** 0–100 while an upload is running, otherwise null. */

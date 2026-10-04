@@ -10,6 +10,8 @@ export const API_ERROR_CODES = [
   'PAYLOAD_TOO_LARGE',
   'UNSUPPORTED_MEDIA_TYPE',
   'INTERNAL',
+  // Something this depends on cannot be reached; trying again later can work.
+  'UNAVAILABLE',
 ] as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
@@ -32,6 +34,9 @@ export const API_ERROR_REASONS = [
   // A contact submission on a deployment that does not deliver them (a
   // preview, the dev server): the form says nothing was sent, and why.
   'DELIVERY_OFF',
+  // A save that names something deleted meanwhile (a category, an author, an
+  // image): reload and choose again.
+  'STALE_REFERENCE',
 ] as const;
 
 export type ApiErrorReason = (typeof API_ERROR_REASONS)[number];

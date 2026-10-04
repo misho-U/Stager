@@ -9,7 +9,7 @@ import { ConfirmButton } from '@/shared/components/confirm-button';
 import { DataTable, type Column } from '@/shared/components/data-table';
 import { CheckboxField, SelectField, TextField } from '@/shared/components/field';
 import { PageHeader } from '@/shared/components/page-header';
-import { ErrorNotice, Panel } from '@/shared/components/panel';
+import { ErrorNotice, LoadFailed, Panel } from '@/shared/components/panel';
 import { useSocialPlatformOptions } from '@/shared/lib/use-enum-options';
 
 export function AdminSocialLinksModule() {
@@ -19,6 +19,7 @@ export function AdminSocialLinksModule() {
     links,
     isLoading,
     loadError,
+    retry,
     form,
     onSubmit,
     editingId,
@@ -39,7 +40,7 @@ export function AdminSocialLinksModule() {
       key: 'platform',
       header: t('socialLinks.columns.platform'),
       render: (link) => (
-        <span className="font-medium text-ink">{t(`platforms.${link.platform}`)}</span>
+        <span className="text-ink font-medium">{t(`platforms.${link.platform}`)}</span>
       ),
     },
     {
@@ -89,8 +90,6 @@ export function AdminSocialLinksModule() {
   return (
     <>
       <PageHeader title={t('socialLinks.title')} description={t('socialLinks.description')} />
-
-      {loadError ? <ErrorNotice message={loadError} /> : null}
 
       <Panel
         title={editingId ? t('socialLinks.editTitle') : t('socialLinks.addTitle')}
@@ -146,7 +145,9 @@ export function AdminSocialLinksModule() {
       </Panel>
 
       <Panel title={t('socialLinks.allTitle')}>
-        {isLoading ? (
+        {loadError ? (
+          <LoadFailed message={loadError} onRetry={retry} />
+        ) : isLoading ? (
           <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
         ) : (
           <DataTable

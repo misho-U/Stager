@@ -1,11 +1,10 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import { Controller } from 'react-hook-form';
 
 import { useAdminPageEditor } from '@/modules/admin-page-editor/admin-page-editor.service';
-import { Button } from '@/shared/components/button';
+import { Button, ButtonLink } from '@/shared/components/button';
 import {
   ContentLocaleProvider,
   ContentLocaleToggle,
@@ -13,9 +12,10 @@ import {
 } from '@/shared/components/content-locale';
 import { CheckboxField, TextAreaField, TextField } from '@/shared/components/field';
 import { PageHeader } from '@/shared/components/page-header';
-import { ErrorNotice, Panel, SuccessNotice } from '@/shared/components/panel';
+import { ErrorNotice, LoadFailed, Panel, SuccessNotice } from '@/shared/components/panel';
 import { SeoFields } from '@/shared/components/seo-fields';
 import type { DbLocale, PageKey } from '@/shared/types/enums';
+import { useUnsavedChangesGuard } from '@/shared/lib/use-unsaved-changes-guard';
 import { MediaPicker } from '@/widgets/media-picker/media-picker.module';
 
 /** Turns a stored section key into a readable heading: "why-stager" → "Why stager". */
@@ -26,12 +26,24 @@ function humanise(key: string): string {
 
 export function AdminPageEditorModule({ pageKey }: { pageKey: PageKey }) {
   const t = useTranslations('admin');
-  const { form, onSubmit, sections, isLoading, loadError, isSubmitting, submitError, isSaved } =
-    useAdminPageEditor(pageKey);
+  const {
+    form,
+    onSubmit,
+    sections,
+    isLoading,
+    loadError,
+    retry,
+    isSubmitting,
+    submitError,
+    isSaved,
+  } = useAdminPageEditor(pageKey);
 
-  const { errors, submitCount } = form.formState;
+  const { errors, submitCount, isDirty } = form.formState;
+  useUnsavedChangesGuard(isDirty, t('common.unsavedChanges'));
 
   if (isLoading) return <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>;
+  // Its blank fields would be saved over the record: no form until it loads.
+  if (loadError) return <LoadFailed message={loadError} onRetry={retry} />;
 
   return (
     <ContentLocaleProvider errors={errors} submitCount={submitCount}>
@@ -41,9 +53,9 @@ export function AdminPageEditorModule({ pageKey }: { pageKey: PageKey }) {
           description={t('pageEditor.description')}
           actions={
             <>
-              <Link href="/admin/pages">
-                <Button variant="ghost">{t('common.back')}</Button>
-              </Link>
+              <ButtonLink href="/admin/pages" variant="ghost">
+                {t('common.back')}
+              </ButtonLink>
               <Button type="submit" loading={isSubmitting}>
                 {t('common.save')}
               </Button>
@@ -53,7 +65,6 @@ export function AdminPageEditorModule({ pageKey }: { pageKey: PageKey }) {
 
         <ContentLocaleToggle />
 
-        {loadError ? <ErrorNotice message={loadError} /> : null}
         {submitError ? <ErrorNotice message={submitError} /> : null}
         {isSaved && !submitError ? <SuccessNotice message={t('pageEditor.saved')} /> : null}
 
@@ -156,9 +167,9 @@ export function AdminPageEditorModule({ pageKey }: { pageKey: PageKey }) {
         })}
 
         <div className="flex justify-end gap-2">
-          <Link href="/admin/pages">
-            <Button variant="ghost">{t('common.back')}</Button>
-          </Link>
+          <ButtonLink href="/admin/pages" variant="ghost">
+            {t('common.back')}
+          </ButtonLink>
           <Button type="submit" loading={isSubmitting}>
             {t('pageEditor.submit')}
           </Button>

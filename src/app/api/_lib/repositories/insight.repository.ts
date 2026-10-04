@@ -95,12 +95,28 @@ function resolvePublishedAt(
   return current ?? new Date();
 }
 
+/**
+ * The list leaves the bodies out: they are the long part, in both languages,
+ * and a list of them all would in time pass Vercel's 4.5 MB response limit.
+ * Nothing on the list shows them; the edit form loads its record whole.
+ */
 export async function listAdminInsights() {
   const rows = await prisma.insight.findMany({
-    include: adminInclude,
+    include: {
+      ...adminInclude,
+      translations: { include: { ogMedia: mediaInclude }, omit: { body: true } },
+    },
     orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
   });
-  return { items: rows.map(toAdminInsight), total: rows.length };
+  return {
+    items: rows.map((row) =>
+      toAdminInsight({
+        ...row,
+        translations: row.translations.map((translation) => ({ ...translation, body: '' })),
+      }),
+    ),
+    total: rows.length,
+  };
 }
 
 export async function getAdminInsight(id: string) {
@@ -160,12 +176,7 @@ export async function updateInsight(
       ...(translations
         ? {
             translations: {
-              upsert: translationUpsert(
-                'insightId',
-                id,
-                'insightId_locale',
-                translations,
-              ) as never,
+              upsert: translationUpsert('insightId', id, 'insightId_locale', translations) as never,
             },
           }
         : {}),
@@ -210,7 +221,7 @@ type PublicRow = {
     ogMedia: { url: string } | null;
   }>;
   category: { slug: string; translations: Array<{ name: string }> } | null;
-  author: { slug: string; translations: Array<{ name: string }> } | null;
+  author: { slug: string; status: string; translations: Array<{ name: string }> } | null;
 };
 
 function toPublicListItem(row: PublicRow, locale: DbLocale): PublicInsightListItem {
@@ -227,8 +238,10 @@ function toPublicListItem(row: PublicRow, locale: DbLocale): PublicInsightListIt
       : null,
     // showAuthor === false means the article is published anonymously, so the
     // author must not leak through the API either — not just be hidden in the UI.
+    // Nor may a team member who is not published: their name would appear, and
+    // their link would lead nowhere.
     author:
-      row.showAuthor && row.author
+      row.showAuthor && row.author && row.author.status === 'PUBLISHED'
         ? { slug: row.author.slug, name: row.author.translations[0]?.name ?? '' }
         : null,
     readingMinutes: row.readingMinutes,

@@ -20,7 +20,32 @@ export const adminContactInquirySchema = z.object({
 
 export type AdminContactInquiry = z.infer<typeof adminContactInquirySchema>;
 
-export const adminContactInquiryListResponseSchema = listResponseSchema(adminContactInquirySchema);
+/**
+ * The two halves of the inbox: what still needs handling (new and read), and
+ * what has been put away (archived).
+ */
+export const INQUIRY_VIEWS = ['inbox', 'archived'] as const;
+export const inquiryViewSchema = z.enum(INQUIRY_VIEWS);
+export type InquiryView = z.infer<typeof inquiryViewSchema>;
+
+/** How many the list holds at most; `total` says how many there are. */
+export const INQUIRY_LIST_LIMIT = 500;
+
+export const adminContactInquiryListResponseSchema = listResponseSchema(
+  adminContactInquirySchema,
+).extend({
+  /** For the view switch: how many each half holds, and how many are new. */
+  counts: z.object({
+    inbox: z.number().int().nonnegative(),
+    archived: z.number().int().nonnegative(),
+    unread: z.number().int().nonnegative(),
+  }),
+});
+
+export type AdminContactInquiryList = z.infer<typeof adminContactInquiryListResponseSchema>;
+
+/** The sidebar's badge: inquiries no one has marked read yet. */
+export const unreadInquiriesSchema = z.object({ count: z.number().int().nonnegative() });
 
 /**
  * Public submission payload.
@@ -38,8 +63,15 @@ export const contactSubmissionSchema = z.object({
   interest: inquiryInterestSchema,
   message: z.string().trim().min(10, 'Please tell us a little more').max(5000),
   locale: dbLocaleSchema,
-  website: z.string().max(0, 'Unexpected value').optional(),
-  elapsedMs: z.number().int().nonnegative().optional(),
+  // Any value is accepted here and dropped by the route: refusing it with a
+  // 422 named the field, which tells a bot exactly what tripped it.
+  website: z.string().max(500).optional(),
+  elapsedMs: z
+    .number()
+    .int()
+    .nonnegative()
+    .max(2 ** 31 - 1)
+    .optional(),
 });
 
 export type ContactSubmission = z.infer<typeof contactSubmissionSchema>;

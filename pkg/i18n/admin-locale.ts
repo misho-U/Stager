@@ -14,7 +14,7 @@ import { LOCALES, type AppLocale } from '@pkg/i18n/routing';
  */
 export const ADMIN_LOCALE_COOKIE = 'stager-admin-locale';
 
-/** Georgian until someone picks: the client runs the dashboard herself. */
+/** Georgian until someone picks: the client runs the dashboard themselves. */
 export const DEFAULT_ADMIN_LOCALE: AppLocale = 'ka';
 
 /** A cookie is user input: anything unrecognised means the default. */

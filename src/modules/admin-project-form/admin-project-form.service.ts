@@ -60,7 +60,10 @@ export function useAdminProjectForm({ projectId }: UseProjectFormOptions) {
   // was tried, so an empty title does not flag the slug mid-typing.
   const setSlug = useCallback(
     (slug: string) =>
-      form.setValue('slug', slug, { shouldDirty: true, shouldValidate: form.formState.isSubmitted }),
+      form.setValue('slug', slug, {
+        shouldDirty: true,
+        shouldValidate: form.formState.isSubmitted,
+      }),
     [form],
   );
   const slugAutofill = useSlugAutofill({ enabled: !isEdit, setSlug });
@@ -73,28 +76,34 @@ export function useAdminProjectForm({ projectId }: UseProjectFormOptions) {
     if (projectQuery.data) reset(toFormValues(projectQuery.data));
   }, [projectQuery.data, reset]);
 
-  const onSubmit = form.handleSubmit(async (values) => {
-    setSubmitError(null);
+  const onSubmit = form.handleSubmit(
+    async (values) => {
+      setSubmitError(null);
 
-    try {
-      if (projectId) {
-        await updateProject.mutateAsync({ id: projectId, input: values });
-      } else {
-        await createProject.mutateAsync(values);
+      try {
+        if (projectId) {
+          await updateProject.mutateAsync({ id: projectId, input: values });
+        } else {
+          await createProject.mutateAsync(values);
+        }
+
+        router.push('/admin/projects');
+        router.refresh();
+      } catch (caught) {
+        setSubmitError(formErrors.message(caught));
+
+        // Re-attach server-side field errors (e.g. a duplicate slug) to the
+        // inputs they belong to, so the message appears where the fix is.
+        for (const [field, message] of Object.entries(formErrors.fields(caught))) {
+          form.setError(field as keyof ProjectFormValues, { type: 'server', message });
+        }
       }
-
-      router.push('/admin/projects');
-      router.refresh();
-    } catch (caught) {
-      setSubmitError(formErrors.message(caught));
-
-      // Re-attach server-side field errors (e.g. a duplicate slug) to the
-      // inputs they belong to, so the message appears where the fix is.
-      for (const [field, message] of Object.entries(formErrors.fields(caught))) {
-        form.setError(field as keyof ProjectFormValues, { type: 'server', message });
-      }
-    }
-  });
+    },
+    // The form's own checks stopped the save. A field may have no message in
+    // view (a dropdown, a field on the other language's tab), so say it here
+    // rather than leave Save looking dead.
+    () => setSubmitError(formErrors.invalid()),
+  );
 
   return {
     form,
@@ -102,7 +111,11 @@ export function useAdminProjectForm({ projectId }: UseProjectFormOptions) {
     isEdit,
     slugAutofill,
     isLoading: isEdit && projectQuery.isLoading,
-    loadError: projectQuery.error ? formErrors.message(projectQuery.error) : null,
+    // Only while nothing has loaded: a failed background refresh must not
+    // take away a form someone is typing in.
+    loadError:
+      projectQuery.error && !projectQuery.data ? formErrors.message(projectQuery.error) : null,
+    retry: () => void projectQuery.refetch(),
     isSubmitting: createProject.isPending || updateProject.isPending,
     submitError,
     services: servicesQuery.data?.items ?? [],

@@ -22,6 +22,8 @@ export const teamMemberTranslationSchema = z.object({
 
 export const adminTeamMemberSchema = z.object({
   id: z.string(),
+  /** What links to it and would lose the link if it were deleted. */
+  linkedCount: z.number().int(),
   slug: z.string(),
   photoMediaId: z.string().nullable(),
   photoMedia: mediaSummarySchema.nullable(),
@@ -66,7 +68,7 @@ export const teamMemberInputSchema = z.object({
   email: optionalEmailInput(),
   linkedinUrl: optionalUrlInput(),
   status: contentStatusSchema.default('DRAFT'),
-  order: z.number().int().min(0).default(0),
+  order: z.number().int().min(0).max(100_000).default(0),
   translations: bothLocales(teamMemberTranslationInputSchema),
 });
 

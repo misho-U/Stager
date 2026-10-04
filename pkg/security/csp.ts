@@ -42,7 +42,6 @@ function buildDirectives(scriptSrc: string[]): Record<string, string[]> {
       'blob:',
       'https://*.public.blob.vercel-storage.com',
       'https://i.ytimg.com',
-      'https://img.youtube.com',
     ],
     'media-src': ["'self'", 'https://*.public.blob.vercel-storage.com'],
     'connect-src': [
