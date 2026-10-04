@@ -20,11 +20,11 @@ type Cleanup = () => void;
 export function useChefsTableMotion(scope: RefObject<HTMLElement | null>) {
   useSmoothScroll({ lerp: M.lerp });
 
-  useMotion(scope, ({ motion, desktop, finePointer }, root) => {
+  useMotion(scope, ({ motion, entrance, desktop, finePointer }, root) => {
     if (!motion) return;
     const cleanups: Cleanup[] = [];
 
-    assembleHero(root);
+    if (entrance) assembleHero(root);
     if (finePointer) cleanups.push(followLight(root));
     if (desktop) cleanups.push(growScreen(root));
     readAlong(root);

@@ -288,6 +288,54 @@ for (const variant of VARIANTS) {
 }
 
 /**
+ * A slow phone: the design's script arrives seconds after the page. The hero
+ * must not wait for it (its text is the page's Largest Contentful Paint), and
+ * once shown it must never be hidden again for an entrance the visitor would
+ * see as a flicker.
+ */
+for (const variant of VARIANTS) {
+  test(`design ${variant.toUpperCase()}: a late script neither delays the hero nor hides it again`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium', 'one browser is enough for motion');
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    // Scripts only: the stylesheet arrives with the page, as it would.
+    await page.route('**/_next/static/chunks/**/*.js', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 4000));
+      await route.continue();
+    });
+    await page.goto(`/en?v=${variant}`, { waitUntil: 'commit' });
+
+    const hero = page.locator(`[data-home-variant="${variant}"] [data-enter]`).last();
+    // Hidden at first, waiting for its entrance…
+    await expect(hero).toHaveCSS('opacity', '0');
+    // …then shown by the CSS fallback, long before the script.
+    await expect(hero).toHaveCSS('opacity', '1', { timeout: 2000 });
+
+    // The script lands seconds later; the hero stays fully shown throughout.
+    const lowest = await hero.evaluate(
+      (element) =>
+        new Promise<number>((resolve) => {
+          let min = 1;
+          const started = performance.now();
+          const sample = () => {
+            min = Math.min(min, Number(getComputedStyle(element).opacity));
+            if (performance.now() - started < 6000) requestAnimationFrame(sample);
+            else resolve(min);
+          };
+          sample();
+        }),
+    );
+    expect(lowest).toBe(1);
+    // And the script did take over, without an entrance.
+    await expect(page.locator(`[data-home-variant="${variant}"]`)).toHaveAttribute(
+      'data-motion',
+      'on',
+    );
+  });
+}
+
+/**
  * With motion allowed, as most visitors see it: after the entrance and a
  * scroll to the bottom and back, nothing a visitor needs may be left hidden.
  * The motion starts things invisible and relies on its script to show them.

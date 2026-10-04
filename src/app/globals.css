@@ -130,13 +130,16 @@
    hidden only where that can end well: the browser runs scripts and motion
    is allowed. When the design's script takes over it sets
    `data-motion="on"` on the design's wrapper and holds the starting state
-   itself. If the script never arrives, the fallback shows everything after a
-   moment, so no failure can leave the page blank.
+   itself. If the script is late, the fallback shows everything after 1s,
+   and the script, finding it waited past ENTRANCE_DEADLINE_MS
+   (use-motion.ts), skips the entrance instead of hiding it again: on a slow
+   phone the hero text is the page's Largest Contentful Paint, and it used
+   to wait seconds for the script.
 --------------------------------------------------------------------------- */
 @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
   [data-home-variant]:not([data-motion='on']) [data-enter] {
     opacity: 0;
-    animation: motion-fallback-in var(--duration-base) ease-out 2.4s forwards;
+    animation: motion-fallback-in var(--duration-base) ease-out 1s forwards;
   }
 }
 

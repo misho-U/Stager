@@ -24,39 +24,41 @@ const R = OK_MOTION.reveal;
 export function useOpenKitchenMotion(scope: RefObject<HTMLElement | null>) {
   useSmoothScroll({ lerp: OK_MOTION.lerp });
 
-  useMotion(scope, ({ motion, finePointer }, root) => {
+  useMotion(scope, ({ motion, entrance, finePointer }, root) => {
     if (!motion) return;
     const cleanups: Array<() => void> = [];
 
     // --- The hero: the headline's lines rise, then the rest follows. ---
-    const headline = root.querySelector<HTMLElement>('[data-ok-headline]');
-    const arriving = [...root.querySelectorAll<HTMLElement>('[data-enter]')].filter(
-      (element) => element !== headline,
-    );
-    gsap.set(arriving, { opacity: 0, y: 24 });
-    if (headline) {
-      gsap.set(headline, { opacity: 1 });
-      splitReveal(headline, {
-        type: 'lines',
-        mask: 'lines',
-        animate: (split) =>
-          gsap.from(split.lines, {
-            yPercent: 105,
-            duration: E.duration,
-            ease: E.ease,
-            delay: E.delay,
-            stagger: cappedStagger(E.stagger),
-          }),
+    if (entrance) {
+      const headline = root.querySelector<HTMLElement>('[data-ok-headline]');
+      const arriving = [...root.querySelectorAll<HTMLElement>('[data-enter]')].filter(
+        (element) => element !== headline,
+      );
+      gsap.set(arriving, { opacity: 0, y: 24 });
+      if (headline) {
+        gsap.set(headline, { opacity: 1 });
+        splitReveal(headline, {
+          type: 'lines',
+          mask: 'lines',
+          animate: (split) =>
+            gsap.from(split.lines, {
+              yPercent: 105,
+              duration: E.duration,
+              ease: E.ease,
+              delay: E.delay,
+              stagger: cappedStagger(E.stagger),
+            }),
+        });
+      }
+      gsap.to(arriving, {
+        opacity: 1,
+        y: 0,
+        duration: 0.9,
+        ease: 'power3.out',
+        delay: E.delay + 0.3,
+        stagger: E.stagger,
       });
     }
-    gsap.to(arriving, {
-      opacity: 1,
-      y: 0,
-      duration: 0.9,
-      ease: 'power3.out',
-      delay: E.delay + 0.3,
-      stagger: E.stagger,
-    });
 
     // --- Sections and cards rise into view, once. ---
     const reveals = gsap.utils.toArray<HTMLElement>(root.querySelectorAll('[data-reveal]'));

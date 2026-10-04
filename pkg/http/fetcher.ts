@@ -32,7 +32,12 @@ type RequestOptions = {
 type ServerReadOptions = {
   /** Cache tags this read participates in — see @pkg/cache/tags. */
   tags: string[];
-  revalidate?: number | false;
+  /**
+   * Required, so every read decides. Caching is opt-in in this Next: on a page
+   * rendered per request (the home page is), a read without it reaches the
+   * API, and the database, on every visit.
+   */
+  revalidate: number | false;
   headers?: Record<string, string>;
 };
 
@@ -77,7 +82,7 @@ export async function serverFetch<T>(path: string, options: ServerReadOptions): 
     signal: AbortSignal.timeout(SELF_FETCH_TIMEOUT_MS),
     next: {
       tags: options.tags,
-      ...(options.revalidate === undefined ? {} : { revalidate: options.revalidate }),
+      revalidate: options.revalidate,
     },
   });
 
