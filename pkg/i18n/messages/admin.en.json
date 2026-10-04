@@ -623,8 +623,7 @@
     "unread": "{count} new",
     "showingNewest": "Showing the newest {shown} of {total}.",
     "archivedEmptyTitle": "Nothing archived",
-    "archivedEmptyDescription": "Archive moves an inquiry here, out of the inbox; Restore brings it back.",
-    "emailOff": "Email notifications are not set up yet: new inquiries arrive only here."
+    "archivedEmptyDescription": "Archive moves an inquiry here, out of the inbox; Restore brings it back."
   },
   "email": {
     "subject": "New inquiry — {name}",

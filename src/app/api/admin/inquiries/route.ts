@@ -8,7 +8,6 @@ import {
 } from '@/entity/contact-inquiry/model/contact-inquiry.model';
 import { prisma } from '@pkg/db/prisma';
 import { apiOk } from '@pkg/http/api-response';
-import { isEmailConfigured } from '@pkg/mail/resend';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,7 +63,6 @@ export const GET = withAdmin(async ({ request }) => {
     items,
     total: view === 'archived' ? archived : inbox,
     counts: { inbox, archived, unread },
-    emailOn: isEmailConfigured,
   };
   return apiOk(body);
 });

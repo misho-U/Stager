@@ -364,11 +364,11 @@ Non-negotiable. Each exists because of a specific failure mode.
 - **The inquiry email is sent after the response** (`after()`,
   `app/api/_lib/notify-inquiry.ts`), with a 10 s limit and the inquiry id as
   Resend's idempotency key, so it can be retried safely. The visitor's answer
-  never waits on the mail provider. Until email is set up, the inbox says so
-  once (`emailOn`), and the sidebar's count of new inquiries, checked every
-  minute, is how a lead gets noticed. Archive takes an inquiry out of the
-  inbox (`?view=inbox|archived`); a list shows the newest 500 and says how
-  many there are in all.
+  never waits on the mail provider; an inquiry whose email never went out
+  says so on its card. The sidebar counts new inquiries on every page
+  (checked every minute). Archive takes an inquiry out of the inbox
+  (`?view=inbox|archived`); a list shows the newest 500 and says how many
+  there are in all.
 - **Bilingual content is authored in both languages at once.** Translation
   tables, `@@unique([<parent>Id, locale])`, one ქართული | English toggle per
   admin form (§ Dashboard language).
@@ -714,7 +714,8 @@ the migrations match `schema.prisma` (`prisma migrate diff … --exit-code`).
 ## 7. Current state
 
 Built: schema, migrations, seed, the full API, auth, the admin dashboard,
-security, caching, and the Playwright suite.
+security, caching, the Playwright suite and CI. The October 2026 audit, what
+it verified in production and what it left open: `docs/AUDIT-HANDOFF.md`.
 
 Courses (with categories the owner adds) and videos have their tables,
 dashboard screens and public endpoints (`/api/public/courses`, which lists a
@@ -723,19 +724,18 @@ first). Both home-page designs read them; a section the dashboard has nothing
 for yet shows samples marked "Sample" (`orSamples`, `home-page.samples.ts`),
 and a failed read shows the failure, never samples.
 
-**Not built: the public site design.** `src/app/[locale]/page.tsx` renders a
-deliberately unstyled scaffold that proves the edit→live loop and nothing more.
-The public API endpoints it needs already exist, so the design phase is frontend
-work only. Delete the scaffold when the real homepage lands; keep the
-data-loading pattern in `home-page.service.ts`.
+**The public site: two home page designs under comparison** (`?v=1` light,
+`?v=2` dark, `src/modules/home-page`), both reading the same dashboard data,
+on a build search engines are kept out of. Still open: which design. Once one
+is chosen: delete the other, the `?v=` switch and the page's noindex; render
+the home page statically (the switch forces per-request rendering); add the
+SEO fields. Keep the data-loading pattern in `home-page.service.ts`.
 
 Decided for the design phase: Noto Sans Georgian for both scripts, so headlines
-match across locales, and GSAP + Lenis motion under the rules in § Motion. Two
-home page designs are under comparison on a preview build (round 4: `?v=1`
-light, `?v=2` dark). Both add a Culinary Academy section and a video section,
-filled from sample entries until the dashboard holds courses and videos
-(`home-page.samples.ts`, typed by `entity/course` and `entity/video`). Still
-open: which design.
+match across locales, and GSAP + Lenis motion under the rules in § Motion. Both
+designs have a Culinary Academy section and a video section; one the dashboard
+has nothing for yet shows samples marked "Sample" (`home-page.samples.ts`,
+typed by `entity/course` and `entity/video`).
 
 <!-- BEGIN:nextjs-agent-rules -->
 

@@ -100,16 +100,6 @@ export function AdminInquiriesModule() {
         ) : null}
       </div>
 
-      {data && !data.emailOn ? (
-        // On a card: the warning colour is too faint for text on the page itself.
-        <p
-          role="note"
-          className="border-line bg-surface-raised text-body-sm text-warning rounded-md border px-4 py-3"
-        >
-          {t('inquiries.emailOff')}
-        </p>
-      ) : null}
-
       {actionError ? <ErrorNotice message={actionError} /> : null}
 
       {loadFailed ? (
@@ -181,7 +171,7 @@ export function AdminInquiriesModule() {
                   {inquiry.message}
                 </p>
 
-                {data?.emailOn && !inquiry.notifiedAt ? (
+                {!inquiry.notifiedAt ? (
                   <p className="text-caption text-warning">{t('inquiries.notNotified')}</p>
                 ) : null}
 

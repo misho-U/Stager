@@ -40,11 +40,6 @@ export const adminContactInquiryListResponseSchema = listResponseSchema(
     archived: z.number().int().nonnegative(),
     unread: z.number().int().nonnegative(),
   }),
-  /**
-   * Whether new inquiries are emailed at all. Until email is set up none is,
-   * and the page says so once, instead of "could not be sent" on every one.
-   */
-  emailOn: z.boolean(),
 });
 
 export type AdminContactInquiryList = z.infer<typeof adminContactInquiryListResponseSchema>;

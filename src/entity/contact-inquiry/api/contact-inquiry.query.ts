@@ -23,9 +23,9 @@ export const inquiriesQuery = (view: InquiryView) =>
   queryOptions({ queryKey: inquiryKeys.list(view), queryFn: () => fetchInquiries(view) });
 
 /**
- * The sidebar's count of new inquiries. Checked again every minute and when
- * the window regains focus: with email notifications off, this badge is how
- * a new lead gets noticed.
+ * The sidebar's count of new inquiries, so a lead shows on every dashboard
+ * page, not only in the inbox. Checked again every minute and when the window
+ * regains focus.
  */
 export const unreadInquiriesQuery = () =>
   queryOptions({

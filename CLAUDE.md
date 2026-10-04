@@ -108,6 +108,11 @@ Do not add a library outside this list without raising it first.
   traps behind them.
 - **Never a `<Button>` inside a `<Link>`**: use `ButtonLink`. Every page has a
   `SkipLink` and one `<main id={CONTENT_ID}>`; `keyboard.spec.ts` checks.
+- **Test accounts never touch the live project.** The test admin exists only
+  in CI's throwaway auth server and database, or a local one:
+  `scripts/test-auth.ts` refuses a Supabase that is not on this machine, and
+  writing tests and the `db:*` scripts refuse a remote database. Production
+  has one admin, the owner. Never seed, sign up or write test data there.
 
 ## Sign-in needs two systems to agree
 
@@ -123,8 +128,17 @@ mismatch between `NEXT_PUBLIC_SUPABASE_URL` and `DATABASE_URL`.
 pnpm lint && pnpm typecheck && pnpm build && pnpm test:e2e
 ```
 
-## What is not built yet
+CI (`.github/workflows/ci.yml`) runs the same on every push, signed-in tests
+included, against a throwaway Postgres and Supabase Auth, with no secrets.
+For the signed-in tests on a laptop, see AGENTS.md § Credential-gated tests.
 
-The public site design. `src/app/[locale]/page.tsx` is an intentionally unstyled
-scaffold proving that dashboard edits reach the site. Its API endpoints already
-exist — the design phase is frontend work only.
+## Where things stand
+
+The October 2026 audit is recorded in `docs/AUDIT-HANDOFF.md`: what changed,
+what was verified in production, what is still open, and what only the owner
+can do in Vercel and Supabase. Read it before planning operations, security
+or test work.
+
+Two home page designs are under comparison (`?v=1`, `?v=2`). Once the client
+picks one, AGENTS.md § 7 lists what follows: the other design and the switch
+go, and the home page is rendered statically.

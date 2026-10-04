@@ -270,7 +270,6 @@ test.describe('content through the dashboard API', () => {
       items: Array<{ id: string }>;
       total: number;
       counts: { inbox: number; archived: number; unread: number };
-      emailOn: boolean;
     };
     const unread = async () =>
       ((await (await page.request.get('/api/admin/inquiries/unread')).json()) as { count: number })
@@ -295,12 +294,10 @@ test.describe('content through the dashboard API', () => {
     await page.goto('/admin/inquiries');
     await expect(page.getByTestId('unread-inquiries')).toContainText(String(before + 1));
     await expect(page.getByText(email)).toBeVisible();
-    // With email not set up, the page says so once, and no inquiry claims a
-    // failed send.
-    if (!(await list('inbox')).emailOn) {
-      await expect(page.getByText(adminEn.inquiries.emailOff)).toBeVisible();
-      await expect(page.getByText(adminEn.inquiries.notNotified)).toHaveCount(0);
-    }
+    // Made here, it was never emailed, and its card says so: reply directly.
+    await expect(
+      page.locator('section', { hasText: email }).getByText(adminEn.inquiries.notNotified),
+    ).toBeVisible();
 
     const read = await patch(page.request, `/api/admin/inquiries/${inquiry.id}`, {
       status: 'READ',

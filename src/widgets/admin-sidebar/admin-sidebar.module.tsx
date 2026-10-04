@@ -63,8 +63,8 @@ export function AdminSidebar({ email, name, role }: AdminSidebarProps) {
                   )}
                 >
                   {t(`sidebar.nav.${item.labelKey}`)}
-                  {/* New leads, while email notifications may be off: the
-                      one place they show without opening the inbox. */}
+                  {/* New leads, on every page: the email may sit unread, and
+                      the inbox is one click away. */}
                   {item.labelKey === 'inquiries' && unreadInquiries > 0 ? (
                     <span
                       data-testid="unread-inquiries"
