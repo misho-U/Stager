@@ -1,5 +1,12 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 
+import {
+  DB_WRITES_ALLOWED,
+  DB_WRITES_SKIP_REASON,
+  disconnectTestPrisma,
+  testPrisma,
+} from './db-guard';
+
 /**
  * TEMPORARY — the home page designs under comparison (round 4, `?v=1`, `?v=2`).
  * Delete with the variants once one is chosen; its contrast and layout checks
@@ -341,49 +348,121 @@ for (const variant of VARIANTS) {
  * compared with the same page under reduced motion, where nothing is split
  * (shared/lib/motion/split.ts). The footer wordmarks are decoration, hidden
  * either way.
+ *
+ * The intro is written here, in the English copy of HOME's intro, and put
+ * back afterwards: a fresh database has none, and both designs split it as a
+ * short statement.
  */
-const SPLIT_TEXT: Record<string, string> = {
-  '1': '[data-ok-headline], [data-ok-lines]',
-  '2': '[data-ct-headline], [data-read-along]',
-};
+test.describe('split text and screen readers', () => {
+  test.describe.configure({ mode: 'serial' });
+  test.beforeEach(({}, testInfo) => {
+    test.skip(!DB_WRITES_ALLOWED, DB_WRITES_SKIP_REASON);
+    test.skip(testInfo.project.name !== 'chromium', 'Writes the intro; one browser is enough.');
+  });
 
-for (const variant of VARIANTS) {
-  test(`design ${variant.toUpperCase()}: split text still reads whole to a screen reader`, async ({
-    page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name !== 'chromium', 'one browser is enough for motion');
-    const split = page.locator(SPLIT_TEXT[variant] ?? 'none');
-    // Each split element's surroundings, as a screen reader is given them, and
-    // how many elements it holds (splitting wraps every piece in one).
-    const readOut = async () =>
-      Promise.all(
-        (await split.all()).map(async (element) => ({
-          spoken: await element.locator('..').ariaSnapshot(),
-          pieces: await element.evaluate((node) => node.querySelectorAll('*').length),
-        })),
+  const SPLIT_TEXT: Record<string, string> = {
+    '1': '[data-ok-headline], [data-ok-lines]',
+    '2': '[data-ct-headline], [data-read-along]',
+  };
+  const INTRO_TEXT: Record<string, string> = { '1': '[data-ok-lines]', '2': '[data-read-along]' };
+  const INTRO =
+    '<p>STAGER builds better food businesses.</p><p>We work in the kitchen, not only in the office.</p>';
+  const INTRO_WITH_LINK =
+    '<p>STAGER builds better food businesses. <a href="#inquiry">Write to us</a> to begin.</p>';
+
+  let original: { id: string; body: string } | null = null;
+
+  const revalidatePages = (request: APIRequestContext) =>
+    request.post('/api/dev/revalidate-probe', {
+      data: { entity: 'page', key: 'HOME' },
+      headers: { 'sec-fetch-site': 'same-origin' },
+    });
+
+  async function setIntro(request: APIRequestContext, body: string) {
+    const prisma = testPrisma();
+    if (!original) {
+      const section = await prisma.pageSection.findFirstOrThrow({
+        where: { key: 'intro', page: { key: 'HOME' } },
+        select: { translations: { where: { locale: 'EN' }, select: { id: true, body: true } } },
+      });
+      const [translation] = section.translations;
+      if (!translation) throw new Error('HOME has no English intro: run `pnpm db:seed` first.');
+      original = translation;
+    }
+    await prisma.pageSectionTranslation.update({ where: { id: original.id }, data: { body } });
+    expect((await revalidatePages(request)).ok()).toBeTruthy();
+  }
+
+  test.afterAll(async ({ playwright }, testInfo) => {
+    if (!original) return;
+    await testPrisma().pageSectionTranslation.update({
+      where: { id: original.id },
+      data: { body: original.body },
+    });
+    const api = await playwright.request.newContext({ baseURL: testInfo.project.use.baseURL });
+    await revalidatePages(api);
+    await api.dispose();
+    await disconnectTestPrisma();
+  });
+
+  for (const variant of VARIANTS) {
+    test(`design ${variant.toUpperCase()}: split text still reads whole to a screen reader`, async ({
+      page,
+      request,
+    }) => {
+      await setIntro(request, INTRO);
+      const split = page.locator(SPLIT_TEXT[variant] ?? 'none');
+      // Each split element's surroundings, as a screen reader is given them,
+      // and how many elements it holds (splitting wraps every piece in one).
+      const readOut = async () =>
+        Promise.all(
+          (await split.all()).map(async (element) => ({
+            spoken: await element.locator('..').ariaSnapshot(),
+            pieces: await element.evaluate((node) => node.querySelectorAll('*').length),
+          })),
+        );
+
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.goto(`/en?v=${variant}`);
+      const whole = await readOut();
+      // The headline and the intro, at least.
+      expect(whole.length).toBeGreaterThanOrEqual(2);
+
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+      await page.goto(`/en?v=${variant}`);
+      await expect(page.locator(`[data-home-variant="${variant}"]`)).toHaveAttribute(
+        'data-motion',
+        'on',
+      );
+      const animated = await readOut();
+      expect(animated).toHaveLength(whole.length);
+      animated.forEach(({ spoken, pieces }, index) => {
+        // Split…
+        expect(pieces).toBeGreaterThan(whole[index]?.pieces ?? 0);
+        // …and read exactly as it was whole.
+        expect(spoken).toBe(whole[index]?.spoken);
+      });
+    });
+
+    test(`design ${variant.toUpperCase()}: intro text holding a link is left whole, so the link keeps its name`, async ({
+      page,
+      request,
+    }) => {
+      await setIntro(request, INTRO_WITH_LINK);
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+      await page.goto(`/en?v=${variant}`);
+      await expect(page.locator(`[data-home-variant="${variant}"]`)).toHaveAttribute(
+        'data-motion',
+        'on',
       );
 
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto(`/en?v=${variant}`);
-    const whole = await readOut();
-    expect(whole.length).toBeGreaterThan(0);
-
-    await page.emulateMedia({ reducedMotion: 'no-preference' });
-    await page.goto(`/en?v=${variant}`);
-    await expect(page.locator(`[data-home-variant="${variant}"]`)).toHaveAttribute(
-      'data-motion',
-      'on',
-    );
-    const animated = await readOut();
-    expect(animated).toHaveLength(whole.length);
-    animated.forEach(({ spoken, pieces }, index) => {
-      // Split…
-      expect(pieces).toBeGreaterThan(whole[index]?.pieces ?? 0);
-      // …and read exactly as it was whole.
-      expect(spoken).toBe(whole[index]?.spoken);
+      // The intro's text, wherever the design puts it (a subheading may sit beside it).
+      const intro = page.locator(INTRO_TEXT[variant] ?? 'none').filter({ hasText: 'Write to us' });
+      await expect(intro.getByRole('link', { name: 'Write to us' })).toBeVisible();
+      await expect(intro).not.toHaveAttribute('aria-hidden', 'true');
     });
-  });
-}
+  }
+});
 
 /**
  * A screen reader user moves through a page by its headings: the outline must
@@ -419,28 +498,6 @@ for (const variant of VARIANTS) {
     expect(skips).toEqual([]);
   });
 }
-
-test('design 2: intro text holding a link is left whole, so the link keeps its name', async ({
-  page,
-}, testInfo) => {
-  test.skip(testInfo.project.name !== 'chromium', 'one browser is enough for motion');
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  // The dashboard's rich text may hold a link; put one in this page's intro.
-  await page.route(/\/en\?v=2$/, async (route) => {
-    const response = await route.fetch();
-    const html = (await response.text()).replace(
-      /(<div data-read-along[^>]*>\s*<div class="rich-text[^"]*">\s*<p>)/,
-      '$1<a href="#inquiry">Write to us</a> ',
-    );
-    await route.fulfill({ response, body: html });
-  });
-  await page.goto('/en?v=2');
-  await expect(page.locator('[data-home-variant="2"]')).toHaveAttribute('data-motion', 'on');
-
-  const intro = page.locator('[data-read-along]');
-  await expect(intro.getByRole('link', { name: 'Write to us' })).toBeVisible();
-  await expect(intro).not.toHaveAttribute('aria-hidden', 'true');
-});
 
 /**
  * With motion allowed, as most visitors see it: after the entrance and a
