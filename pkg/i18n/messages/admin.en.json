@@ -591,6 +591,13 @@
       "label": "Inquiry inbox",
       "hint": "Where contact-form messages are sent. Leave blank to use the address configured in the environment."
     },
+    "errorReporting": {
+      "title": "Error reporting",
+      "description": "Errors on the site and in the dashboard are sent to Sentry, where whoever maintains the site sees them. Send a test error to check that it works.",
+      "send": "Send a test error",
+      "sent": "Sent. It should appear in Sentry within a minute.",
+      "off": "Error reporting is off: no Sentry address is set for this site. Whoever maintains the site can turn it on."
+    },
     "submit": "Save settings"
   },
   "inquiries": {

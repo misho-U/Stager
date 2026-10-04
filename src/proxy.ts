@@ -100,6 +100,8 @@ export const config = {
     // path ending in .png": that also let /admin/projects/x.png render a
     // dashboard page with no CSP, and this app serves no such files itself
     // (images come from the blob store, fonts from _next/static).
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',
+    // /monitoring is Sentry's tunnel (next.config.ts): browser error reports on
+    // their way out, which need neither a locale nor a session.
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|monitoring).*)',
   ],
 };

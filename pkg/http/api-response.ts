@@ -13,6 +13,7 @@ import type {
 import { toValidationIssue } from '@pkg/http/validation-issue';
 import { describeDbError } from '@pkg/db/errors';
 import { logger, serialiseError } from '@pkg/logger';
+import { reportServerError } from '@pkg/monitoring/server';
 
 const STATUS_BY_CODE: Record<ApiErrorCode, number> = {
   BAD_REQUEST: 400,
@@ -129,6 +130,9 @@ export function handleRouteError(error: unknown, context: Record<string, unknown
     return dbAnswer;
   }
 
-  logger.error('api.unhandled_error', { ...context, ...serialiseError(error) });
+  // Reported as the error itself, so Sentry groups it by its stack, not under
+  // one "unhandled error" heading.
+  logger.error('api.unhandled_error', { ...context, ...serialiseError(error) }, { report: false });
+  reportServerError(error, context);
   return apiFail('INTERNAL', 'Something went wrong');
 }

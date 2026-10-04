@@ -6,6 +6,7 @@ import { insightInputSchema } from '@/entity/insight/model/insight.model';
 import { serviceInputSchema } from '@/entity/service/model/service.model';
 import { socialLinkInputSchema } from '@/entity/social-link/model/social-link.model';
 import { teamMemberInputSchema } from '@/entity/team-member/model/team-member.model';
+import adminEn from '@pkg/i18n/messages/admin.en.json';
 
 import { ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_SESSION, CREDENTIALS_PRESENT } from './admin-session';
 import {
@@ -240,6 +241,23 @@ test.describe('content through the dashboard API', () => {
       // An editor still reads them, and still edits content.
       expect((await page.request.get('/api/admin/settings')).status()).toBe(200);
       await patch(page.request, `/api/admin/categories/${ids.category}`, { order: 3 });
+    } finally {
+      await prisma.adminUser.update({ where: { id: admin.id }, data: { role: admin.role } });
+    }
+  });
+
+  test('only an owner sends a test error; with reporting off, none is sent', async ({ page }) => {
+    const prisma = testPrisma();
+    const admin = await prisma.adminUser.findUniqueOrThrow({ where: { email: ADMIN_EMAIL! } });
+    try {
+      await prisma.adminUser.update({ where: { id: admin.id }, data: { role: 'OWNER' } });
+      // No DSN here, so the dashboard says reporting is off rather than "sent".
+      await page.goto('/admin/settings');
+      await page.getByRole('button', { name: adminEn.settings.errorReporting.send }).click();
+      await expect(page.getByText(adminEn.settings.errorReporting.off)).toBeVisible();
+
+      await prisma.adminUser.update({ where: { id: admin.id }, data: { role: 'EDITOR' } });
+      expect((await page.request.post('/api/admin/monitoring')).status()).toBe(403);
     } finally {
       await prisma.adminUser.update({ where: { id: admin.id }, data: { role: admin.role } });
     }

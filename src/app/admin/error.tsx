@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 
 import { LoadFailed } from '@/shared/components/panel';
+import { reportError } from '@pkg/monitoring/report';
 
 /**
  * The dashboard could not render at all: its access check failed (the
@@ -22,6 +23,7 @@ export default function AdminError({
 
   useEffect(() => {
     console.error(error);
+    reportError(error);
   }, [error]);
 
   return (

@@ -30,6 +30,7 @@ rather than adding a dependency.
 | Icons | **@phosphor-icons/react** — per-icon imports: `…/dist/csr/<Name>` in client components, `…/dist/ssr/<Name>` in server components (the root re-exports ~1,500 icons) |
 | Motion (public site) | **GSAP 3.15** (every plugin is free) + **Lenis 1.3** smooth scroll, both pinned exactly — client leaf components only, through `shared/lib/motion` and `widgets/smooth-scroll` (§ Motion) |
 | i18n | **next-intl 4** |
+| Error reporting | **Sentry** (`@sentry/nextjs`, pinned exactly) — off without a DSN; § Error reporting |
 | Tests | **Playwright** |
 | Hosting | **Vercel** |
 | Package manager | **pnpm** |
@@ -646,6 +647,30 @@ the migrations match `schema.prisma` (`prisma migrate diff … --exit-code`).
   when larger.
 - **`robots.txt`** lets search engines in only on production, and never into
   `/admin` or `/api`; `sitemap.xml` lists each public page per language.
+
+### Error reporting (Sentry)
+
+- **Off unless `NEXT_PUBLIC_SENTRY_DSN` is set, and always off in `pnpm dev`**
+  (`MONITORING_ON`, `pkg/monitoring/options.ts`). Without a DSN the build is
+  unchanged (`withSentryConfig` only wraps the config when one is set).
+- **The SDK is only ever imported dynamically**, behind `MONITORING_ON`:
+  `src/instrumentation.ts`, `src/instrumentation-client.ts`, `reportError()`
+  (error boundaries) and `reportServerError()` / `reportServerEvent()`
+  (`pkg/monitoring/server.ts`). A static `import * as Sentry` in client code
+  would put the SDK in every visitor's download.
+- **What is reported:** errors Next catches while rendering (`onRequestError`),
+  unhandled route errors (`handleRouteError`, with their stack), errors the
+  error boundaries catch, and every `logger.error`, grouped by its event name.
+  `logger.error(…, { report: false })` only where the caller reports the
+  exception itself. A known state is not an error: log it with `warn`.
+- **What is never sent:** cookies, request bodies, query strings (also in
+  breadcrumbs), and of a user anything but an id (`scrubEvent`,
+  `scrubBreadcrumb`). No session replay, no performance tracing.
+  `sendDefaultPii` stays false.
+- **Browser events go through `/monitoring`** on the site itself, past ad
+  blockers; the proxy matcher must keep skipping that path.
+- **Server events are flushed in `after()`**: Vercel freezes a function once
+  it has answered, and an event still queued then is lost.
 
 ---
 

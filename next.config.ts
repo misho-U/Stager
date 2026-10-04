@@ -1,3 +1,4 @@
+import { withSentryConfig } from '@sentry/nextjs/config';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 
@@ -65,4 +66,22 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+/**
+ * Sentry, only when its DSN is set (pkg/monitoring): without one the build is
+ * exactly what it was. Browser events go through /monitoring on this site,
+ * which ad blockers leave alone (the proxy skips that path). Source maps are
+ * uploaded only when SENTRY_AUTH_TOKEN, SENTRY_ORG and SENTRY_PROJECT are set;
+ * without them stack traces read minified, and the build still succeeds.
+ */
+export default process.env.NEXT_PUBLIC_SENTRY_DSN?.trim()
+  ? withSentryConfig(withNextIntl(nextConfig), {
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      tunnelRoute: '/monitoring',
+      silent: !process.env.CI,
+      telemetry: false,
+      // No performance tracing (pkg/monitoring/options.ts), so no router spans.
+      suppressOnRouterTransitionStartWarning: true,
+    })
+  : withNextIntl(nextConfig);

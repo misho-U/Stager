@@ -15,7 +15,8 @@ drift.
 
 Next.js 16 · React 19 · TypeScript strict · Tailwind 4 · TanStack Query ·
 Zustand · react-hook-form · zod 4 · Prisma 7 · Supabase · Vercel Blob · Resend ·
-next-intl · sanitize-html · Phosphor icons · GSAP · Lenis · Playwright · pnpm.
+next-intl · sanitize-html · Phosphor icons · GSAP · Lenis · Sentry · Playwright ·
+pnpm.
 
 Do not add a library outside this list without raising it first.
 

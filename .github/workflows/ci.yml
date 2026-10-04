@@ -106,7 +106,6 @@ jobs:
             -e GOTRUE_SITE_URL=http://localhost:3000 \
             -e GOTRUE_JWT_SECRET="$TEST_AUTH_JWT_SECRET" \
             -e GOTRUE_JWT_AUD=authenticated \
-            -e GOTRUE_JWT_DEFAULT_GROUP_NAME=authenticated \
             -e GOTRUE_JWT_ADMIN_ROLES=service_role \
             -e GOTRUE_EXTERNAL_EMAIL_ENABLED=true \
             -e GOTRUE_MAILER_AUTOCONFIRM=true \

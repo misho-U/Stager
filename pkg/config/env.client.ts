@@ -55,3 +55,17 @@ export const clientEnv = parsed.data;
 
 /** Origin without a trailing slash, for building absolute URLs. */
 export const SITE_ORIGIN = clientEnv.NEXT_PUBLIC_SITE_URL.replace(/\/$/, '');
+
+/**
+ * Sentry's DSN, or null. Public by design: it only lets events be sent.
+ *
+ * Optional, and read leniently: anything that is not shaped like a DSN reads
+ * as unset, so a typo leaves error reporting off instead of failing the build
+ * that would take the site down.
+ */
+const sentryDsn = process.env.NEXT_PUBLIC_SENTRY_DSN?.trim();
+export const SENTRY_DSN =
+  sentryDsn && /^https:\/\/[^@\s/]+@[^/\s]+\/\d+$/.test(sentryDsn) ? sentryDsn : null;
+
+/** `production`, `preview` or `development` on Vercel (its system variable); null elsewhere. */
+export const DEPLOY_ENV = process.env.NEXT_PUBLIC_VERCEL_ENV ?? null;

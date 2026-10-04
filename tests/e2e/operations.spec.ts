@@ -7,6 +7,7 @@ import {
   AuthUnknownError,
 } from '@supabase/supabase-js';
 
+import { scrubEvent } from '@pkg/monitoring/options';
 import { isAuthOutage } from '@pkg/supabase/outage';
 
 import { DB_WRITES_ALLOWED, DB_WRITES_SKIP_REASON } from './db-guard';
@@ -98,4 +99,37 @@ test.describe('a Supabase outage is told apart from a signed-out visitor', () =>
     expect(isAuthOutage(new AuthApiError('User not found', 404, 'user_not_found'))).toBe(false);
     expect(isAuthOutage(new AuthInvalidTokenResponseError())).toBe(false);
   });
+});
+
+test('an error report keeps no cookies, bodies, query strings or personal data', () => {
+  const event = scrubEvent({
+    type: undefined,
+    message: 'boom',
+    request: {
+      url: 'https://stager.ge/api/contact?email=visitor@example.com',
+      query_string: 'email=visitor@example.com',
+      cookies: { 'sb-x-auth-token': 'secret' },
+      data: { name: 'A visitor', message: 'Personal' },
+      headers: {
+        cookie: 'sb-x-auth-token=secret',
+        authorization: 'Bearer secret',
+        'x-forwarded-for': '203.0.113.7',
+        'user-agent': 'Mozilla/5.0',
+      },
+    },
+    user: { id: 'admin-1', email: 'owner@example.com', ip_address: '203.0.113.7' },
+    breadcrumbs: [
+      {
+        category: 'navigation',
+        data: { from: '/en?email=visitor@example.com', to: '/ka?email=visitor@example.com' },
+      },
+    ],
+  });
+  expect(JSON.stringify(event)).not.toContain('visitor@example.com');
+  expect(event.breadcrumbs?.[0]?.data).toEqual({ from: '/en', to: '/ka' });
+  expect(event.request).toEqual({
+    url: 'https://stager.ge/api/contact',
+    headers: { 'user-agent': 'Mozilla/5.0' },
+  });
+  expect(event.user).toEqual({ id: 'admin-1' });
 });

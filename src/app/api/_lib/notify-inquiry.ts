@@ -4,7 +4,7 @@ import { getInquiryInbox } from '@/app/api/_lib/repositories/site-setting.reposi
 import { serverEnv } from '@pkg/config/env.server';
 import { prisma } from '@pkg/db/prisma';
 import { logger, serialiseError } from '@pkg/logger';
-import { sendEmail } from '@pkg/mail/resend';
+import { isEmailConfigured, sendEmail } from '@pkg/mail/resend';
 import { buildInquiryNotification } from '@pkg/mail/templates/inquiry-notification';
 
 /**
@@ -20,6 +20,13 @@ import { buildInquiryNotification } from '@pkg/mail/templates/inquiry-notificati
  * Returns whether the inquiry is notified now.
  */
 export async function notifyInquiry(inquiryId: string): Promise<boolean> {
+  // Email not set up yet is a known state, not a failure: the inquiry waits in
+  // the dashboard. Reported as an error, every inquiry would page someone.
+  if (!isEmailConfigured) {
+    logger.warn('contact.notification_skipped', { inquiryId, reason: 'mail_not_configured' });
+    return false;
+  }
+
   try {
     const inquiry = await prisma.contactInquiry.findUnique({
       where: { id: inquiryId },

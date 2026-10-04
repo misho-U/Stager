@@ -8,6 +8,9 @@
 export const NODE_ENV = process.env.NODE_ENV ?? 'development';
 
 export const IS_PRODUCTION = NODE_ENV === 'production';
+
+/** `nodejs` or `edge` on the server, unset in the browser: which runtime this code runs in. */
+export const NEXT_RUNTIME = process.env.NEXT_RUNTIME ?? null;
 export const IS_DEVELOPMENT = NODE_ENV === 'development';
 export const IS_TEST = NODE_ENV === 'test';
 

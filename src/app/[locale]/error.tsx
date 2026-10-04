@@ -3,6 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 
+import { reportError } from '@pkg/monitoring/report';
+
 /**
  * A public page that failed to render: said in the visitor's language, with a
  * way to try again, instead of Next's bare error screen. Next logs the error
@@ -19,6 +21,7 @@ export default function PublicError({
 
   useEffect(() => {
     console.error(error);
+    reportError(error);
   }, [error]);
 
   return (

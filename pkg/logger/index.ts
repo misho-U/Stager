@@ -1,4 +1,5 @@
 import { IS_PRODUCTION } from '@pkg/config/runtime';
+import { reportServerEvent } from '@pkg/monitoring/server';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -77,5 +78,13 @@ export const logger = {
   debug: (message: string, context?: LogContext) => write('debug', message, context),
   info: (message: string, context?: LogContext) => write('info', message, context),
   warn: (message: string, context?: LogContext) => write('warn', message, context),
-  error: (message: string, context?: LogContext) => write('error', message, context),
+  /**
+   * Something failed that someone should look at: also sent to Sentry, when
+   * it is set up, grouped by the event name. `report: false` where the caller
+   * reports the error itself, with its stack (handleRouteError).
+   */
+  error: (message: string, context?: LogContext, { report = true }: { report?: boolean } = {}) => {
+    write('error', message, context);
+    if (report) reportServerEvent(message, context);
+  },
 };

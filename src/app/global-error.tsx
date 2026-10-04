@@ -4,6 +4,8 @@ import './globals.css';
 
 import { useEffect } from 'react';
 
+import { reportError } from '@pkg/monitoring/report';
+
 /**
  * The root layout itself failed, so nothing above this exists: no language, no
  * message provider, no global styles (imported here for that reason). The
@@ -35,6 +37,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     console.error(error);
+    reportError(error);
   }, [error]);
 
   return (
