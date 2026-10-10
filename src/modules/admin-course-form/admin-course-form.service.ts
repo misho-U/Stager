@@ -18,7 +18,6 @@ import {
   type CourseFormValues,
   type CourseInput,
 } from '@/entity/course/model/course.model';
-import { adminServicesQuery } from '@/entity/service/api/service.query';
 import { useFormErrors } from '@/shared/lib/form-errors';
 import { useSlugAutofill } from '@/shared/lib/use-slug-autofill';
 import { useValidationErrorMap } from '@/shared/lib/use-validation-error-map';
@@ -69,7 +68,6 @@ export function useAdminCourseForm({ courseId }: { courseId?: string }) {
 
   const courseQuery = useQuery({ ...adminCourseQuery(courseId ?? ''), enabled: isEdit });
   const categoriesQuery = useQuery(adminCourseCategoriesQuery());
-  const servicesQuery = useQuery(adminServicesQuery());
 
   const createCourse = useCreateCourse();
   const updateCourse = useUpdateCourse();
@@ -140,10 +138,6 @@ export function useAdminCourseForm({ courseId }: { courseId?: string }) {
     categoryOptions: (categoriesQuery.data?.items ?? []).map((category) => ({
       value: category.id,
       label: category.translations.KA.name || category.translations.EN.name || category.slug,
-    })),
-    serviceOptions: (servicesQuery.data?.items ?? []).map((service) => ({
-      value: service.id,
-      label: service.translations.KA.title || service.translations.EN.title || service.slug,
     })),
   };
 }

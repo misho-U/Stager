@@ -20,6 +20,7 @@ export const CONTENT_ENTITIES = [
   'course',
   'courseCategory',
   'video',
+  'stat',
 ] as const;
 
 export type ContentEntity = (typeof CONTENT_ENTITIES)[number];

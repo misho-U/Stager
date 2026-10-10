@@ -68,13 +68,13 @@ const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : us
  * Runs a design's GSAP setup inside `scope`, scoped and cleaned up.
  *
  * - Every tween, ScrollTrigger and SplitText created in `setup` is recorded in
- *   a GSAP context and reverted on unmount, so a locale switch or a design
- *   switch leaves nothing pinned or hidden behind.
+ *   a GSAP context and reverted on unmount, so a locale switch or a page
+ *   change leaves nothing pinned or hidden behind.
  * - `setup` receives the scope element as `root`; query inside it
  *   (`root.querySelectorAll('[data-enter]')`), never the whole document.
  * - The design hands itself over from the CSS starting state (see
  *   `[data-enter]` in globals.css) by setting `data-motion="on"` on its
- *   `[data-home-variant]` wrapper, but only when motion is allowed: under
+ *   `[data-site]` wrapper, but only when motion is allowed: under
  *   reduced motion nothing was ever hidden and nothing animates.
  * - Pinned scenes are re-measured once the web fonts have loaded, since a
  *   heading that re-wraps in the real face changes every height below it,
@@ -90,7 +90,7 @@ export function useMotion(
     if (!element) return;
     registerMotion();
 
-    const design = element.closest<HTMLElement>('[data-home-variant]') ?? element;
+    const design = element.closest<HTMLElement>('[data-site]') ?? element;
     let entrance = entranceDecided.get(design);
     if (entrance === undefined) {
       entrance = hiddenForMs(design) < ENTRANCE_DEADLINE_MS;
@@ -102,7 +102,7 @@ export function useMotion(
       const conditions = { ...(context.conditions as MotionConditions), entrance };
       const cleanup = setup(conditions, element);
       if (conditions.motion) {
-        element.closest('[data-home-variant]')?.setAttribute('data-motion', 'on');
+        element.closest('[data-site]')?.setAttribute('data-motion', 'on');
       }
       return cleanup;
     });

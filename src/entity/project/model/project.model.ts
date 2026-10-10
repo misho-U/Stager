@@ -64,6 +64,9 @@ export const publicProjectListItemSchema = z.object({
   client: z.string().nullable(),
   featured: z.boolean(),
   publishedAt: isoDateTime.nullable(),
+  /** The photos after the cover, in the dashboard's order: the card shows
+   *  them one after another. Projects have no page of their own. */
+  gallery: z.array(mediaSummarySchema),
 });
 
 export type PublicProjectListItem = z.infer<typeof publicProjectListItemSchema>;
@@ -71,7 +74,6 @@ export type PublicProjectListItem = z.infer<typeof publicProjectListItemSchema>;
 export const publicProjectDetailSchema = publicProjectListItemSchema.extend({
   body: z.string(),
   youtubeUrl: z.string().nullable(),
-  gallery: z.array(mediaSummarySchema),
   metaTitle: z.string().nullable(),
   metaDescription: z.string().nullable(),
   ogImageUrl: z.string().nullable(),

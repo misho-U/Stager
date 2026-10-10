@@ -178,7 +178,7 @@ model Media {
   id String @id @default(cuid())
 
   /// Public Vercel Blob URL.
-  url String @db.Text
+  url         String  @db.Text
   /// Blob pathname, needed to delete the object.
   pathname    String  @unique
   contentType String
@@ -196,20 +196,20 @@ model Media {
 
   translations MediaTranslation[]
 
-  projectCovers          Project[]             @relation("ProjectCover")
-  projectOgImages        ProjectTranslation[]  @relation("ProjectTranslationOg")
-  projectGalleryItems    ProjectGalleryItem[]  @relation("ProjectGalleryMedia")
-  serviceCovers          Service[]             @relation("ServiceCover")
-  courseCovers           Course[]              @relation("CourseCover")
-  serviceOgImages        ServiceTranslation[]  @relation("ServiceTranslationOg")
-  teamMemberPhotos       TeamMember[]          @relation("TeamMemberPhoto")
-  insightCovers          Insight[]             @relation("InsightCover")
-  insightOgImages        InsightTranslation[]  @relation("InsightTranslationOg")
-  pageOgImages           PageTranslation[]     @relation("PageTranslationOg")
-  pageSectionMedia       PageSection[]         @relation("PageSectionMedia")
-  siteSettingLogos       SiteSetting[]         @relation("SiteSettingLogo")
-  siteSettingLogosLight  SiteSetting[]         @relation("SiteSettingLogoLight")
-  siteSettingOgImages    SiteSettingTranslation[] @relation("SiteSettingTranslationOg")
+  projectCovers         Project[]                @relation("ProjectCover")
+  projectOgImages       ProjectTranslation[]     @relation("ProjectTranslationOg")
+  projectGalleryItems   ProjectGalleryItem[]     @relation("ProjectGalleryMedia")
+  serviceCovers         Service[]                @relation("ServiceCover")
+  courseCovers          Course[]                 @relation("CourseCover")
+  serviceOgImages       ServiceTranslation[]     @relation("ServiceTranslationOg")
+  teamMemberPhotos      TeamMember[]             @relation("TeamMemberPhoto")
+  insightCovers         Insight[]                @relation("InsightCover")
+  insightOgImages       InsightTranslation[]     @relation("InsightTranslationOg")
+  pageOgImages          PageTranslation[]        @relation("PageTranslationOg")
+  pageSectionMedia      PageSection[]            @relation("PageSectionMedia")
+  siteSettingLogos      SiteSetting[]            @relation("SiteSettingLogo")
+  siteSettingLogosLight SiteSetting[]            @relation("SiteSettingLogoLight")
+  siteSettingOgImages   SiteSettingTranslation[] @relation("SiteSettingTranslationOg")
 
   @@index([createdAt])
   @@map("media")
@@ -447,10 +447,10 @@ model Insight {
   categoryId String?
   category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
-  authorId String?
-  author   TeamMember? @relation("InsightAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  authorId   String?
+  author     TeamMember? @relation("InsightAuthor", fields: [authorId], references: [id], onDelete: SetNull)
   /// The brief asks to sometimes publish without naming an author.
-  showAuthor Boolean @default(true)
+  showAuthor Boolean     @default(true)
 
   readingMinutes Int?
 
@@ -572,8 +572,8 @@ model CourseTranslation {
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
   locale   Locale
 
-  title   String
-  summary String @default("") @db.Text
+  title    String
+  summary  String @default("") @db.Text
   /// As it should read on the site: "2 days", "6 Saturdays".
   duration String @default("")
   /// Where it takes place; empty for an online course.
@@ -748,6 +748,43 @@ model SiteSettingTranslation {
 
   @@unique([siteSettingId, locale])
   @@map("site_setting_translations")
+}
+
+// ---------------------------------------------------------------------------
+// Figures — the company in numbers, under the home page's hero
+// ---------------------------------------------------------------------------
+
+/// One figure: "20+" years in professional kitchens, "150" projects. The
+/// value is text, so "20+", "150" and "6" all fit; the site counts up to its
+/// leading number. Shown in `order`, while active.
+model Stat {
+  id String @id @default(cuid())
+
+  value    String
+  order    Int     @default(0)
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  translations StatTranslation[]
+
+  @@index([isActive, order])
+  @@map("stats")
+}
+
+model StatTranslation {
+  id String @id @default(cuid())
+
+  statId String
+  stat   Stat   @relation(fields: [statId], references: [id], onDelete: Cascade)
+  locale Locale
+
+  /// What the figure counts: "years in professional kitchens".
+  label String
+
+  @@unique([statId, locale])
+  @@map("stat_translations")
 }
 
 model SocialLink {

@@ -33,7 +33,6 @@ export function AdminCourseFormModule({ courseId }: { courseId?: string }) {
     isSubmitting,
     submitError,
     categoryOptions,
-    serviceOptions,
     slugAutofill,
   } = useAdminCourseForm({ courseId });
 
@@ -166,13 +165,6 @@ export function AdminCourseFormModule({ courseId }: { courseId?: string }) {
               options={categoryOptions}
               hint={t('courses.form.category.hint')}
               {...form.register('categoryId')}
-            />
-            <SelectField
-              label={t('courses.form.service.label')}
-              placeholder={t('courses.form.service.none')}
-              options={serviceOptions}
-              hint={t('courses.form.service.hint')}
-              {...form.register('serviceId')}
             />
           </div>
 

@@ -5,10 +5,12 @@ import { DB_WRITES_ALLOWED, disconnectTestPrisma, testPrisma } from './db-guard'
  *
  * Each test deletes what it creates, in a `finally`, but a run killed between
  * the two leaves rows on the site. Everything tests create is named for this:
- * slugs start `e2e-` (the dashboard derives them from "E2E …" titles) and
- * contact-form senders are `e2e-…@example.com`. Only where tests may write at
- * all (db-guard.ts). Media is left alone: its files live in Blob, which this
- * cannot reach, and the upload test cleans up after itself.
+ * slugs start `e2e-` (the dashboard derives them from "E2E …" titles),
+ * figures carry an `e2e-` run in their label, and contact-form senders are
+ * `e2e-…@example.com`. Only where tests may write at all (db-guard.ts). Media
+ * is left alone, its files live in Blob, which this cannot reach, and the
+ * upload test cleans up after itself; except the photo test's rows, which
+ * stand for no file at all (`media/e2e-photos-…`).
  */
 export default async function globalTeardown(): Promise<void> {
   if (!DB_WRITES_ALLOWED) return;
@@ -37,6 +39,14 @@ export default async function globalTeardown(): Promise<void> {
     await sweep('team', () => prisma.teamMember.deleteMany({ where: { slug } }));
     await sweep('categories', () => prisma.category.deleteMany({ where: { slug } }));
     await sweep('course categories', () => prisma.courseCategory.deleteMany({ where: { slug } }));
+    await sweep('figures', () =>
+      prisma.stat.deleteMany({
+        where: { translations: { some: { label: { contains: 'e2e-' } } } },
+      }),
+    );
+    await sweep('test photos', () =>
+      prisma.media.deleteMany({ where: { pathname: { startsWith: 'media/e2e-photos-' } } }),
+    );
     await sweep('inquiries', () =>
       prisma.contactInquiry.deleteMany({
         where: { email: { startsWith: 'e2e-', endsWith: '@example.com' } },

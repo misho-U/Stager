@@ -1,29 +1,27 @@
 /**
- * Option 2, "Chef's Table": the timings and eases of its motion, in one
- * place. Cinematic by design (motion 8): the page plays as you scroll, and
- * everything it shows can still be reached with reduced motion, where none
- * of this runs.
+ * The site's design, "Chef's Table": the timings and eases of its motion, in
+ * one place. Calm by request (motion 5): things arrive and the page draws as
+ * it is read, nothing performs for its own sake. Everything it shows can be
+ * reached with reduced motion, where none of this runs.
  */
 export const CT_MOTION = {
-  /** Lenis: a slower, heavier glide than option 1's. */
-  lerp: 0.08,
-  /** The hero's headline: letters rising into place on arrival. */
-  assemble: { duration: 1.1, ease: 'expo.out', stagger: 0.03, delay: 0.15 },
+  /** Lenis: a slow, even glide. */
+  lerp: 0.1,
+  /** The hero's headline: its lines rising into place on arrival. */
+  assemble: { duration: 1, ease: 'expo.out', stagger: 0.08, delay: 0.15 },
   /** The rest of the hero, after the headline. */
   enter: { duration: 0.9, ease: 'power3.out', stagger: 0.1, delay: 0.6 },
   /** The hero's light following the pointer. */
   light: { duration: 1.4, ease: 'power3.out' },
-  /**
-   * The hero's screen growing to fill the view (desktop): `length` screens
-   * of scroll; the rest are shares of that scroll.
-   */
-  screen: { length: 1, open: 0.75, copyOut: 0.45, captionAt: 0.72 },
+  /** The company's figures counting up to their numbers. */
+  count: { duration: 1.6, ease: 'power2.out', delay: 0.2 },
   /** The intro read along: how faint the words start. */
   readAlong: { from: 0.16 },
-  /** A service card as the next one covers it. */
-  stack: { scale: 0.94, dim: 0.35 },
-  /** The filmstrip: how far frames lean with speed, and how they straighten. */
-  film: { skew: 5, settle: 0.6 },
+  /**
+   * The services' journey: where on the screen its line starts and finishes
+   * filling (ScrollTrigger start/end, the journey's edges against the screen).
+   */
+  journey: { start: 'top 70%', end: 'bottom 60%' },
   /** Sections and cards rising into view, once. */
   reveal: { y: 36, duration: 0.9, ease: 'power3.out', stagger: 0.08 },
   /** The Academy's filter. */

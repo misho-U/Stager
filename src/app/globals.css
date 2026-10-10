@@ -18,11 +18,10 @@
 --------------------------------------------------------------------------- */
 @import '../shared/brandbook/brandbook.css';
 
-/* TEMPORARY — the home page design comparison. Each file only overrides
-   brandbook tokens, and adds the CSS only that design draws, inside its own
-   [data-home-variant] scope. Removed with the variants once one is chosen. */
-@import '../shared/brandbook/variants/open-kitchen.css';
-@import '../shared/brandbook/variants/chefs-table.css';
+/* The public site's design ("Chef's Table", dark): it overrides brandbook
+   tokens and adds the CSS only the site draws, inside [data-site]. The
+   dashboard never renders that attribute and keeps the brandbook's roles. */
+@import '../shared/brandbook/site.css';
 
 @layer base {
   html {
@@ -131,12 +130,12 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Motion hand-over — the public designs (src/shared/lib/motion/use-motion.ts)
+   Motion hand-over — the public site (src/shared/lib/motion/use-motion.ts)
    ---------------------------------------------------------------------------
    `data-enter` marks an element a design animates in on load. It starts
    hidden only where that can end well: the browser runs scripts and motion
    is allowed. When the design's script takes over it sets
-   `data-motion="on"` on the design's wrapper and holds the starting state
+   `data-motion="on"` on its [data-site] wrapper and holds the starting state
    itself. If the script is late, the fallback shows everything after 1s,
    and the script, finding it waited past ENTRANCE_DEADLINE_MS
    (use-motion.ts), skips the entrance instead of hiding it again: on a slow
@@ -144,7 +143,7 @@
    to wait seconds for the script.
 --------------------------------------------------------------------------- */
 @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
-  [data-home-variant]:not([data-motion='on']) [data-enter] {
+  [data-site]:not([data-motion='on']) [data-enter] {
     opacity: 0;
     animation: motion-fallback-in var(--duration-base) ease-out 1s forwards;
   }

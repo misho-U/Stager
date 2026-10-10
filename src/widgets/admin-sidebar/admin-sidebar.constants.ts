@@ -27,7 +27,9 @@ export type AdminNavItem = {
  *
  * Categories are reached from the screen they sort (Insights, Courses), not
  * from here: with two kinds, a bare "Categories" would be ambiguous, and every
- * row counts against a sidebar sized to fit a laptop screen.
+ * row counts against a sidebar sized to fit a laptop screen. For that reason
+ * the company's figures, home page content, are reached from Page copy (and
+ * the dashboard's shortcuts).
  */
 export const ADMIN_NAV: AdminNavItem[] = [
   { href: '/admin/projects', labelKey: 'projects', group: 'content' },

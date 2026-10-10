@@ -2,11 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { ADMIN_SESSION, CREDENTIALS_PRESENT } from './admin-session';
 import { DB_WRITES_ALLOWED, DB_WRITES_SKIP_REASON } from './db-guard';
-import {
-  courseInputSchema,
-  relatedCourses,
-  type PublicCourse,
-} from '@/entity/course/model/course.model';
+import { courseInputSchema } from '@/entity/course/model/course.model';
 import { todayInTbilisi } from '@/shared/lib/calendar-date';
 import { describeIssue } from '@/shared/lib/validation-message';
 import adminEn from '@pkg/i18n/messages/admin.en.json';
@@ -61,18 +57,6 @@ test.describe('course rules', () => {
     // Tbilisi is UTC+4: 19:59 UTC is still the 1st there, 20:00 is the 2nd.
     expect(todayInTbilisi(new Date('2026-10-01T19:59:00Z'))).toBe('2026-10-01');
     expect(todayInTbilisi(new Date('2026-10-01T20:00:00Z'))).toBe('2026-10-02');
-  });
-
-  test('a service points at the soonest course that names it', () => {
-    const course = (id: string, serviceId: string | null) =>
-      ({ id, serviceId }) as unknown as PublicCourse;
-    // Courses arrive soonest first.
-    const courses = [course('soon', 'kitchen'), course('later', 'kitchen'), course('menu', 'menu')];
-    const related = relatedCourses([{ id: 'kitchen' }, { id: 'menu' }, { id: 'haccp' }], courses);
-
-    expect(related.get('kitchen')?.id).toBe('soon');
-    expect(related.get('menu')?.id).toBe('menu');
-    expect(related.has('haccp')).toBe(false);
   });
 });
 

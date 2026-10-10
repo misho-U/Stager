@@ -150,14 +150,14 @@ hero's entrance instead of hiding text the visitor has already seen.
 
 ## Open, on purpose
 
-| Item                                                           | Why not now                                                                             |
-| -------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| Static rendering of the home page, the biggest speed gain left | The `?v=` design switch forces per-request rendering; it goes when one design is chosen |
-| SEO fields (canonical, per-page share images)                  | Belong with the chosen design                                                           |
-| About 68 KB (gzipped) of zod's message locales on public pages | Turbopack does not tree-shake them; a lighter contact form comes with the chosen design |
-| Password reset, an audit-log viewer, user management           | Features, not fixes                                                                     |
-| Two admins editing one record (last save wins)                 | There is one admin                                                                      |
-| The 20 foreign-key indexes Supabase's advisor lists            | Irrelevant at this size; add with the next schema change                                |
+| Item                                                           | Why not now                                                                                                                                                      |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Static rendering of the home page, the biggest speed gain left | The design switch is gone (October 2026), but `/[locale]` still renders per request: the CSP's per-request nonce (`src/proxy.ts`) needs it. Decide the CSP first |
+| SEO fields (canonical, per-page share images)                  | Belong with the launch copy                                                                                                                                      |
+| About 68 KB (gzipped) of zod's message locales on public pages | Turbopack does not tree-shake them; a lighter contact form is still to do                                                                                        |
+| Password reset, an audit-log viewer, user management           | Features, not fixes                                                                                                                                              |
+| Two admins editing one record (last save wins)                 | There is one admin                                                                                                                                               |
+| The 20 foreign-key indexes Supabase's advisor lists            | Irrelevant at this size; add with the next schema change                                                                                                         |
 
 ## For the owner
 

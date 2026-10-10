@@ -261,6 +261,16 @@ const publicInclude = (locale: DbLocale) =>
     },
   }) as const;
 
+/** A project's gallery as the site shows it: in order, missing images left out. */
+function toGallery(
+  gallery: ReadonlyArray<{ media: Parameters<typeof toMediaSummary>[0] }>,
+  locale: DbLocale,
+) {
+  return gallery
+    .map((item) => toMediaSummary(item.media, locale))
+    .filter((media): media is NonNullable<typeof media> => media !== null);
+}
+
 export async function listPublicProjects(locale: DbLocale, limit: number, offset: number) {
   const where = { status: 'PUBLISHED' as const };
 
@@ -288,6 +298,7 @@ export async function listPublicProjects(locale: DbLocale, limit: number, offset
       client: row.client,
       featured: row.featured,
       publishedAt: toIso(row.publishedAt),
+      gallery: toGallery(row.gallery, locale),
     };
   });
 
@@ -320,9 +331,7 @@ export async function getPublicProject(
     featured: row.featured,
     publishedAt: toIso(row.publishedAt),
     youtubeUrl: row.youtubeUrl,
-    gallery: row.gallery
-      .map((item) => toMediaSummary(item.media, locale))
-      .filter((media): media is NonNullable<typeof media> => media !== null),
+    gallery: toGallery(row.gallery, locale),
     metaTitle: translation?.metaTitle ?? null,
     metaDescription: translation?.metaDescription ?? null,
     ogImageUrl: translation?.ogMedia?.url ?? row.coverMedia?.url ?? null,

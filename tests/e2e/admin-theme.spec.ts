@@ -5,7 +5,8 @@ import { expect, test, type Page } from '@playwright/test';
 
 /**
  * The dashboard's light / dark theme, which follows the operating system until
- * one is picked — and the rule that the public site never follows it.
+ * one is picked — and the rule that the public site never follows it: it is
+ * dark, by design, whatever the system or a cookie says.
  *
  * Runs without credentials: the login page lives under the admin layout, so it
  * carries exactly the same theme wiring as the dashboard.
@@ -168,25 +169,26 @@ test.describe('admin theme modes', () => {
   });
 });
 
-test.describe('the public site is light-only', () => {
+test.describe('the public site is dark, whatever the system says', () => {
   for (const locale of ['ka', 'en']) {
-    test(`/${locale} ignores an OS dark preference and a stray theme cookie`, async ({
+    test(`/${locale} ignores an OS light preference and a stray theme cookie`, async ({
       page,
       baseURL,
     }) => {
-      await page.emulateMedia({ colorScheme: 'light' });
+      await page.emulateMedia({ colorScheme: 'dark' });
       await page.goto(`/${locale}`);
-      const light = await pageState(page);
+      const dark = await pageState(page);
+      expect(dark.colorScheme).toBe('dark');
 
       // A cookie at "/" would never be written by the switch (it is scoped to
       // /admin), but the public site must not react to one regardless.
-      await setCookie(page, baseURL, 'dark', '/');
-      await page.emulateMedia({ colorScheme: 'dark' });
+      await setCookie(page, baseURL, 'light', '/');
+      await page.emulateMedia({ colorScheme: 'light' });
       await page.goto(`/${locale}`);
-      const underDark = await pageState(page);
+      const underLight = await pageState(page);
 
-      expect(underDark.colorScheme).toBe('normal');
-      expect(underDark.background).toEqual(light.background);
+      expect(underLight.colorScheme).toBe('dark');
+      expect(underLight.background).toEqual(dark.background);
     });
   }
 });

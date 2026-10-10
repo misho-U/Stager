@@ -87,22 +87,6 @@ export const publicCourseListResponseSchema = listResponseSchema(publicCourseSch
 /** Few enough seats left that the site says so with emphasis. */
 export const FEW_SEATS = 5;
 
-/**
- * The course each service points at: the soonest one that names it. Courses
- * arrive soonest first, so the first match is the next to start.
- */
-export function relatedCourses(
-  services: ReadonlyArray<{ id: string }>,
-  courses: readonly PublicCourse[],
-): ReadonlyMap<string, PublicCourse> {
-  const related = new Map<string, PublicCourse>();
-  for (const service of services) {
-    const course = courses.find((item) => item.serviceId === service.id);
-    if (course) related.set(service.id, course);
-  }
-  return related;
-}
-
 export const courseTranslationInputSchema = z.object({
   title: z.string().trim().min(1).max(200),
   summary: z.string().trim().max(600).default(''),

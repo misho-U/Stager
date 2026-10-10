@@ -64,23 +64,20 @@
   "home": {
     "readFailed": "ზოგიერთი კონტენტი ვერ ჩაიტვირთა. გვერდი შეიძლება არასრული იყოს.",
     "noProjects": "პროექტები მალე დაემატება.",
+    "stats": "STAGER ციფრებში",
+    "photos": {
+      "label": "ფოტოები: {title}",
+      "carousel": "ფოტოები",
+      "slide": "ფოტო",
+      "position": "{index} / {count}",
+      "previous": "წინა ფოტო",
+      "next": "შემდეგი ფოტო"
+    },
     "contactDetails": "საკონტაქტო ინფორმაცია",
     "sections": "გვერდის სექციები",
     "why": "რატომ ჩვენ",
-    "previous": "წინა",
-    "next": "შემდეგი",
     "menu": "მენიუ",
     "close": "დახურვა",
-    "board": {
-      "title": "რა ხდება STAGER-ში",
-      "carousel": "კარუსელი",
-      "slide": "ბარათი",
-      "show": "ჩვენება: {name}",
-      "pause": "პაუზა",
-      "resume": "გაგრძელება"
-    },
-    "featuredProject": "გამორჩეული პროექტი",
-    "seeProjects": "პროექტების ნახვა",
     "rights": "ყველა უფლება დაცულია."
   },
   "preview": {
@@ -117,8 +114,7 @@
     "registerMessageUndated": "მსურს დავრეგისტრირდე კურსზე „{course}“.",
     "waitlistMessage": "მსურს ჩავეწერო მოლოდინის სიაში კურსზე „{course}“, რომელიც იწყება {date}.",
     "waitlistMessageUndated": "მსურს ჩავეწერო მოლოდინის სიაში კურსზე „{course}“.",
-    "close": "დახურვა",
-    "related": "აკადემიაში: {course}"
+    "close": "დახურვა"
   },
   "videos": {
     "title": "ვიდეოები",
@@ -128,11 +124,8 @@
       "PODCAST": "პოდკასტი",
       "MASTERCLASS": "მასტერკლასი"
     },
-    "play": "ყურება",
     "playTitle": "ყურება: {title}",
     "minutes": "{count} წთ",
-    "latest": "ახალი ვიდეო",
-    "nowPlaying": "ახლა ჩართულია",
     "allOnYouTube": "ყველა ვიდეო YouTube-ზე",
     "watchOnYouTube": "YouTube-ზე ნახვა: {title}",
     "unavailable": "ეს ნიმუშია. ვიდეო აქ ჩაირთვება, როცა მისი YouTube ბმული ადმინ პანელში დაემატება.",
@@ -141,6 +134,6 @@
   },
   "sample": {
     "badge": "ნიმუში",
-    "hint": "ნიმუშები, სანამ კურსები და ვიდეოები ადმინ პანელში დაემატება."
+    "hint": "ნიმუშები, სანამ ადმინ პანელში ნამდვილი ჩანაწერები დაემატება."
   }
 }

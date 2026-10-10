@@ -1,0 +1,775 @@
+/* ===========================================================================
+   THE PUBLIC SITE — "Chef's Table", dark
+   ===========================================================================
+   The best seat in the house, at night. The page is dark and the work is
+   lit. The company's figures follow the promise, the services read as a
+   journey drawn as the page is read, each project shows its photos one
+   after another, the Academy's courses are admission tickets, the videos
+   open full screen, and the page ends at dawn: an iris opening onto teal.
+   Calm by the client's request: the type reads, it does not shout.
+
+   Colour rule: a near-black teal night (the brand teal taken toward black)
+   carries the page; cream is the text and the primary button. The one
+   accent is the brand teal lifted for the dark (the same hue, lighter),
+   for active states, links, small highlights and the stage lights. The
+   finale is the brand teal itself. Every colour is the palette or a mix.
+
+   Type: Noto Sans Georgian at its own width, a medium weight for headings
+   and regular for reading. Sizes stay moderate: the largest is the hero's
+   headline, and no other heading comes near it. Georgian steps down a
+   little and sets lighter, since Mkhedruli is taller and its words longer.
+   No capitals as a style, no italics, leading never under 1.1.
+
+   Shape rule: buttons, chips and one-line fields are pills; cards, frames,
+   tickets and the message box are 24px; the finale's panel is 40px.
+
+   Section header: a condensed heading with an optional line under it;
+   actions at the right end of the same block.
+
+   Every value here overrides a brandbook.css token of the same name, or
+   defines one the site alone uses (--ct-*), inside [data-site] only: every
+   public page wraps itself in it. The dashboard never does.
+   =========================================================================== */
+[data-site] {
+  --ct-night: color-mix(in oklab, var(--color-brand-teal) 32%, black);
+  --ct-raised: color-mix(in oklab, var(--color-brand-teal) 50%, black);
+  --ct-lifted: color-mix(in oklab, var(--color-brand-teal) 64%, black);
+  /* The brand teal, lifted for the dark (see the @supports rule below for
+     the exact colour); a browser without relative colours gets sage. */
+  --ct-accent: color-mix(in oklab, var(--color-brand-sage) 55%, var(--color-brand-cream-light));
+
+  color-scheme: dark;
+
+  /* --- Colour roles --- */
+  --color-surface: var(--ct-night);
+  --color-surface-raised: var(--ct-raised);
+  --color-surface-muted: var(--ct-lifted);
+  --color-surface-inset: color-mix(in oklab, var(--color-brand-teal) 40%, black);
+  --color-surface-inverse: var(--color-brand-teal);
+  --color-ink: var(--color-brand-cream-light);
+  --color-ink-muted: color-mix(in oklab, var(--color-brand-cream) 70%, var(--color-brand-sage));
+  --color-ink-subtle: color-mix(in oklab, var(--color-brand-cream) 55%, var(--color-brand-sage));
+  --color-ink-inverse: var(--color-brand-cream-light);
+  --color-line: color-mix(in oklab, var(--color-brand-cream) 13%, var(--ct-night));
+  --color-line-strong: color-mix(in oklab, var(--color-brand-cream) 26%, var(--ct-night));
+  --color-line-input: color-mix(in oklab, var(--color-brand-cream) 48%, var(--ct-night));
+  --color-primary: var(--color-brand-cream-light);
+  --color-primary-hover: var(--ct-accent);
+  --color-on-primary: var(--color-brand-teal);
+  --color-focus: var(--ct-accent);
+  --color-accent: var(--ct-accent);
+  --color-danger: var(--color-danger-on-dark);
+
+  /* --- Light: pools of it, never a glowing edge --- */
+  --ct-glow: color-mix(in oklab, var(--ct-accent) 22%, transparent);
+  --ct-glow-soft: color-mix(in oklab, var(--ct-accent) 10%, transparent);
+  --ct-poster:
+    radial-gradient(
+      120% 90% at 85% 100%,
+      color-mix(in oklab, var(--ct-accent) 28%, transparent),
+      transparent 60%
+    ),
+    linear-gradient(
+      160deg,
+      var(--color-brand-teal),
+      color-mix(in oklab, var(--color-brand-teal) 55%, black)
+    );
+  --ct-poster-mark: color-mix(in oklab, var(--color-brand-cream) 14%, transparent);
+
+  /* --- Elevation: deeper night, never grey --- */
+  --shadow-card: 0 30px 60px -30px color-mix(in oklab, black 70%, transparent);
+
+  /* --- Type (see the rule above). The hero's headline tops out at 68px on
+         a wide screen, a section heading at 48px, everything else well
+         under: each step is clearly smaller than the one above it. --- */
+  --font-weight-hero: 560;
+  --font-weight-heading: 560;
+  --font-stretch-hero: 100%;
+  --font-stretch-heading: 100%;
+  --text-display: clamp(2.25rem, 1.4rem + 3.2vw, 4.25rem);
+  --text-display--line-height: 1.1;
+  --text-display--letter-spacing: -0.015em;
+  --text-headline: clamp(1.875rem, 1.3rem + 1.9vw, 3rem);
+  --text-headline--line-height: 1.15;
+  --text-headline--letter-spacing: -0.01em;
+  --text-title-lg: clamp(1.5rem, 1.2rem + 0.9vw, 2rem);
+  --text-title-lg--line-height: 1.2;
+  --text-title: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem);
+  --text-title--line-height: 1.25;
+  --text-title-sm: 1.1875rem;
+  --text-title-sm--line-height: 1.3;
+  --text-lead: clamp(1.125rem, 1rem + 0.4vw, 1.3125rem);
+  --text-lead--line-height: 1.55;
+  /* A statement: a short intro, set as a sentence or two, larger than the
+     text around it and smaller than a heading. */
+  --ct-statement: clamp(1.375rem, 1.1rem + 1vw, 2rem);
+  --ct-statement--line-height: 1.45;
+  --text-caption: 0.8125rem;
+
+  /* --- Space --- */
+  --spacing-gutter: clamp(1.25rem, 0.5rem + 3vw, 3.5rem);
+  --spacing-section: clamp(5rem, 2.5rem + 6vw, 8.5rem);
+  --container-page: 88rem;
+
+  /* --- Shape (see the rule above) --- */
+  --radius-sm: 9999px;
+  --radius-md: 9999px;
+  --radius-lg: 1.5rem;
+  --radius-xl: 2.5rem;
+
+  /* --- Sizes the site alone uses --- */
+  --ct-hero-h: 78dvh; /* the hero: the figures below it show on arrival */
+  --ct-hero-measure: 14em; /* the headline's longest line, in its own size */
+  --ct-header-h: 4.5rem;
+  --ct-pill-h: 3.75rem; /* the header once it has become a pill */
+  /* The services' journey: a stage's marker, and the gap between stages
+     (the line from one marker to the next spans it). */
+  --ct-node: 3.5rem;
+  --ct-step-gap: 1rem;
+  --ct-thumb-radius: 0.75rem; /* a photo inside a card, inside its 24px corner */
+  --ct-arrow: 2.75rem; /* a project's photo arrows: a finger's width */
+  --ct-video-w-sm: 72vw; /* a video in the phone's swipe row */
+  --ct-ticket-stub: 9.5rem; /* the tear-off end of an Academy ticket */
+  --ct-notch: 0.875rem; /* the half-circles cut where a ticket tears */
+  --ct-play: 5.5rem;
+  --ct-play-sm: 3.5rem;
+  /* Lifts the play button above a caption on its poster: a padding under
+     it, as a share of the frame's width (16:9 at any size). */
+  --ct-play-lift: 14%;
+  --ct-spot: 22rem; /* the light that follows the pointer over a card */
+  --ct-footer-mark: 18cqi; /* "STAGER", in outline, across part of the footer */
+}
+
+/* The accent proper: the brand teal's own hue, lighter and a little richer,
+   so it reads on the night. Relative colour, derived from the token. */
+@supports (color: oklch(from white l c h)) {
+  [data-site] {
+    --ct-accent: oklch(from var(--color-brand-teal) 0.8 0.075 h);
+  }
+}
+
+/* Georgian: Mkhedruli is taller than Latin at the same size and its words
+   are longer, so the two largest sizes step down a little, set lighter and
+   keep the brandbook's letter spacing. */
+[data-site]:lang(ka) {
+  --font-weight-hero: 500;
+  --font-weight-heading: 500;
+  --text-display: clamp(2rem, 1.3rem + 2.7vw, 3.625rem);
+  --text-display--letter-spacing: 0em;
+  --text-display--line-height: 1.2;
+  --text-headline: clamp(1.75rem, 1.25rem + 1.6vw, 2.625rem);
+  --text-headline--letter-spacing: 0em;
+  --text-headline--line-height: 1.2;
+  --ct-statement: clamp(1.25rem, 1.05rem + 0.8vw, 1.75rem);
+}
+
+:root:has([data-site]) {
+  background-color: var(--ct-night);
+  color-scheme: dark;
+}
+
+/* A jump to a section lands clear of the header. */
+[data-site] :is(section, div, li)[id] {
+  scroll-margin-top: calc(var(--ct-pill-h) + 2rem);
+}
+
+@layer components {
+  /* The header: clear over the hero, a dark glass pill once the page moves. */
+  [data-site] .ct-glass {
+    background-color: color-mix(in oklab, var(--ct-raised) 78%, transparent);
+    backdrop-filter: blur(18px) saturate(140%);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    [data-site] .ct-glass {
+      background-color: var(--ct-raised);
+      backdrop-filter: none;
+    }
+  }
+
+  /* The language switch as a two-part pill: the current language filled. */
+  [data-site] .ct-lang nav {
+    gap: 0.125rem;
+    padding: 0.125rem;
+    border-radius: 9999px;
+    background-color: color-mix(in oklab, var(--color-brand-cream) 10%, transparent);
+  }
+
+  /* A pool of light: the hero's (it follows the pointer), the Academy's. */
+  [data-site] .ct-light {
+    --ct-light: radial-gradient(
+      var(--ct-spot-size, 60rem) circle at var(--x, 70%) var(--y, 30%),
+      var(--ct-glow),
+      transparent 70%
+    );
+    background-image: var(--ct-light);
+  }
+  /* The hero's fades into the night before its bottom edge, so the figures
+     under it start on the page's own colour, not at a seam. */
+  [data-site] .ct-light-fade {
+    background-image:
+      linear-gradient(to bottom, transparent 50%, var(--color-surface)), var(--ct-light);
+  }
+  /* The Academy's: a wide wash from above, like a lamp over the table. */
+  [data-site] .ct-light-top {
+    --x: 50%;
+    --y: 0%;
+    --ct-spot-size: 70rem;
+  }
+
+  /* A poster for a video without a picture yet. */
+  [data-site] .ct-poster {
+    background-color: var(--color-brand-teal);
+    background-image: var(--ct-poster);
+    color: var(--ct-poster-mark);
+  }
+
+  /* Cards that light up under the pointer: a soft pool of light that
+     follows it (--x/--y, set by the design's script), inside the card. */
+  [data-site] .ct-spot {
+    position: relative;
+    isolation: isolate;
+  }
+  [data-site] .ct-spot::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(
+      var(--ct-spot) circle at var(--x, -100%) var(--y, -100%),
+      var(--ct-glow-soft),
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity var(--duration-base) var(--ease-brand);
+    pointer-events: none;
+  }
+  [data-site] .ct-spot:hover::before {
+    opacity: 1;
+  }
+
+  /* An Academy ticket: a body and a stub, torn along a dashed line with a
+     half-circle cut out of each edge. The cut is a mask, so the night shows
+     through it. */
+  [data-site] .ct-ticket {
+    --notch-x: calc(100% - var(--ct-ticket-stub));
+    mask:
+      radial-gradient(var(--ct-notch) at var(--notch-x) 0, transparent 98%, black) top / 100% 51%
+        no-repeat,
+      radial-gradient(var(--ct-notch) at var(--notch-x) 100%, transparent 98%, black) bottom / 100%
+        51% no-repeat;
+  }
+  [data-site] .ct-tear {
+    border-left: 2px dashed var(--color-line-strong);
+  }
+  /* On a phone the stub sits on top, torn along a horizontal line. */
+  [data-site] .ct-ticket {
+    @variant max-sm {
+      mask: none;
+    }
+  }
+  [data-site] .ct-tear {
+    @variant max-sm {
+      border-left: 0;
+      border-bottom: 2px dashed var(--color-line-strong);
+    }
+  }
+
+  /* The footer's wordmark, as wide as its container, drawn in outline. */
+  [data-site] .ct-footer-mark {
+    font-size: var(--ct-footer-mark);
+    line-height: 0.82;
+    letter-spacing: 0;
+    color: transparent;
+    -webkit-text-stroke: 1px var(--color-line-input);
+  }
+
+  /* The full-screen video player and the menu: the whole screen. */
+  [data-site] .ct-fullscreen {
+    margin: 0;
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    padding: 0;
+    border: 0;
+    /* Frosted night: the page behind is only a blur of light. */
+    background-color: color-mix(in oklab, var(--ct-night) 90%, transparent);
+    backdrop-filter: blur(16px);
+    color: var(--color-ink);
+
+    &::backdrop {
+      background-color: transparent;
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    [data-site] .ct-fullscreen {
+      background-color: var(--ct-night);
+      backdrop-filter: none;
+    }
+  }
+
+  /* The menu fades in over the page. */
+  [data-site] .ct-menu {
+    opacity: 1;
+    transition: opacity var(--duration-base) var(--ease-brand);
+
+    @starting-style {
+      &[open] {
+        opacity: 0;
+      }
+    }
+  }
+
+  /* A statement (a short intro): large and regular, at the face's own width. */
+  [data-site] .ct-statement {
+    max-width: 34em; /* about 60 characters a line, in either script */
+    font-size: var(--ct-statement);
+    line-height: var(--ct-statement--line-height);
+    font-weight: 400;
+  }
+
+  /* A video's title on its frame (a phone's newest video): cream over a
+     scrim of night toward the bottom edge. Recedes under a resting mouse
+     (.video-caption, globals.css). */
+  [data-site] .ct-caption {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 3rem 1rem 1rem;
+    background-image: linear-gradient(
+      to top,
+      color-mix(in oklab, var(--ct-night) 88%, transparent),
+      color-mix(in oklab, var(--ct-night) 40%, transparent) 60%,
+      transparent
+    );
+    color: var(--color-brand-cream-light);
+
+    @variant sm {
+      gap: 0.5rem;
+      padding: 6rem 2rem 1.75rem;
+    }
+  }
+  [data-site] .ct-caption-meta {
+    color: var(--color-brand-cream);
+  }
+
+  /* A programme's kind and length on its poster, like a label on a can. */
+  [data-site] .ct-tag {
+    pointer-events: none;
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.75rem;
+    padding-inline: 0.75rem;
+    border-radius: 9999px;
+    background-color: color-mix(in oklab, var(--ct-night) 72%, transparent);
+    backdrop-filter: blur(8px);
+    color: var(--color-brand-cream-light);
+    font-size: var(--text-caption);
+    font-weight: 500;
+  }
+
+  /* "YouTube": a glass pill on a frame's corner, or a quiet link by a title. */
+  [data-site] .ct-youtube {
+    z-index: var(--z-raised);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 2.25rem;
+    padding-inline: 0.875rem;
+    border-radius: 9999px;
+    background-color: color-mix(in oklab, var(--ct-night) 72%, transparent);
+    backdrop-filter: blur(8px);
+    color: var(--color-brand-cream-light);
+    font-size: var(--text-body-sm);
+    font-weight: 500;
+
+    &:hover {
+      background-color: var(--ct-night);
+    }
+  }
+  [data-site] .ct-youtube-quiet {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 2.75rem;
+    color: var(--color-ink-muted);
+    font-size: var(--text-body-sm);
+
+    &:hover {
+      color: var(--color-ink);
+    }
+  }
+
+  /* The company in figures: a row between two hairlines, a hairline
+     between figures. Two to a row on a phone, up to four on a wide screen
+     (--stats is how many there are). */
+  [data-site] .ct-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-block: 1px solid var(--color-line);
+
+    @variant lg {
+      grid-template-columns: repeat(min(var(--stats), 4), minmax(0, 1fr));
+    }
+  }
+  [data-site] .ct-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-block: 1.75rem;
+    padding-inline-end: 1rem;
+
+    @variant lg {
+      padding-block: 2.25rem;
+    }
+  }
+  [data-site] .ct-stat:nth-child(even) {
+    border-inline-start: 1px solid var(--color-line);
+    padding-inline-start: 1.25rem;
+  }
+  [data-site] .ct-stat:nth-child(n + 3) {
+    border-top: 1px solid var(--color-line);
+  }
+  @variant lg {
+    [data-site] .ct-stat:is(:nth-child(even), :nth-child(n + 3)) {
+      border-inline-start: 0;
+      border-top: 0;
+      padding-inline-start: 0;
+    }
+    [data-site] .ct-stat:not(:nth-child(4n + 1)) {
+      border-inline-start: 1px solid var(--color-line);
+      padding-inline-start: 2rem;
+    }
+    [data-site] .ct-stat:nth-child(n + 5) {
+      border-top: 1px solid var(--color-line);
+    }
+  }
+
+  /* The services as a journey. Each stage is its marker on the line and,
+     beside it on a phone or under it in a row, a card: the service's name,
+     what it is, its photo. A row from xl (five stages at most, see
+     JOURNEY_ROW_MAX), the line running through the markers; one column
+     below that, the markers down the left on a vertical line. The line from
+     a marker to the next is the stage's own ::after; --fill (0 to 1) is how
+     much of it the page has drawn in the accent, set by the design's motion
+     as the stages are reached. */
+  [data-site] .ct-journey {
+    display: grid;
+    gap: var(--ct-step-gap);
+    max-width: 48rem;
+  }
+  [data-site] .ct-step {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--ct-node) minmax(0, 1fr);
+    align-items: start;
+    gap: 1rem;
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: calc(var(--ct-node) / 2 - 1px);
+      top: var(--ct-node);
+      width: 2px;
+      height: calc(100% - var(--ct-node) + var(--ct-step-gap));
+      background: linear-gradient(
+        to bottom,
+        var(--color-accent) calc(var(--fill, 0) * 100%),
+        var(--color-line-strong) 0
+      );
+      pointer-events: none;
+    }
+
+    &:last-child::after {
+      display: none;
+    }
+  }
+  [data-site] .ct-step-node {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: var(--ct-node);
+    height: var(--ct-node);
+    border-radius: 9999px;
+    background-color: var(--color-surface-raised);
+    box-shadow: 0 0 0 1px var(--color-line-strong);
+    color: var(--color-ink);
+    font-size: var(--text-title);
+    transition:
+      background-color var(--duration-base) var(--ease-brand),
+      color var(--duration-base) var(--ease-brand),
+      box-shadow var(--duration-base) var(--ease-brand),
+      scale var(--duration-base) var(--ease-brand);
+  }
+  [data-site] .ct-step-card {
+    display: flex;
+    min-width: 0;
+    height: 100%;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface-raised);
+    box-shadow: 0 0 0 1px var(--color-line);
+    transition:
+      box-shadow var(--duration-base) var(--ease-brand),
+      translate var(--duration-base) var(--ease-brand);
+  }
+  [data-site] .ct-step-text {
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+  }
+  @variant xl {
+    [data-site] .ct-journey[data-row] {
+      max-width: none;
+      grid-template-columns: repeat(var(--steps), minmax(0, 1fr));
+    }
+    [data-site] .ct-journey[data-row] .ct-step {
+      grid-template-columns: minmax(0, 1fr);
+      /* The marker's row keeps its height when the stage is stretched to
+         the tallest one; the card takes the rest, so all cards start level
+         and end level. */
+      grid-template-rows: var(--ct-node) 1fr;
+      gap: 1.25rem;
+
+      &::after {
+        left: var(--ct-node);
+        top: calc(var(--ct-node) / 2 - 1px);
+        width: calc(100% - var(--ct-node) + var(--ct-step-gap));
+        height: 2px;
+        background: linear-gradient(
+          to right,
+          var(--color-accent) calc(var(--fill, 0) * 100%),
+          var(--color-line-strong) 0
+        );
+      }
+    }
+    [data-site] .ct-journey[data-row] .ct-step-text {
+      font-size: var(--text-body-sm);
+      line-height: var(--text-body-sm--line-height);
+    }
+  }
+  /* A stage the page has reached: its marker ringed in the accent. */
+  [data-site] .ct-step[data-reached] .ct-step-node {
+    box-shadow: 0 0 0 2px var(--color-accent);
+    color: var(--color-accent);
+  }
+  /* The stage under the pointer steps forward, its marker lit. */
+  [data-site] .ct-step:hover .ct-step-card {
+    box-shadow:
+      0 0 0 1px var(--color-line-strong),
+      var(--shadow-card);
+    translate: 0 -0.25rem;
+  }
+  [data-site] .ct-step:hover .ct-step-node {
+    background-color: var(--color-accent);
+    box-shadow: 0 0 0 2px var(--color-accent);
+    color: var(--color-on-primary);
+    scale: 1.06;
+  }
+
+  /* A project's card: its photos, its name and details under them, and
+     what it was about. On a screen with a mouse, that summary waits on the
+     photos and shows under the pointer, or with focus inside the card; a
+     touch screen has no hover, so there it reads under the name. The frame
+     and the summary share a grid cell to overlap. */
+  [data-site] .ct-project {
+    display: grid;
+    grid-template-areas: 'photo' 'text' 'summary';
+  }
+  [data-site] .ct-project-frame {
+    grid-area: photo;
+    align-self: start;
+  }
+  [data-site] .ct-project-text {
+    grid-area: text;
+  }
+  [data-site] .ct-project-summary {
+    grid-area: summary;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    padding-top: 0.5rem;
+    color: var(--color-ink-muted);
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm--line-height);
+    text-wrap: pretty;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    [data-site] .ct-project {
+      grid-template-areas: 'photo' 'text';
+    }
+    [data-site] .ct-project-summary {
+      position: relative;
+      z-index: 1;
+      grid-area: photo;
+      align-self: end;
+      -webkit-line-clamp: 4;
+      padding: 4rem 1.5rem 1.5rem;
+      border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+      background-image: linear-gradient(
+        to top,
+        color-mix(in oklab, var(--ct-night) 92%, transparent),
+        color-mix(in oklab, var(--ct-night) 70%, transparent) 55%,
+        transparent
+      );
+      color: var(--color-brand-cream-light);
+      opacity: 0;
+      translate: 0 0.75rem;
+      pointer-events: none;
+      transition:
+        opacity var(--duration-base) var(--ease-brand),
+        translate var(--duration-base) var(--ease-brand);
+    }
+    [data-site] .ct-project:is(:hover, :focus-within) .ct-project-summary {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+
+  /* A project's photos: a row that scrolls and snaps, one photo to the
+     frame. The arrows sit together in the top corner, clear of the summary,
+     cream like the site's buttons so they stand out on any photo; with a
+     mouse they show under the pointer or with focus, on a touch screen
+     always (a swipe works too). */
+  [data-site] .ct-photos-track {
+    display: flex;
+    height: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  [data-site] .ct-photos-track::-webkit-scrollbar {
+    display: none;
+  }
+  [data-site] .ct-photos-slide {
+    flex: 0 0 100%;
+    height: 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+  [data-site] .ct-photos-arrow {
+    position: absolute;
+    top: 0.75rem;
+    z-index: var(--z-raised);
+    display: grid;
+    place-items: center;
+    width: var(--ct-arrow);
+    height: var(--ct-arrow);
+    border-radius: 9999px;
+    background-color: var(--color-primary);
+    box-shadow: var(--shadow-card);
+    color: var(--color-on-primary);
+    transition:
+      opacity var(--duration-base) var(--ease-brand),
+      background-color var(--duration-base) var(--ease-brand);
+
+    &:hover {
+      background-color: var(--color-primary-hover);
+    }
+  }
+  /* Side by side at the right: next at the corner, previous before it. */
+  [data-site] .ct-photos-next {
+    right: 0.75rem;
+  }
+  [data-site] .ct-photos-previous {
+    right: calc(0.75rem + var(--ct-arrow) + 0.375rem);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    [data-site] .ct-photos-arrow {
+      opacity: 0;
+    }
+    [data-site] .ct-project:is(:hover, :focus-within) .ct-photos-arrow {
+      opacity: 1;
+    }
+  }
+
+  /* Why STAGER: the reasons, written in the dashboard. A paragraph reads as
+     a lead; a list as numbered lines between hairlines. */
+  [data-site] .ct-reasons {
+    font-size: var(--text-lead);
+    line-height: var(--text-lead--line-height);
+    text-wrap: pretty;
+  }
+  [data-site] .ct-reasons > * + * {
+    margin-top: 1.5rem;
+  }
+  [data-site] .ct-reasons :is(ul, ol) {
+    list-style: none;
+    padding-left: 0;
+    counter-reset: reason;
+    border-bottom: 1px solid var(--color-line);
+  }
+  [data-site] .ct-reasons li {
+    counter-increment: reason;
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: 1rem;
+    margin: 0;
+    padding-block: 1.25rem;
+    border-top: 1px solid var(--color-line);
+    color: var(--color-ink);
+    font-size: var(--text-body-lg);
+    line-height: var(--text-body-lg--line-height);
+
+    @variant sm {
+      grid-template-columns: 3.5rem minmax(0, 1fr);
+    }
+  }
+  [data-site] .ct-reasons li::before {
+    content: counter(reason, decimal-leading-zero);
+    padding-top: 0.15em;
+    color: var(--color-accent);
+    font-size: var(--text-body-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* A course hidden by the Academy's filter. */
+  [data-site] [data-filtered-out] {
+    display: none;
+  }
+}
+
+/* Outside any layer on purpose: these must win over the utility classes the
+   shared widgets carry. */
+
+/* The message box is a 24px box, not a pill (see the shape rule). */
+[data-site] textarea {
+  border-radius: var(--radius-lg);
+}
+
+/* A pill-shaped select draws its own arrow, clear of the rounded end
+   (Chrome paints the native one at the very edge, whatever the padding).
+   Two gradients make the chevron; it takes the text's colour. */
+[data-site] select {
+  appearance: none;
+  padding-inline-end: 2.75rem;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 1.5rem) 55%,
+    calc(100% - 1.5rem + 0.3125rem) 55%;
+  background-size: 0.3125rem 0.3125rem;
+  background-repeat: no-repeat;
+}
+
+/* The language switch: no divider, the current language filled with cream. */
+[data-site] .ct-lang nav > span > span[aria-hidden] {
+  display: none;
+}
+[data-site] .ct-lang nav a {
+  min-width: 2.75rem;
+  border-radius: 9999px;
+  padding-inline: 0.75rem;
+  color: var(--color-ink-muted);
+  letter-spacing: 0;
+}
+[data-site] .ct-lang nav a[aria-current='true'] {
+  background-color: var(--color-brand-cream-light);
+  color: var(--color-brand-teal);
+}
