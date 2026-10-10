@@ -13,7 +13,6 @@ import {
 import { CheckboxField, SelectField, TextAreaField, TextField } from '@/shared/components/field';
 import { PageHeader } from '@/shared/components/page-header';
 import { ErrorNotice, LoadFailed, Panel } from '@/shared/components/panel';
-import { SeoFields } from '@/shared/components/seo-fields';
 import { toOptionalNumber } from '@/shared/lib/form-values';
 import { useStatusOptions } from '@/shared/lib/use-enum-options';
 import type { DbLocale } from '@/shared/types/enums';
@@ -88,29 +87,18 @@ export function AdminProjectFormModule({ projectId }: { projectId?: string }) {
                   error={errors.translations?.[locale]?.summary?.message}
                   {...form.register(`translations.${locale}.summary`)}
                 />
-
-                <TextAreaField
-                  label={t('fields.body')}
-                  rows={10}
-                  hint={t('projects.form.bodyHint')}
-                  error={errors.translations?.[locale]?.body?.message}
-                  {...form.register(`translations.${locale}.body`)}
-                />
-
-                <SeoFields
-                  metaTitle={form.register(`translations.${locale}.metaTitle`)}
-                  metaDescription={form.register(`translations.${locale}.metaDescription`)}
-                  errors={{
-                    metaTitle: errors.translations?.[locale]?.metaTitle?.message,
-                    metaDescription: errors.translations?.[locale]?.metaDescription?.message,
-                  }}
-                />
               </>
             )}
           </TranslatedFields>
         </Panel>
 
-        <Panel title={t('projects.form.mediaPanel')}>
+        {/* A project is its card on the home page, with no page of its own:
+            no write-up, search fields or video to fill in. What was saved
+            in them before stays as it was. */}
+        <Panel
+          title={t('projects.form.mediaPanel')}
+          description={t('projects.form.mediaDescription')}
+        >
           <div className="flex flex-col gap-5">
             <Controller
               control={form.control}
@@ -136,14 +124,6 @@ export function AdminProjectFormModule({ projectId }: { projectId?: string }) {
                 />
               )}
             />
-
-            <TextField
-              label={t('projects.form.youtube.label')}
-              placeholder={t('projects.form.youtube.placeholder')}
-              hint={t('projects.form.youtube.hint')}
-              error={errors.youtubeUrl?.message}
-              {...form.register('youtubeUrl')}
-            />
           </div>
         </Panel>
 
@@ -154,8 +134,8 @@ export function AdminProjectFormModule({ projectId }: { projectId?: string }) {
               required
               hint={
                 isEdit
-                  ? t('fields.slug.hint')
-                  : `${t('fields.slug.hint')} ${t('fields.slug.autoFromTitle')}`
+                  ? t('projects.form.slugHint')
+                  : `${t('projects.form.slugHint')} ${t('fields.slug.autoFromTitle')}`
               }
               error={errors.slug?.message}
               {...form.register('slug', { onChange: slugAutofill.slugEdited })}

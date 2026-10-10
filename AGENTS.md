@@ -167,6 +167,13 @@ browser, and it is what makes the "only api routes touch the DB" rule hold.
   that looked correct, and "my edits do not appear" could not be told apart from
   a healthy site. Failed reads are logged as `public.read_failed` and say so on
   the page.
+- **A cached response can be older than the code reading it.** The data
+  cache keeps a response until its tag is purged or its time runs out, and
+  it is not emptied by a new deployment's code (a dev server's certainly is
+  not). A field added to a public response may be missing from a cached copy
+  for up to `PUBLIC_REVALIDATE_SECONDS`: the reading service fills it in
+  (`withGalleries`, `home-page.service.ts`). The first projects list without
+  `gallery` crashed the home page.
 - **Test the loop, do not reason about it.** `tests/e2e/cache-invalidation.spec.ts`
   asserts both halves: stale without revalidation, fresh on the very next
   request after it. It drives `/api/dev/revalidate-probe`, which needs no
@@ -417,16 +424,24 @@ and CLAUDE.md win wherever they disagree. The resolved conflicts:
   below the brandbook's values without checking /ka. A future display face
   needs a matching Georgian design (Noto Serif Georgian is one). Verify every
   typography change on /ka as well as /en.
-- **Dials:** per design while the home page designs are compared (round 4,
-  `?v=1` and `?v=2`): 1 "Open Kitchen" (light) at MOTION 5, 2 "Chef's Table"
-  (dark) at MOTION 8. The rules in § Motion hold at every setting.
+- **Dials:** the site's one design, "Chef's Table" (dark), chosen by the
+  client in October 2026: VARIANCE 6, MOTION 5, DENSITY 4. Calm by her
+  request: no heading anywhere near the hero's size, reasons and figures set
+  as lines, not slogans. The rules in § Motion hold at every setting.
+- **Type sizes are the design's tokens** (`site.css`, with a smaller,
+  lighter set under `:lang(ka)`), never a size picked per section. The hero's
+  headline is the largest thing on the page and the only `text-display`; a
+  section heading is `text-headline`; everything else is a title, lead or
+  body size. Text is left-aligned, its measure capped: centred blocks of
+  more than a line read badly in both scripts.
 - **No custom cursors**, and no scroll cues: the skill bans both, and round 3
   showed why (a cursor disc that hid what it pointed at).
-- **Sample content is TEMPORARY and says so.** Academy courses and videos
-  have no dashboard yet; `home-page.samples.ts` supplies invented entries,
-  and every section showing them carries a "Sample" badge
-  (`shared/components/sample-badge.tsx`). They must be replaced by dashboard
-  data before launch, never shipped as content.
+- **Sample content is TEMPORARY and says so.** While the dashboard holds no
+  figures, courses or videos, `home-page.samples.ts` supplies invented
+  entries, and every section showing them carries a "Sample" badge
+  (`shared/components/sample-badge.tsx`). The first real entry replaces them
+  all; a failed read shows the failure, never samples. They must be replaced
+  by dashboard data before launch, never shipped as content.
 - **Out of scope:** the admin dashboard — the skill excludes admin panels.
 
 ### Motion
@@ -446,14 +461,15 @@ Lenis. The dashboard has none.
   from `lg` up, cursor effects with a mouse only; below that, scenes stack.
 - **Nothing may be left hidden.** `data-enter` elements start invisible only
   when scripts run and motion is allowed, and globals.css shows them anyway
-  after 1 s if the script has not taken over. The variant spec scrolls every
-  design with motion on and fails on a heading left invisible.
+  after 1 s if the script has not taken over. The home page spec scrolls the
+  page with motion on and fails on a heading left invisible, or a figure
+  that stopped counting short of its number.
 - **The hero never waits for the script.** On a slow phone its text is the
   page's Largest Contentful Paint. A script that arrives after the CSS
   fallback has begun (`ENTRANCE_DEADLINE_MS`, `use-motion.ts`) gets
   `entrance: false` and skips the hero's entrance, rather than hiding text
   the visitor has already seen to play it again; everything else still runs.
-  The variant spec delays every script by 4 s and fails on any flicker.
+  The home page spec delays every script by 4 s and fails on any flicker.
 - **Drawers, menus and players are native `<dialog>`s** opened with
   `showModal()`: the browser makes the page inert, holds focus inside, closes
   on Escape and returns focus. Stop Lenis while one is open (globals.css
@@ -467,7 +483,7 @@ Lenis. The dashboard has none.
   just before it (on a paragraph a label is ignored, and the intro was read
   as two empty paragraphs). Text holding a link or any other control is never
   split, and shows whole: split, the link would be reachable by Tab with no
-  name. The variant spec compares what a screen reader is given with motion
+  name. The home page spec compares what a screen reader is given with motion
   on and off.
 - **SplitText masks are loosened** (`loosenMasks`, built into `splitReveal`):
   cut to the line box, a mask clips Georgian letters that reach below the
@@ -501,6 +517,16 @@ Lenis. The dashboard has none.
   widget focuses every `#` link's target (`focusArrival`: tabindex -1, no
   scroll), and a menu that scrolls by itself calls `glideTo(target, { focus:
   true })`. `keyboard.spec.ts` follows the call to action by keyboard.
+- **A count-up never shows a wrong number for good.** The page holds the
+  real value; a figure's digits start counting only once motion takes over,
+  and the full value stays in a visually hidden copy for screen readers. A
+  figure already read on screen (the script came late) is not counted again,
+  and one stopped half-way by a revert is put back to its number.
+- **A project card's summary waits for the pointer** (by the client's
+  request) only where there is one: `(hover: hover) and (pointer: fine)`.
+  A touch screen has no hover, so there it reads under the project's name,
+  and the photo arrows are always shown. Focus inside the card shows it too,
+  and a card with no arrow to focus takes focus itself.
 - **A video's poster carries its title** (`VideoCaption`, by the client's
   request): over a scrim, receding once a mouse has rested on the frame
   (`.video-caption` in globals.css), gone once it plays. Touch keeps it, so
@@ -508,15 +534,15 @@ Lenis. The dashboard has none.
 
 ### Theme
 
-The **public site is light-only**, by decision. Only the **dashboard** has a
-theme switch — Light / Dark, beside the wordmark in the sidebar. Until one is
-picked, the dashboard follows the OS (the `system` cookie state).
-
-The one exception is temporary: home page design 2 under comparison
-("Chef's Table", `?v=2`) is dark. It is not a theme and has no switch: it
-remaps the colour roles inside `[data-home-variant='2']` only
-(`variants/chefs-table.css`), and the rest of the site stays light. Should
-it be chosen, the light-only decision is revisited, not worked around.
+The **public site is dark**, by decision: the client chose "Chef's Table" in
+October 2026. It is not a theme and has no switch. `src/shared/brandbook/site.css`
+remaps the colour roles, type sizes, spacing and shape inside `[data-site]`,
+which every public page renders around itself (the home page, the 404, the
+error page), and sets `color-scheme: dark` on the document. A new public page
+wraps itself in `[data-site]` too, or it renders in the brandbook's light
+roles. Only the **dashboard** has a theme switch — Light / Dark, beside the
+wordmark in the sidebar. Until one is picked, the dashboard follows the OS
+(the `system` cookie state).
 
 - The choice is a cookie, `stager-admin-theme` (`Path=/admin`), read on the
   server in `src/app/admin/layout.tsx`, so the first byte is already themed:
@@ -720,22 +746,30 @@ it verified in production and what it left open: `docs/AUDIT-HANDOFF.md`.
 Courses (with categories the owner adds) and videos have their tables,
 dashboard screens and public endpoints (`/api/public/courses`, which lists a
 course until its start date has passed, and `/api/public/videos`, newest
-first). Both home-page designs read them; a section the dashboard has nothing
-for yet shows samples marked "Sample" (`orSamples`, `home-page.samples.ts`),
-and a failed read shows the failure, never samples.
+first). The home page reads them; a section the dashboard has nothing for yet
+shows samples marked "Sample" (`orSamples`, `home-page.samples.ts`), and a
+failed read shows the failure, never samples.
 
-**The public site: two home page designs under comparison** (`?v=1` light,
-`?v=2` dark, `src/modules/home-page`), both reading the same dashboard data,
-on a build search engines are kept out of. Still open: which design. Once one
-is chosen: delete the other, the `?v=` switch and the page's noindex; render
-the home page statically (the switch forces per-request rendering); add the
-SEO fields. Keep the data-loading pattern in `home-page.service.ts`.
+**The public site: one design, "Chef's Table" (dark)**, chosen by the client
+in October 2026 (`src/modules/home-page/elements/chefs-table`, `site.css`).
+After the design review: the hero is text only (no video); the company's
+figures follow it (`Stat`, dashboard → "Company in figures",
+`/api/public/company-stats`); the services read as a journey along a line,
+with no Academy link on them; each project is one card whose photos (the
+cover, then the gallery) scroll inside it, with its summary shown under the
+pointer; projects have no page of their own, so the dashboard's project form
+no longer asks for a write-up, search fields or a video (stored values stay);
+"Why STAGER" is a heading beside numbered lines. A course's "related
+service" left the course form with the Academy link (the column stays).
+
+Still open: the real figures (the samples are placeholders, marked);
+rendering the home page statically (the per-request CSP nonce keeps it
+dynamic, see `docs/AUDIT-HANDOFF.md`); the SEO fields; and the noindex,
+which stays until launch. Keep the data-loading pattern in
+`home-page.service.ts`.
 
 Decided for the design phase: Noto Sans Georgian for both scripts, so headlines
-match across locales, and GSAP + Lenis motion under the rules in § Motion. Both
-designs have a Culinary Academy section and a video section; one the dashboard
-has nothing for yet shows samples marked "Sample" (`home-page.samples.ts`,
-typed by `entity/course` and `entity/video`).
+match across locales, and GSAP + Lenis motion under the rules in § Motion.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

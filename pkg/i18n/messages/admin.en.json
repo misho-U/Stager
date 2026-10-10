@@ -143,7 +143,7 @@
     "shortcuts": {
       "addProject": {
         "label": "Add a case study",
-        "description": "Publish a new project with photos and a write-up."
+        "description": "Publish a new project with its photos."
       },
       "writeArticle": {
         "label": "Write an article",
@@ -156,6 +156,10 @@
       "editPages": {
         "label": "Edit page copy",
         "description": "Change the words on Home, About and the rest without a deploy."
+      },
+      "companyStats": {
+        "label": "Company in figures",
+        "description": "The figures under the home page's first section: years, projects and more."
       },
       "settings": {
         "label": "Site settings",
@@ -215,20 +219,16 @@
     "form": {
       "titleEdit": "Edit project",
       "titleNew": "New project",
-      "description": "Case study shown in the Projects section.",
+      "description": "A card in the Projects section of the home page: its photos, its name and details, and a short summary that shows when a visitor points at it. Projects have no page of their own.",
+      "slugHint": "The project's name inside the site, never shown: projects have no page, so no link uses it. Lowercase Latin letters, numbers and hyphens.",
       "summary": {
         "label": "Summary",
-        "hint": "One or two sentences, shown on the projects grid."
+        "hint": "One or two sentences. Shown over the photos when a visitor points at the card; on a phone, under its name."
       },
-      "bodyHint": "The full write-up. Basic HTML is allowed; scripts are stripped on save.",
-      "mediaPanel": "Images and video",
-      "coverHint": "Used on the projects grid and as the social sharing image.",
-      "gallery": "Gallery",
-      "youtube": {
-        "label": "YouTube link",
-        "placeholder": "https://www.youtube.com/watch?v=…",
-        "hint": "Optional. Videos are embedded from YouTube rather than hosted, so pages stay fast."
-      },
+      "mediaPanel": "Photos",
+      "mediaDescription": "The card shows the cover first, then the photos below in this order, one at a time: visitors move through them with the arrows, or swipe on a phone.",
+      "coverHint": "The first photo on the card, and the picture shown when the site is shared.",
+      "gallery": "More photos",
       "client": "Client",
       "location": "Location",
       "year": "Year",
@@ -370,11 +370,6 @@
         "none": "No category",
         "hint": "Groups courses on the site. Add categories under Course categories."
       },
-      "service": {
-        "label": "Related service",
-        "none": "None",
-        "hint": "The service whose section on the site points to this course."
-      },
       "submit": "Save course"
     }
   },
@@ -413,6 +408,7 @@
       },
       "youtube": {
         "label": "YouTube link",
+        "placeholder": "https://www.youtube.com/watch?v=…",
         "hint": "The video plays from YouTube. You can save it without a link and add one later."
       },
       "kind": {
@@ -505,6 +501,7 @@
   "pages": {
     "title": "Page copy",
     "description": "Change the words and SEO on each page. The sections themselves are fixed in code.",
+    "companyStatsLink": "Company in figures",
     "sectionCount": "{count, plural, one {# section} other {# sections}}",
     "keys": {
       "HOME": "Home",
@@ -545,6 +542,33 @@
     },
     "sectionImage": "Section image",
     "submit": "Save page"
+  },
+  "companyStats": {
+    "title": "Company in figures",
+    "description": "The figures under the first section of the home page: years of experience, projects delivered and the like. Until you add one, the site shows sample figures marked “Sample”.",
+    "back": "← Page copy",
+    "editTitle": "Edit figure",
+    "addTitle": "Add a figure",
+    "value": {
+      "label": "Figure",
+      "placeholder": "20+",
+      "hint": "Up to 12 characters, such as 20+, 150 or 1,200. The site counts up to the number."
+    },
+    "labelKa": "Caption (Georgian)",
+    "labelKaPlaceholder": "წელი პროფესიულ სამზარეულოში",
+    "labelEn": "Caption (English)",
+    "labelEnPlaceholder": "Years in professional kitchens",
+    "isActive": "Show on the site",
+    "add": "Add figure",
+    "allTitle": "All figures",
+    "emptyTitle": "No figures yet",
+    "emptyDescription": "Four read best: a figure and a short caption each.",
+    "columns": {
+      "value": "Figure",
+      "labelKa": "Caption (Georgian)",
+      "labelEn": "Caption (English)",
+      "shown": "Shown"
+    }
   },
   "socialLinks": {
     "title": "Social links",

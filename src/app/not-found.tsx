@@ -14,15 +14,18 @@ export default async function NotFound() {
   const t = await getTranslations('common');
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-2xl flex-col items-center justify-center gap-4 px-gutter text-center">
-      <p className="text-caption tracking-label text-ink-subtle uppercase">404</p>
-      <h1 className="text-title font-semibold">{t('notFound')}</h1>
-      <Link
-        href={`/${locale}`}
-        className="text-body-sm text-ink-muted underline underline-offset-4"
-      >
-        {t('backHome')}
-      </Link>
-    </main>
+    // In the site's dark design (site.css), like every public page.
+    <div data-site className="bg-surface text-ink">
+      <main className="px-gutter mx-auto flex min-h-dvh max-w-2xl flex-col items-center justify-center gap-4 text-center">
+        <p className="text-caption tracking-label text-ink-subtle uppercase">404</p>
+        <h1 className="text-title font-semibold">{t('notFound')}</h1>
+        <Link
+          href={`/${locale}`}
+          className="text-body-sm text-ink-muted underline underline-offset-4"
+        >
+          {t('backHome')}
+        </Link>
+      </main>
+    </div>
   );
 }

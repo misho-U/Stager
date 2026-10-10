@@ -1,14 +1,15 @@
 import type { PublicCourse } from '@/entity/course/model/course.model';
 import type { PublicInsightListItem } from '@/entity/insight/model/insight.model';
 import {
-  DEFAULT_HOME_VARIANT,
-  HOME_VARIANTS,
-  type HomeVariant,
-} from '@/modules/home-page/home-page.constants';
-import { orSamples, sampleCourses, sampleVideos } from '@/modules/home-page/home-page.samples';
+  orSamples,
+  sampleCourses,
+  sampleStats,
+  sampleVideos,
+} from '@/modules/home-page/home-page.samples';
 import type { PublicPage } from '@/entity/page/model/page.model';
 import type { PublicProjectListItem } from '@/entity/project/model/project.model';
 import type { PublicServiceListItem } from '@/entity/service/model/service.model';
+import type { PublicStat } from '@/entity/stat/model/stat.model';
 import type { PublicLayoutData } from '@/entity/site-setting/model/site-setting.model';
 import type { PublicVideo } from '@/entity/video/model/video.model';
 import type { ListResponse } from '@/shared/types/api';
@@ -34,6 +35,22 @@ import { logger, serialiseError } from '@pkg/logger';
 
 type ReadResult<T> = { data: T; failed: boolean };
 
+/**
+ * A project list as it may come out of the data cache: one cached before
+ * projects carried their gallery (the cache can outlive a deployment) has
+ * none, until it is next refreshed.
+ */
+type CachedProjectList = ListResponse<
+  Omit<PublicProjectListItem, 'gallery'> & Partial<Pick<PublicProjectListItem, 'gallery'>>
+>;
+
+function withGalleries(list: CachedProjectList): ListResponse<PublicProjectListItem> {
+  return {
+    ...list,
+    items: list.items.map((project) => ({ ...project, gallery: project.gallery ?? [] })),
+  };
+}
+
 async function read<T>(label: string, request: Promise<T>, fallback: T): Promise<ReadResult<T>> {
   try {
     return { data: await request, failed: false };
@@ -44,7 +61,7 @@ async function read<T>(label: string, request: Promise<T>, fallback: T): Promise
 }
 
 export async function loadHomePageData(locale: DbLocale) {
-  const [layout, page, projects, services, insights, courses, videos] = await Promise.all([
+  const [layout, page, stats, projects, services, insights, courses, videos] = await Promise.all([
     read<PublicLayoutData | null>(
       'layout',
       serverFetch<PublicLayoutData>(`/api/public/layout?locale=${locale}`, {
@@ -63,15 +80,21 @@ export async function loadHomePageData(locale: DbLocale) {
       null,
     ),
 
-    read<ListResponse<PublicProjectListItem>>(
+    read<ListResponse<PublicStat>>(
+      'stats',
+      serverFetch<ListResponse<PublicStat>>(`/api/public/company-stats?locale=${locale}`, {
+        tags: [collectionTag('stat')],
+        revalidate: PUBLIC_REVALIDATE_SECONDS,
+      }),
+      { items: [], total: 0 },
+    ),
+
+    read<CachedProjectList>(
       'projects',
-      serverFetch<ListResponse<PublicProjectListItem>>(
-        `/api/public/projects?locale=${locale}&limit=6`,
-        {
-          tags: [collectionTag('project')],
-          revalidate: PUBLIC_REVALIDATE_SECONDS,
-        },
-      ),
+      serverFetch<CachedProjectList>(`/api/public/projects?locale=${locale}&limit=6`, {
+        tags: [collectionTag('project')],
+        revalidate: PUBLIC_REVALIDATE_SECONDS,
+      }),
       { items: [], total: 0 },
     ),
 
@@ -127,16 +150,18 @@ export async function loadHomePageData(locale: DbLocale) {
   return {
     layout: layout.data,
     page: page.data,
-    projects: projects.data,
+    stats: orSamples(stats, () => sampleStats(locale)),
+    projects: withGalleries(projects.data),
     services: services.data,
     insights: insights.data,
-    courses: orSamples(courses, () => sampleCourses(locale, services.data.items)),
+    courses: orSamples(courses, () => sampleCourses(locale)),
     videos: orSamples(videos, () => sampleVideos(locale)),
     /** True when any read failed, so the page can say so instead of
      *  rendering placeholder copy that looks like real content. */
     readFailed:
       layout.failed ||
       page.failed ||
+      stats.failed ||
       projects.failed ||
       services.failed ||
       insights.failed ||
@@ -146,9 +171,3 @@ export async function loadHomePageData(locale: DbLocale) {
 }
 
 export type HomePageData = Awaited<ReturnType<typeof loadHomePageData>>;
-
-/** TEMPORARY — which design `?v=` asks for; anything unknown gets the default. */
-export function parseHomeVariant(value: string | string[] | undefined): HomeVariant {
-  const requested = Array.isArray(value) ? value[0] : value;
-  return HOME_VARIANTS.find((variant) => variant.id === requested)?.id ?? DEFAULT_HOME_VARIANT;
-}

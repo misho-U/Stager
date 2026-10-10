@@ -90,7 +90,7 @@ export function AdminVideoFormModule({ videoId }: { videoId?: string }) {
             <div className="sm:col-span-2">
               <TextField
                 label={t('videos.form.youtube.label')}
-                placeholder={t('projects.form.youtube.placeholder')}
+                placeholder={t('videos.form.youtube.placeholder')}
                 hint={t('videos.form.youtube.hint')}
                 error={errors.youtubeUrl?.message}
                 {...form.register('youtubeUrl')}

@@ -43,33 +43,25 @@ test.describe('the public site', () => {
     test.skip(testInfo.project.name !== 'chromium', 'a keyboard: the desktop browser');
   });
 
-  for (const variant of ['1', '2']) {
-    test(`design ${variant}: the first Tab offers a skip to the content`, async ({ page }) => {
-      await page.goto(`/en?v=${variant}`);
-      await expect(page.locator(`[data-home-variant="${variant}"]`)).toHaveAttribute(
-        'data-motion',
-        'on',
-      );
-      await skipToContent(page, en.common.skipToContent);
-    });
+  test('the first Tab offers a skip to the content', async ({ page }) => {
+    await page.goto('/en');
+    await expect(page.locator('[data-site]')).toHaveAttribute('data-motion', 'on');
+    await skipToContent(page, en.common.skipToContent);
+  });
 
-    test(`design ${variant}: Start a Project takes the keyboard to the form`, async ({ page }) => {
-      // With smooth scrolling on, which takes over the browser's own jump.
-      await page.emulateMedia({ reducedMotion: 'no-preference' });
-      await page.goto(`/en?v=${variant}`);
-      await expect(page.locator(`[data-home-variant="${variant}"]`)).toHaveAttribute(
-        'data-motion',
-        'on',
-      );
+  test('Start a Project takes the keyboard to the form', async ({ page }) => {
+    // With smooth scrolling on, which takes over the browser's own jump.
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto('/en');
+    await expect(page.locator('[data-site]')).toHaveAttribute('data-motion', 'on');
 
-      await page.locator('main a[href="#inquiry"]').first().focus();
-      await page.keyboard.press('Enter');
-      await expect(page.locator('#inquiry')).toBeFocused();
-      // The next Tab goes on from the form, not back up to the hero.
-      await page.keyboard.press('Tab');
-      expect(await focusIsIn(page, '#inquiry')).toBe(true);
-    });
-  }
+    await page.locator('main a[href="#inquiry"]').first().focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#inquiry')).toBeFocused();
+    // The next Tab goes on from the form, not back up to the hero.
+    await page.keyboard.press('Tab');
+    expect(await focusIsIn(page, '#inquiry')).toBe(true);
+  });
 });
 
 /** The dashboard pages without a record in their address, found on disk. */

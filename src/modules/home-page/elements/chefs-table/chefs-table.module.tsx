@@ -3,7 +3,6 @@ import { ArrowUpRightIcon } from '@phosphor-icons/react/dist/ssr/ArrowUpRight';
 import { ChefHatIcon } from '@phosphor-icons/react/dist/ssr/ChefHat';
 import { ClockIcon } from '@phosphor-icons/react/dist/ssr/Clock';
 import { GlobeSimpleIcon } from '@phosphor-icons/react/dist/ssr/GlobeSimple';
-import { GraduationCapIcon } from '@phosphor-icons/react/dist/ssr/GraduationCap';
 import { MapPinIcon } from '@phosphor-icons/react/dist/ssr/MapPin';
 import { MicrophoneIcon } from '@phosphor-icons/react/dist/ssr/Microphone';
 import { PlayIcon } from '@phosphor-icons/react/dist/ssr/Play';
@@ -16,20 +15,23 @@ import {
   courseCategoryKey,
   FEW_SEATS,
   type PublicCourse,
-  relatedCourses,
 } from '@/entity/course/model/course.model';
+import type { MediaSummary } from '@/entity/media/model/media.model';
 import type { PublicInsightListItem } from '@/entity/insight/model/insight.model';
 import { homeSections, type PublicPage } from '@/entity/page/model/page.model';
 import type { PublicProjectListItem } from '@/entity/project/model/project.model';
 import type { PublicServiceListItem } from '@/entity/service/model/service.model';
+import type { PublicStat } from '@/entity/stat/model/stat.model';
 import type { PublicLayoutData } from '@/entity/site-setting/model/site-setting.model';
 import type { PublicVideo } from '@/entity/video/model/video.model';
 import { ChefsTableMotion } from '@/modules/home-page/elements/chefs-table/elements/chefs-table-motion/chefs-table-motion.module';
 import { CtHeader } from '@/modules/home-page/elements/chefs-table/elements/ct-header/ct-header.module';
+import { ProjectPhotos } from '@/modules/home-page/elements/chefs-table/elements/project-photos/project-photos.module';
 import {
   PlayButton,
   ScreeningPlayer,
 } from '@/modules/home-page/elements/chefs-table/elements/screening-room/screening-room.module';
+import { StatBand } from '@/modules/home-page/elements/chefs-table/elements/stat-band/stat-band.module';
 import { TicketGrid } from '@/modules/home-page/elements/chefs-table/elements/ticket-grid/ticket-grid.module';
 import { ContactDetails } from '@/shared/components/contact-details';
 import { CtaLink } from '@/shared/components/cta-link';
@@ -66,6 +68,7 @@ type ChefsTableProps = {
   content: {
     layout: PublicLayoutData | null;
     page: PublicPage | null;
+    stats: { items: PublicStat[]; sample: boolean };
     projects: ListResponse<PublicProjectListItem>;
     services: ListResponse<PublicServiceListItem>;
     insights: ListResponse<PublicInsightListItem>;
@@ -89,6 +92,10 @@ const PLAY_DISC =
 
 /** Up to this many characters, the intro is set as one large statement. */
 const INTRO_STATEMENT_MAX = 220;
+
+/** Up to this many services stand in one row on a wide screen; more read
+ *  down the page, as on a phone, rather than squeeze. */
+const JOURNEY_ROW_MAX = 5;
 
 const KIND_ICONS: Record<VideoKind, typeof VideoCameraIcon> = {
   EPISODE: VideoCameraIcon,
@@ -140,21 +147,29 @@ function PosterPlaceholder({ kind }: { kind: VideoKind | null }) {
   );
 }
 
+/** A project's photos in the order its card shows them: the cover, then the gallery. */
+function photosOf(project: PublicProjectListItem): MediaSummary[] {
+  const photos = project.cover ? [project.cover, ...project.gallery] : project.gallery;
+  return photos.filter(
+    (photo, index) => photos.findIndex((other) => other.id === photo.id) === index,
+  );
+}
+
 /** Where a course happens: a pin for a place, a globe for online. */
 function CoursePlaceIcon({ course }: { course: PublicCourse }) {
   return course.format === 'ONLINE' ? <GlobeSimpleIcon aria-hidden /> : <MapPinIcon aria-hidden />;
 }
 
 /**
- * Option 2, "Chef's Table". Dark and cinematic: the hero's screen grows to
- * fill the view, the services arrive one card over the next, the projects
- * run past as a filmstrip, the Academy's courses are admission tickets, the
- * videos open full screen, and the page ends at dawn, on teal.
+ * The site's design, "Chef's Table". Dark and calm: the promise, the company
+ * in figures, the services as a journey drawn as it is read, each project's
+ * photos on its card, the Academy's courses as admission tickets, the videos
+ * full screen, and the page ends at dawn, on teal.
  */
 export async function ChefsTable({ locale, content }: ChefsTableProps) {
   const t = await getTranslations();
   const format = await getFormatter();
-  const { layout, page, projects, services, insights, courses, videos } = content;
+  const { layout, page, stats, projects, services, insights, courses, videos } = content;
   const section = homeSections(page);
 
   // With the page loaded, a missing section was hidden in the dashboard. If
@@ -219,7 +234,6 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
 
   // A short intro reads as one statement, set large; a long one as text.
   const introIsStatement = plainTextLength(section.intro?.body) <= INTRO_STATEMENT_MAX;
-  const coursesByService = relatedCourses(services.items, courses.items);
   const tabs = [
     { id: ALL, label: t('academy.all'), count: courses.items.length },
     ...courseCategories(courses.items).map(({ key, name, count }) => ({
@@ -267,119 +281,48 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
       />
 
       <main id={CONTENT_ID} tabIndex={-1}>
-        {/* --- Hero: the promise, and a screen that grows to fill the view --- */}
+        {/* --- Hero: the promise, and the one way to act on it --- */}
         <section id="top" data-ct-hero aria-labelledby="hero-heading" className="relative">
           <div
             data-ct-light
-            className="ct-light px-gutter relative flex min-h-dvh flex-col justify-end overflow-hidden pt-36 pb-16 lg:pb-24"
+            className="ct-light ct-light-fade px-gutter relative flex min-h-(--ct-hero-h) flex-col justify-end pt-32 pb-16 lg:pb-24"
           >
-            <div className="max-w-page mx-auto grid w-full gap-12 lg:grid-cols-12 lg:items-end lg:gap-10">
-              <div data-hero-copy className="flex flex-col gap-8 lg:col-span-7">
-                <h1
-                  id="hero-heading"
-                  data-testid="hero-heading"
-                  data-enter
-                  data-ct-headline
-                  className="text-display font-hero stretch-hero text-balance"
-                >
-                  {section.hero?.heading || (
-                    <span className="text-ink-subtle">[no hero heading set]</span>
-                  )}
-                </h1>
-                {section.hero?.subheading ? (
-                  <p data-enter className="text-lead text-ink-muted max-w-xl text-pretty">
-                    {section.hero.subheading}
-                  </p>
-                ) : null}
-                <div data-enter className="flex flex-wrap items-center gap-3">
-                  <span data-magnetic className="inline-flex">
-                    <CtaLink href={toInquiry} size="lg" icon="down">
-                      {ctaLabel}
-                    </CtaLink>
-                  </span>
-                  {newest ? (
-                    <PlayButton
-                      videoId={newest.id}
-                      label={t('videos.playTitle', { title: newest.title })}
-                      className={`${BUTTON_OUTLINE} text-body-lg min-h-13 px-7`}
-                    >
-                      <PlayIcon aria-hidden weight="fill" />
-                      {t('videos.play')}
-                    </PlayButton>
-                  ) : null}
-                </div>
-              </div>
-              {newest ? (
-                <div data-enter className="flex flex-col gap-4 lg:col-span-5">
-                  <div
-                    data-hero-slot
-                    data-video-card
-                    className="relative aspect-video overflow-hidden rounded-lg"
-                  >
-                    <div data-poster className="absolute inset-0">
-                      <VideoPoster
-                        youtubeUrl={newest.youtubeUrl}
-                        placeholder={<PosterPlaceholder kind={newest.kind} />}
-                      />
-                    </div>
-                    <PlayButton
-                      videoId={newest.id}
-                      label={t('videos.playTitle', { title: newest.title })}
-                      growFrom="[data-poster]"
-                      className="group absolute inset-0 flex items-center justify-center"
-                    >
-                      <span className={`${PLAY_DISC} size-(--ct-play-sm)`}>
-                        <PlayIcon aria-hidden weight="fill" size="1.25rem" />
-                      </span>
-                    </PlayButton>
-                  </div>
-                  <p className="text-body-sm text-ink-muted">
-                    {joinMeta([t('videos.latest'), newest.title])}
-                  </p>
-                </div>
+            <div data-hero-copy className="max-w-page mx-auto flex w-full flex-col gap-7">
+              <h1
+                id="hero-heading"
+                data-testid="hero-heading"
+                data-enter
+                data-ct-headline
+                className="text-display font-hero stretch-hero max-w-(--ct-hero-measure) text-balance"
+              >
+                {section.hero?.heading || (
+                  <span className="text-ink-subtle">[no hero heading set]</span>
+                )}
+              </h1>
+              {section.hero?.subheading ? (
+                <p data-enter className="text-lead text-ink-muted max-w-xl text-pretty">
+                  {section.hero.subheading}
+                </p>
               ) : null}
-            </div>
-
-            {/* The cinema: the screen at full size, shown and opened out by the
-                motion on a desktop (see growScreen). */}
-            {newest ? (
-              <div data-hero-cinema data-video-card className="absolute inset-0 z-(--z-raised)">
-                <div data-poster className="absolute inset-0">
-                  <VideoPoster
-                    youtubeUrl={newest.youtubeUrl}
-                    placeholder={<PosterPlaceholder kind={newest.kind} />}
-                  />
-                </div>
-                <div
-                  data-cinema-play
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                >
-                  <PlayButton
-                    videoId={newest.id}
-                    label={t('videos.playTitle', { title: newest.title })}
-                    growFrom="[data-poster]"
-                    className="group flex"
-                  >
-                    <span className={`${PLAY_DISC} size-(--ct-play)`}>
-                      <PlayIcon aria-hidden weight="fill" size="1.75rem" />
-                    </span>
-                  </PlayButton>
-                </div>
-                <div
-                  data-cinema-caption
-                  className="px-gutter absolute inset-x-0 bottom-0 pb-24 opacity-0"
-                >
-                  <div className="max-w-page mx-auto flex flex-col gap-2">
-                    <p className="text-body-sm text-ink-muted">{t('videos.latest')}</p>
-                    <p className="text-title-lg font-heading stretch-heading max-w-3xl text-balance">
-                      {newest.title}
-                    </p>
-                  </div>
-                </div>
+              <div data-enter className="pt-2">
+                <span data-magnetic className="inline-flex">
+                  <CtaLink href={toInquiry} size="lg" icon="down">
+                    {ctaLabel}
+                  </CtaLink>
+                </span>
               </div>
-            ) : null}
+            </div>
           </div>
         </section>
+
+        {/* --- The company in figures --- */}
+        {stats.items.length > 0 ? (
+          <StatBand
+            stats={stats.items}
+            label={t('home.stats')}
+            badge={stats.sample ? sampleBadge : null}
+          />
+        ) : null}
 
         {/* --- Who STAGER is, lighting up as it is read --- */}
         {section.intro ? (
@@ -425,11 +368,11 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
           </section>
         ) : null}
 
-        {/* --- Services: one card over the next, under an index of them all
-            that stays in view, marks the one in front and jumps to any --- */}
+        {/* --- Services: the journey from an idea to a working business, one
+            stage after another along a line the page draws as it is read --- */}
         {showServices ? (
           <section id="services" aria-labelledby="services-title" className="px-gutter py-section">
-            <div data-stack-section className="max-w-page mx-auto flex flex-col gap-10">
+            <div className="max-w-page mx-auto flex flex-col gap-12 lg:gap-16">
               <div data-reveal>
                 <SectionHeader
                   id="services-title"
@@ -437,215 +380,132 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                   description={section.services?.subheading}
                 />
               </div>
-              <nav aria-label={servicesTitle} data-stack-index className="ct-index">
-                <ol className="ct-index-list">
-                  {services.items.map((service) => (
-                    <li key={service.id}>
-                      <a
-                        href={`#service-${service.slug}`}
-                        data-index-link
-                        className="ct-index-link"
-                      >
-                        {hasServiceIcon(service.icon) ? (
-                          <ServiceIcon name={service.icon} className="shrink-0" />
-                        ) : null}
-                        <span className="whitespace-nowrap">{service.title}</span>
-                      </a>
-                    </li>
-                  ))}
-                </ol>
-              </nav>
-              <ol data-stack className="flex flex-col gap-6">
-                {services.items.map((service, index) => {
-                  const related = coursesByService.get(service.id);
-                  // The card's second half: the service's photo; failing that,
-                  // the Academy course on its subject; failing both, its mark.
-                  const stub = !service.cover && related ? related : null;
-                  return (
-                    <li
-                      key={service.id}
-                      id={`service-${service.slug}`}
-                      data-stack-card
-                      style={{ '--stack-index': index } as CSSProperties}
-                    >
-                      <article
-                        data-stack-face
-                        className="ct-spot bg-surface-raised grid gap-8 overflow-hidden rounded-lg p-6 sm:p-10 lg:grid-cols-12 lg:gap-12 lg:p-14"
-                      >
-                        <div className="flex flex-col gap-5 lg:col-span-7">
-                          {hasServiceIcon(service.icon) ? (
-                            <ServiceIcon
-                              name={service.icon}
-                              className="text-accent text-title-lg"
-                            />
-                          ) : null}
-                          <h3 className={H2}>{service.title}</h3>
-                          {service.shortDescription ? (
-                            <p className="text-lead text-ink-muted max-w-2xl text-pretty">
-                              {service.shortDescription}
-                            </p>
-                          ) : null}
-                          {related && !stub ? (
-                            <a
-                              href="#academy"
-                              className="text-body text-accent mt-auto inline-flex min-h-11 items-center self-start font-medium text-pretty hover:underline hover:underline-offset-4"
-                            >
-                              <span>
-                                {t('academy.related', { course: related.title })}{' '}
-                                <ArrowRightIcon aria-hidden className="inline align-middle" />
-                              </span>
-                            </a>
-                          ) : null}
-                        </div>
-                        <div className="lg:col-span-5">
-                          {service.cover ? (
-                            <div className="relative aspect-4/3 overflow-hidden rounded-lg lg:aspect-auto lg:h-full">
-                              <MediaFrame
-                                media={service.cover}
-                                ratio="fill"
-                                sizes="(min-width: 1024px) 34vw, 100vw"
-                                missingLabel={t('preview.photoSection')}
-                                className="absolute inset-0 size-full"
-                              />
-                            </div>
-                          ) : stub ? (
-                            <a
-                              href="#academy"
-                              aria-label={t('academy.related', { course: stub.title })}
-                              className="ct-course-stub"
-                            >
-                              <span className="text-body-sm text-accent flex items-center gap-2 font-medium">
-                                <GraduationCapIcon aria-hidden size="1.25em" />
-                                {t('academy.title')}
-                              </span>
-                              <span className="text-title font-heading stretch-heading text-balance">
-                                {stub.title}
-                              </span>
-                              <span className="text-body-sm text-ink-muted">
-                                {joinMeta([
-                                  stub.startsAt
-                                    ? date(stub.startsAt, { day: 'numeric', month: 'long' })
-                                    : t('academy.dateTba'),
-                                  stub.location ?? t(`academy.formats.${stub.format}`),
-                                ])}
-                              </span>
-                              <span className="border-line-strong mt-auto flex items-end justify-between gap-4 border-t border-dashed pt-5">
-                                <span className="flex flex-col">
-                                  <span className="text-title-sm font-heading tabular-nums">
-                                    {price(stub.priceGel)}
-                                  </span>
-                                  <span className="text-body-sm text-ink-muted">
-                                    {seats(stub.seatsLeft)}
-                                  </span>
-                                </span>
-                                <span className="ct-stub-arrow">
-                                  <ArrowRightIcon aria-hidden />
-                                </span>
-                              </span>
-                            </a>
-                          ) : (
-                            <div
-                              aria-hidden
-                              className="ct-poster grid aspect-4/3 place-items-center rounded-lg max-lg:hidden lg:aspect-auto lg:h-full"
-                            >
-                              <ServiceIcon
-                                name={service.icon}
-                                weight="thin"
-                                className="text-accent size-1/4"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </article>
-                    </li>
-                  );
-                })}
+              <ol
+                data-journey
+                data-row={services.items.length <= JOURNEY_ROW_MAX ? '' : undefined}
+                className="ct-journey"
+                style={{ '--steps': services.items.length } as CSSProperties}
+              >
+                {services.items.map((service) => (
+                  <li key={service.id} data-journey-step data-reveal className="ct-step">
+                    <span aria-hidden className="ct-step-node">
+                      {hasServiceIcon(service.icon) ? <ServiceIcon name={service.icon} /> : null}
+                    </span>
+                    <div className="ct-step-card">
+                      <h3 className="text-title-sm font-heading text-balance">{service.title}</h3>
+                      {service.shortDescription ? (
+                        <p className="ct-step-text text-ink-muted text-pretty">
+                          {service.shortDescription}
+                        </p>
+                      ) : null}
+                      {service.cover ? (
+                        <MediaFrame
+                          media={service.cover}
+                          ratio="3/2"
+                          sizes="(min-width: 1280px) 16rem, (min-width: 640px) 36rem, 80vw"
+                          missingLabel={t('preview.photoSection')}
+                          className="mt-auto rounded-(--ct-thumb-radius)"
+                        />
+                      ) : null}
+                    </div>
+                  </li>
+                ))}
               </ol>
             </div>
           </section>
         ) : null}
 
-        {/* --- Projects: the filmstrip --- */}
+        {/* --- Projects: a card each, its photos one after another, what it
+            was about shown under the pointer --- */}
         {showProjects ? (
-          <section
-            id="projects"
-            aria-labelledby="projects-title"
-            data-film
-            className="py-section @container overflow-hidden"
-          >
-            <div className="px-gutter">
-              <div data-reveal className="max-w-page mx-auto">
+          <section id="projects" aria-labelledby="projects-title" className="px-gutter py-section">
+            <div className="max-w-page mx-auto flex flex-col gap-12">
+              <div data-reveal>
                 <SectionHeader
                   id="projects-title"
                   title={projectsTitle}
                   description={section.projects?.subheading}
                 />
               </div>
-            </div>
-            {projects.items.length === 0 ? (
-              <p className="px-gutter text-body-lg text-ink-muted max-w-page mx-auto mt-10 w-full">
-                {t('home.noProjects')}
-              </p>
-            ) : (
-              <div
-                data-film-scroller
-                role="region"
-                aria-label={projectsTitle}
-                tabIndex={0}
-                className="mt-12 snap-x snap-mandatory scroll-px-(--ct-film-inset) [scrollbar-width:none] overflow-x-auto pb-4"
-              >
+              {projects.items.length === 0 ? (
+                <p className="text-body-lg text-ink-muted">{t('home.noProjects')}</p>
+              ) : (
                 <ul
                   data-testid="project-list"
-                  data-film-track
-                  className="flex w-max gap-6 px-(--ct-film-inset)"
+                  className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3"
                 >
                   {projects.items.map((project) => {
                     const meta = joinMeta([project.client, project.location, project.year]);
+                    const photos = photosOf(project);
+                    // With no arrows to focus, the frame itself takes focus,
+                    // so the summary shows for a keyboard as for a mouse.
+                    const focusable = project.summary !== '' && photos.length < 2;
                     return (
-                      <li
-                        key={project.id}
-                        data-film-frame
-                        className="w-(--ct-frame-w-sm) shrink-0 snap-start"
-                      >
-                        <article className="flex flex-col gap-5">
-                          <div className="ct-spot relative aspect-16/10 overflow-hidden rounded-lg">
-                            {project.cover ? (
-                              <MediaFrame
-                                media={project.cover}
-                                ratio="fill"
-                                sizes="(min-width: 1024px) 60vw, 84vw"
-                                missingLabel={t('preview.photoProject')}
-                                className="absolute inset-0 size-full"
+                      <li key={project.id} data-reveal>
+                        <article className="ct-project">
+                          <div
+                            role={focusable ? 'group' : undefined}
+                            aria-label={focusable ? project.title : undefined}
+                            tabIndex={focusable ? 0 : undefined}
+                            className="ct-project-frame ct-spot relative aspect-4/3 overflow-hidden rounded-lg"
+                          >
+                            {photos.length > 0 ? (
+                              <ProjectPhotos
+                                slides={photos.map((photo) => (
+                                  <MediaFrame
+                                    key={photo.id}
+                                    media={photo}
+                                    ratio="fill"
+                                    sizes="(min-width: 1024px) 30vw, (min-width: 640px) 50vw, 100vw"
+                                    missingLabel={t('preview.photoProject')}
+                                    className="size-full"
+                                  />
+                                ))}
+                                label={t('home.photos.label', { title: project.title })}
+                                labels={{
+                                  carousel: t('home.photos.carousel'),
+                                  slide: t('home.photos.slide'),
+                                  previous: t('home.photos.previous'),
+                                  next: t('home.photos.next'),
+                                }}
+                                slideLabels={photos.map((_, index) =>
+                                  t('home.photos.position', {
+                                    index: index + 1,
+                                    count: photos.length,
+                                  }),
+                                )}
                               />
                             ) : (
-                              <div className="ct-poster absolute inset-0 flex items-end p-6 sm:p-10">
-                                <span className="text-display font-hero stretch-hero text-ink tabular-nums">
-                                  {project.year ?? project.title.slice(0, 1)}
-                                </span>
+                              <div className="ct-poster absolute inset-0 flex items-end p-6">
+                                {project.year ? (
+                                  <span className="text-title-lg font-heading text-ink tabular-nums">
+                                    {project.year}
+                                  </span>
+                                ) : null}
                               </div>
                             )}
                           </div>
-                          <div className="flex max-w-2xl flex-col gap-2">
+                          <div className="ct-project-text flex flex-col gap-1.5 pt-5">
                             <h3
                               data-testid="project-title"
-                              className="text-title font-heading stretch-heading text-balance"
+                              className="text-title-sm font-heading text-balance"
                             >
                               {project.title}
                             </h3>
                             {meta ? <p className="text-body-sm text-ink-muted">{meta}</p> : null}
-                            {project.summary ? (
-                              <p className="text-body text-ink-muted line-clamp-3 text-pretty">
-                                {project.summary}
-                              </p>
-                            ) : null}
                           </div>
+                          {project.summary ? (
+                            <p data-testid="project-summary" className="ct-project-summary">
+                              {project.summary}
+                            </p>
+                          ) : null}
                         </article>
                       </li>
                     );
                   })}
                 </ul>
-              </div>
-            )}
+              )}
+            </div>
           </section>
         ) : null}
 
@@ -716,7 +576,7 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                           <div className="ct-tear -order-1 flex items-center justify-between gap-4 p-6 sm:order-none sm:w-(--ct-ticket-stub) sm:flex-col sm:items-start">
                             {course.startsAt ? (
                               <p className="flex flex-col">
-                                <span className="text-headline font-hero stretch-hero leading-none tabular-nums">
+                                <span className="text-title-lg font-heading leading-none tabular-nums">
                                   {date(course.startsAt, { day: 'numeric' })}
                                 </span>
                                 <span className="text-body-sm mt-1 font-semibold">
@@ -877,29 +737,31 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
           </section>
         ) : null}
 
-        {/* --- Why STAGER: rolling credits --- */}
+        {/* --- Why STAGER: the heading on the left, the reasons on the right,
+            one to a line, numbered --- */}
         {section.why ? (
           <section id="why" aria-labelledby="why-title" className="px-gutter py-section">
-            <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 text-center">
-              <h2 id="why-title" data-reveal className={H2}>
-                {whyTitle}
-              </h2>
-              {section.why.subheading ? (
-                <p className="text-body-lg text-ink-muted text-pretty">{section.why.subheading}</p>
-              ) : null}
-              <div className="mt-8 w-full">
+            <div className="max-w-page mx-auto grid gap-10 lg:grid-cols-12 lg:gap-10">
+              <div data-reveal className="flex flex-col gap-4 lg:col-span-4">
+                <h2 id="why-title" className={H2}>
+                  {whyTitle}
+                </h2>
+                {section.why.subheading ? (
+                  <p className="text-body-lg text-ink-muted text-pretty">
+                    {section.why.subheading}
+                  </p>
+                ) : null}
+              </div>
+              <div className="lg:col-span-8 lg:col-start-5 xl:col-span-7 xl:col-start-6">
                 {isBlankHtml(section.why.body) ? (
                   <PendingSlot
                     label={t('preview.pendingWhy')}
                     hint={t('preview.pendingHint')}
-                    className="mx-auto max-w-xl text-left"
+                    className="max-w-xl"
                   />
                 ) : (
-                  <div data-credits className="ct-credits">
-                    <RichText
-                      html={section.why.body}
-                      className="text-title-lg font-heading stretch-heading text-balance"
-                    />
+                  <div data-reveal-items>
+                    <RichText html={section.why.body} className="ct-reasons" />
                   </div>
                 )}
               </div>
@@ -962,10 +824,7 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
         >
           <div className="max-w-page mx-auto grid gap-14 lg:grid-cols-12 lg:gap-10">
             <div className="flex flex-col gap-6 lg:col-span-5">
-              <h2
-                id={`${INQUIRY_ANCHOR}-title`}
-                className="text-display font-hero stretch-hero text-balance"
-              >
+              <h2 id={`${INQUIRY_ANCHOR}-title`} className={H2}>
                 {section.cta?.heading || t('contact.title')}
               </h2>
               {section.cta?.subheading ? (

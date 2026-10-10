@@ -1,13 +1,13 @@
 import type { PublicCourse } from '@/entity/course/model/course.model';
-import type { PublicServiceListItem } from '@/entity/service/model/service.model';
+import type { PublicStat } from '@/entity/stat/model/stat.model';
 import type { PublicVideo } from '@/entity/video/model/video.model';
 import { todayInTbilisi } from '@/shared/lib/calendar-date';
 import type { DbLocale } from '@/shared/types/enums';
 
 /**
- * TEMPORARY: sample Academy courses and videos for the design comparison.
+ * TEMPORARY: sample figures, Academy courses and videos.
  *
- * Both designs need some to be judged before the dashboard holds real ones.
+ * The design needs some to be judged before the dashboard holds real ones.
  * These entries are invented, so every section that shows them says so on the
  * page ("Sample"), and the first real entry in the dashboard replaces them
  * (`orSamples`, home-page.service.ts). Never ship them to production as content.
@@ -40,24 +40,11 @@ const CATEGORY_NAMES: Localised<Record<SampleCategory, string>> = {
   },
 };
 
-/**
- * Which sample subject teaches what a service does, by the service's icon key
- * (the one stable key a service has besides its slug). A real course names its
- * service in the dashboard instead.
- */
-const CATEGORY_BY_SERVICE_ICON: Partial<Record<string, SampleCategory>> = {
-  concept: 'management',
-  menu: 'management',
-  kitchen: 'kitchen',
-  training: 'hospitality',
-  haccp: 'food-safety',
-};
-
 /** A section's entries, and whether they are invented ones shown in their place. */
 export type SectionItems<T> = { items: T[]; sample: boolean };
 
 /**
- * The Academy and the videos show samples, marked "Sample" on the page, while
+ * The figures, the Academy and the videos show samples, marked "Sample" on the page, while
  * the dashboard holds none of their own; the first real entry replaces them
  * all. A FAILED read shows nothing instead: invented entries standing in for
  * content that did not load would hide the outage.
@@ -338,32 +325,18 @@ const VIDEOS: ReadonlyArray<
   },
 ];
 
-export function sampleCourses(
-  locale: DbLocale,
-  services: ReadonlyArray<Pick<PublicServiceListItem, 'id' | 'icon'>>,
-): PublicCourse[] {
+export function sampleCourses(locale: DbLocale): PublicCourse[] {
   // Soonest first, as the API lists them.
-  const courses = [...COURSES].sort((a, b) => a.inDays - b.inDays);
-
-  // Each service points at the next sample course on its subject. Two services
-  // on one subject take different courses; one left without names none.
-  const serviceByCourse = new Map<string, string>();
-  for (const service of services) {
-    const subject = service.icon ? CATEGORY_BY_SERVICE_ICON[service.icon] : undefined;
-    const course = courses.find(
-      (item) => item.category === subject && !serviceByCourse.has(item.id),
-    );
-    if (course) serviceByCourse.set(course.id, service.id);
-  }
-
-  return courses.map(({ inDays, text, category, ...course }) => ({
-    ...course,
-    ...text[locale],
-    category: { slug: category, name: CATEGORY_NAMES[locale][category] },
-    serviceId: serviceByCourse.get(course.id) ?? null,
-    startsAt: dayFromToday(inDays),
-    cover: null,
-  }));
+  return [...COURSES]
+    .sort((a, b) => a.inDays - b.inDays)
+    .map(({ inDays, text, category, ...course }) => ({
+      ...course,
+      ...text[locale],
+      category: { slug: category, name: CATEGORY_NAMES[locale][category] },
+      serviceId: null,
+      startsAt: dayFromToday(inDays),
+      cover: null,
+    }));
 }
 
 export function sampleVideos(locale: DbLocale): PublicVideo[] {
@@ -373,4 +346,36 @@ export function sampleVideos(locale: DbLocale): PublicVideo[] {
     publishedAt: dayFromToday(-daysAgo),
     youtubeUrl: null,
   }));
+}
+
+/**
+ * The company in figures. Only the years come from STAGER's own copy ("twenty
+ * years in professional kitchens"); the rest are placeholders for the real
+ * counts, entered in the dashboard (Company in figures).
+ */
+const STATS: ReadonlyArray<{ id: string; value: string; label: Localised<string> }> = [
+  {
+    id: 'sample-stat-years',
+    value: '20+',
+    label: { EN: 'Years in professional kitchens', KA: 'წელი პროფესიულ სამზარეულოში' },
+  },
+  {
+    id: 'sample-stat-projects',
+    value: '60+',
+    label: { EN: 'Projects delivered', KA: 'განხორციელებული პროექტი' },
+  },
+  {
+    id: 'sample-stat-venues',
+    value: '35',
+    label: { EN: 'Venues opened', KA: 'გახსნილი ობიექტი' },
+  },
+  {
+    id: 'sample-stat-trained',
+    value: '500+',
+    label: { EN: 'Professionals trained', KA: 'მომზადებული პროფესიონალი' },
+  },
+];
+
+export function sampleStats(locale: DbLocale): PublicStat[] {
+  return STATS.map(({ label, ...stat }) => ({ ...stat, label: label[locale] }));
 }

@@ -5,6 +5,7 @@ import { categoryInputSchema } from '@/entity/category/model/category.model';
 import { insightInputSchema } from '@/entity/insight/model/insight.model';
 import { serviceInputSchema } from '@/entity/service/model/service.model';
 import { socialLinkInputSchema } from '@/entity/social-link/model/social-link.model';
+import { statInputSchema } from '@/entity/stat/model/stat.model';
 import { teamMemberInputSchema } from '@/entity/team-member/model/team-member.model';
 import adminEn from '@pkg/i18n/messages/admin.en.json';
 
@@ -18,8 +19,8 @@ import {
 
 /**
  * The dashboard's API, signed in, for the content no UI test walks through:
- * categories, team members, services, articles and social links are created,
- * changed and deleted, and on the way:
+ * categories, team members, services, articles, social links and the
+ * company's figures are created, changed and deleted, and on the way:
  *
  *  - rich text is cleaned before it is stored, whatever the browser sent;
  *  - a slug that is taken is a 409 on the slug, on create and on rename;
@@ -59,6 +60,7 @@ test.describe('content through the dashboard API', () => {
     await prisma.teamMember.deleteMany({ where: { slug } });
     await prisma.category.deleteMany({ where: { slug } });
     if (ids.socialLink) await prisma.socialLink.deleteMany({ where: { id: ids.socialLink } });
+    if (ids.stat) await prisma.stat.deleteMany({ where: { id: ids.stat } });
     await disconnectTestPrisma();
   });
 
@@ -220,6 +222,36 @@ test.describe('content through the dashboard API', () => {
     await patch(page.request, `/api/admin/social-links/${link.id}`, { isActive: false });
   });
 
+  test('a figure is trimmed, kept short, and hiding it keeps its place', async ({ page }) => {
+    const figure = await create(page.request, '/api/admin/company-stats', statInputSchema, {
+      value: ' 20+ ',
+      order: 3,
+      translations: both({ label: ` Years in kitchens ${run} ` }),
+    });
+    ids.stat = figure.id;
+    expect(figure.value).toBe('20+');
+    expect(figure.isActive).toBe(true);
+    expect((figure.translations as { EN: { label: string } }).EN.label).toBe(
+      `Years in kitchens ${run}`,
+    );
+
+    // A sentence is not a figure.
+    const long = await page.request.patch(`/api/admin/company-stats/${figure.id}`, {
+      data: { value: 'more than twenty years' },
+    });
+    expect(long.status()).toBe(422);
+
+    const hidden = await patch(page.request, `/api/admin/company-stats/${figure.id}`, {
+      isActive: false,
+    });
+    expect(hidden.order).toBe(3);
+    expect(hidden.value).toBe('20+');
+
+    // The site's list leaves it out while it is switched off.
+    const site = await page.request.get('/api/public/company-stats?locale=EN');
+    expect(JSON.stringify(await site.json())).not.toContain(run);
+  });
+
   test('only an owner changes the settings', async ({ page }) => {
     const prisma = testPrisma();
     const admin = await prisma.adminUser.findUniqueOrThrow({ where: { email: ADMIN_EMAIL! } });
@@ -329,6 +361,7 @@ test.describe('content through the dashboard API', () => {
       ['team', ids.member],
       ['categories', ids.category],
       ['social-links', ids.socialLink],
+      ['company-stats', ids.stat],
     ] as const) {
       expect((await page.request.delete(`/api/admin/${path}/${id}`)).status(), path).toBe(204);
       expect((await page.request.delete(`/api/admin/${path}/${id}`)).status(), path).toBe(404);

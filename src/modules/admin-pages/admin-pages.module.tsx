@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 import { adminPagesQuery } from '@/entity/page/api/page.query';
+import { ButtonLink } from '@/shared/components/button';
 import { PageHeader } from '@/shared/components/page-header';
 import { LoadFailed, Panel } from '@/shared/components/panel';
 import { useFormErrors } from '@/shared/lib/form-errors';
@@ -18,7 +19,16 @@ export function AdminPagesModule() {
 
   return (
     <>
-      <PageHeader title={t('pages.title')} description={t('pages.description')} />
+      <PageHeader
+        title={t('pages.title')}
+        description={t('pages.description')}
+        actions={
+          // Home page content too, kept off the sidebar (admin-sidebar.constants.ts).
+          <ButtonLink href="/admin/company-stats" variant="secondary">
+            {t('pages.companyStatsLink')}
+          </ButtonLink>
+        }
+      />
 
       <Panel>
         {loadFailed ? (

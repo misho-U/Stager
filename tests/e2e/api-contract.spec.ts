@@ -20,6 +20,7 @@ import {
 } from '@/entity/service/model/service.model';
 import { publicLayoutDataSchema } from '@/entity/site-setting/model/site-setting.model';
 import { publicTeamMemberListResponseSchema } from '@/entity/team-member/model/team-member.model';
+import { publicStatListResponseSchema } from '@/entity/stat/model/stat.model';
 import { publicVideoListResponseSchema } from '@/entity/video/model/video.model';
 
 import {
@@ -54,6 +55,7 @@ const READS: [string, z.ZodType][] = [
   ['/api/public/categories', publicCategoryListResponseSchema],
   ['/api/public/courses', publicCourseListResponseSchema],
   ['/api/public/videos', publicVideoListResponseSchema],
+  ['/api/public/company-stats', publicStatListResponseSchema],
 ];
 
 const DETAILS: [string, z.ZodType][] = [

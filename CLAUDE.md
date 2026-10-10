@@ -54,6 +54,10 @@ Do not add a library outside this list without raising it first.
   routing, CSP and session refresh with it.
 - `revalidateTag(tag, { expire: 0 })` — anything else serves stale content right
   after an admin saves.
+- **A field added to a public response can be missing from a cached copy**
+  after a deploy: the data cache outlives the code. Fill it in where it is
+  read (AGENTS.md § Caching); a projects list without `gallery` crashed the
+  home page.
 - **Never let a failed read fall back to content-shaped copy.** A placeholder
   that reads like the real thing turns an outage into a page that merely looks
   fine, and hid a dead API for days. Log it and say so on the page.
@@ -139,6 +143,6 @@ what was verified in production, what is still open, and what only the owner
 can do in Vercel and Supabase. Read it before planning operations, security
 or test work.
 
-Two home page designs are under comparison (`?v=1`, `?v=2`). Once the client
-picks one, AGENTS.md § 7 lists what follows: the other design and the switch
-go, and the home page is rendered statically.
+The client chose one design, "Chef's Table" (dark, `site.css`, `[data-site]`
+on every public page). AGENTS.md § 7 records what the design review changed
+and what is still open (the real figures, static rendering, the noindex).

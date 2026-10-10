@@ -25,20 +25,18 @@
        a code change, not a design change.
      - Put a colour or size anywhere else. If a value is missing, add it here.
      - Change the selectors in "Admin theme wiring" — only the values above
-       them. The public site is light-only by decision; only the dashboard
-       switches.
+       them. The dashboard switches between light and dark; the public site
+       has one design, dark, and no switch.
 
    GENERATED FROM THIS FILE — never edit these by hand:
      - pkg/brand/hex.generated.ts — hex copies of --color-brand-* for the email
        and the browser-bar colour, which cannot read CSS.
 
-   TEMPORARY EXCEPTION — the home page design comparison (round 4):
-     - ./variants/open-kitchen.css (light) and ./variants/chefs-table.css
-       (dark) override these tokens, each inside its own design on the home
-       page only, and hold the CSS that only that design draws. Once one
-       design is chosen, its values move into this file and the folder is
-       deleted. (The dark one is an exception to "light-only" below until
-       then.)
+   THE PUBLIC SITE — ./site.css:
+     - The site's design ("Chef's Table", dark) overrides these roles inside
+       [data-site] and holds the CSS only the site draws. Its values are
+       mixed from the brand palette above, so a brand edit carries into it.
+       The roles here stay light for the dashboard.
 
    HOW A CHANGE GOES LIVE — there is nothing to run:
      - Locally: save, and `pnpm dev` reloads the page.
@@ -188,7 +186,6 @@
 @theme static {
   --z-raised: 10; /* an element lifted over its neighbours */
   --z-header: 30; /* a header that stays in view */
-  --z-switcher: 35; /* the temporary design-comparison bar */
   --z-overlay: 40; /* full-screen menus */
 }
 
