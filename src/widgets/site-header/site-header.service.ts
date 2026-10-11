@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { CT_MOTION } from '@/modules/home-page/elements/chefs-table/chefs-table.constants';
+import { SITE_MENU_MOTION } from '@/widgets/site-header/site-header.constants';
 import { gsap } from '@/shared/lib/motion/gsap';
 import { getSmoothScroll, glideTo } from '@/widgets/smooth-scroll/smooth-scroll.service';
 
@@ -31,7 +31,8 @@ export function useScrolled() {
 /**
  * The full-screen menu: a native modal <dialog> (focus held inside, Escape
  * closes, focus returns to the button). Its links rise in one after another;
- * a link closes the menu first, then glides to its section.
+ * a link to a section of this page closes the menu first, then glides there.
+ * A link to another page is simply followed (see the module).
  */
 export function useMenu() {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -42,7 +43,7 @@ export function useMenu() {
     element.showModal();
     getSmoothScroll()?.stop();
     if (!reducedMotion()) {
-      const { duration, ease, stagger } = CT_MOTION.menu;
+      const { duration, ease, stagger } = SITE_MENU_MOTION;
       gsap.fromTo(
         element.querySelectorAll('[data-menu-link]'),
         { yPercent: 110 },
@@ -53,9 +54,10 @@ export function useMenu() {
   const close = () => dialog.current?.close();
   const onClose = () => getSmoothScroll()?.start();
 
+  /** Glides to a section of this page (`#id`). */
   const follow = (href: string) => {
     close();
-    const target = document.querySelector<HTMLElement>(href);
+    const target = document.getElementById(href.slice(1));
     if (!target) return;
     // The section's scroll-margin keeps it clear of the header. Focus goes
     // there too, once the closing menu has handed it back to its button.

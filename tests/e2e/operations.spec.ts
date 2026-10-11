@@ -69,13 +69,14 @@ test('outside production, robots.txt keeps every crawler out', async ({ request 
   expect(body).not.toMatch(/^Allow:/m);
 });
 
-test('the sitemap lists the home page in both languages, each naming the other', async ({
+test('the sitemap lists every page in both languages, each naming the other', async ({
   request,
 }) => {
   const response = await request.get('/sitemap.xml');
   expect(response.status()).toBe(200);
   const xml = await response.text();
   expect(xml.match(/<loc>[^<]+\/(ka|en)<\/loc>/g)).toHaveLength(2);
+  expect(xml.match(/<loc>[^<]+\/(ka|en)\/privacy<\/loc>/g)).toHaveLength(2);
   for (const lang of ['ka', 'en', 'x-default']) {
     expect(xml).toContain(`hreflang="${lang}"`);
   }

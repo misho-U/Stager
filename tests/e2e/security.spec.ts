@@ -121,6 +121,18 @@ test.describe('rich text keeps formatting and loses anything that runs', () => {
     expect(out).not.toContain('popup');
   });
 
+  test('text written without markup becomes paragraphs, escaped', () => {
+    // A blank line starts a paragraph, a single break stays a break: pasted
+    // from a document, a privacy policy keeps its shape.
+    expect(clean('First line\nsame paragraph\n\n\nSecond <3 & more\r\n\r\n  ')).toBe(
+      '<p>First line<br />same paragraph</p><p>Second &lt;3 &amp; more</p>',
+    );
+    expect(clean('   \n\n ')).toBe('');
+    // The author's own markup is left as written, and still cleaned.
+    expect(clean('<p>Kept</p>\n\nas is')).toBe('<p>Kept</p>\n\nas is');
+    expect(clean('a <script>alert(1)</script> b')).toBe('a  b');
+  });
+
   test('images come only from the site’s own store', () => {
     const own = `https://${STORE_HOST}/media/a.jpg`;
     const out = clean(

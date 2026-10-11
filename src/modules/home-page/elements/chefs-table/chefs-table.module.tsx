@@ -18,20 +18,26 @@ import {
 } from '@/entity/course/model/course.model';
 import type { MediaSummary } from '@/entity/media/model/media.model';
 import type { PublicInsightListItem } from '@/entity/insight/model/insight.model';
-import { homeSections, type PublicPage } from '@/entity/page/model/page.model';
+import {
+  homeSections,
+  PRIVACY_PATH,
+  privacyPolicy,
+  type PublicPage,
+} from '@/entity/page/model/page.model';
 import type { PublicProjectListItem } from '@/entity/project/model/project.model';
 import type { PublicServiceListItem } from '@/entity/service/model/service.model';
 import type { PublicStat } from '@/entity/stat/model/stat.model';
+import type { PublicTeamMember } from '@/entity/team-member/model/team-member.model';
 import type { PublicLayoutData } from '@/entity/site-setting/model/site-setting.model';
 import type { PublicVideo } from '@/entity/video/model/video.model';
 import { ChefsTableMotion } from '@/modules/home-page/elements/chefs-table/elements/chefs-table-motion/chefs-table-motion.module';
-import { CtHeader } from '@/modules/home-page/elements/chefs-table/elements/ct-header/ct-header.module';
 import { ProjectPhotos } from '@/modules/home-page/elements/chefs-table/elements/project-photos/project-photos.module';
 import {
   PlayButton,
   ScreeningPlayer,
 } from '@/modules/home-page/elements/chefs-table/elements/screening-room/screening-room.module';
 import { StatBand } from '@/modules/home-page/elements/chefs-table/elements/stat-band/stat-band.module';
+import { TeamBand } from '@/modules/home-page/elements/chefs-table/elements/team-band/team-band.module';
 import { TicketGrid } from '@/modules/home-page/elements/chefs-table/elements/ticket-grid/ticket-grid.module';
 import { ContactDetails } from '@/shared/components/contact-details';
 import { CtaLink } from '@/shared/components/cta-link';
@@ -49,6 +55,7 @@ import { isBlankHtml, joinMeta, plainTextLength } from '@/shared/lib/content';
 import { youtubeId } from '@/shared/lib/youtube';
 import type { ListResponse } from '@/shared/types/api';
 import type { DbLocale, VideoKind } from '@/shared/types/enums';
+import { toAppLocale } from '@pkg/i18n/routing';
 import {
   RegisterButton,
   RegistrationDialog,
@@ -57,6 +64,8 @@ import type { RegistrationCourse } from '@/widgets/course-registration/course-re
 import { INQUIRY_ANCHOR } from '@/widgets/inquiry-form/inquiry-form.constants';
 import { InquiryForm } from '@/widgets/inquiry-form/inquiry-form.module';
 import { LanguageSwitcher } from '@/widgets/language-switcher/language-switcher.module';
+import { SiteFooter } from '@/widgets/site-footer/site-footer.module';
+import { SiteHeader } from '@/widgets/site-header/site-header.module';
 import {
   VideoCaption,
   VideoPoster,
@@ -68,7 +77,10 @@ type ChefsTableProps = {
   content: {
     layout: PublicLayoutData | null;
     page: PublicPage | null;
+    /** The privacy policy page, linked only once it has text. */
+    privacy: PublicPage | null;
     stats: { items: PublicStat[]; sample: boolean };
+    team: ListResponse<PublicTeamMember>;
     projects: ListResponse<PublicProjectListItem>;
     services: ListResponse<PublicServiceListItem>;
     insights: ListResponse<PublicInsightListItem>;
@@ -169,7 +181,7 @@ function CoursePlaceIcon({ course }: { course: PublicCourse }) {
 export async function ChefsTable({ locale, content }: ChefsTableProps) {
   const t = await getTranslations();
   const format = await getFormatter();
-  const { layout, page, stats, projects, services, insights, courses, videos } = content;
+  const { layout, page, stats, team, projects, services, insights, courses, videos } = content;
   const section = homeSections(page);
 
   // With the page loaded, a missing section was hidden in the dashboard. If
@@ -185,6 +197,9 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
   const ctaLabel = section.hero?.ctaLabel || t('nav.startProject');
   const toInquiry = `#${INQUIRY_ANCHOR}`;
   const siteName = layout?.siteName || 'STAGER';
+  const privacyHref = privacyPolicy(content.privacy)
+    ? `/${toAppLocale(locale)}${PRIVACY_PATH}`
+    : null;
   const servicesTitle = section.services?.heading || t('nav.services');
   const projectsTitle = section.projects?.heading || t('nav.projects');
   const insightsTitle = section.insights?.heading || t('nav.insights');
@@ -245,7 +260,7 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
 
   return (
     <ChefsTableMotion>
-      <CtHeader
+      <SiteHeader
         links={links}
         cta={{ href: toInquiry, label: ctaLabel }}
         brand={
@@ -366,6 +381,19 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
               </div>
             </div>
           </section>
+        ) : null}
+
+        {/* --- The people behind it --- */}
+        {team.items.length > 0 ? (
+          <TeamBand
+            members={team.items}
+            followsIntro={section.intro !== undefined}
+            labels={{
+              title: t('home.team'),
+              linkedin: (name) => t('home.linkedin', { name }),
+              photo: t('preview.photoTeam'),
+            }}
+          />
         ) : null}
 
         {/* --- Services: the journey from an idea to a working business, one
@@ -844,63 +872,26 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
             </div>
             <div className="lg:col-span-7">
               <div className="bg-surface-raised rounded-lg p-6 sm:p-10">
-                <InquiryForm locale={locale} submitLabel={ctaLabel} layout="two-column" />
+                <InquiryForm
+                  locale={locale}
+                  submitLabel={ctaLabel}
+                  layout="two-column"
+                  privacyHref={privacyHref}
+                />
               </div>
             </div>
           </div>
         </section>
       </main>
 
-      <footer className="px-gutter pt-section pb-6">
-        <div className="max-w-page @container mx-auto flex flex-col gap-12 overflow-hidden">
-          <div className="grid gap-10 md:grid-cols-12">
-            <div className="flex flex-col gap-3 md:col-span-5">
-              <Wordmark testId="footer-wordmark" className="text-title-sm" />
-              {layout?.tagline ? (
-                <p className="text-body text-ink-muted max-w-sm text-pretty">{layout.tagline}</p>
-              ) : null}
-            </div>
-            <nav aria-label={t('home.sections')} className="md:col-span-4">
-              <ul className="grid grid-cols-2 gap-x-6">
-                {links.map((link) => (
-                  <li key={link.href}>
-                    <a
-                      href={link.href}
-                      className="text-body text-ink-muted hover:text-ink inline-flex min-h-11 items-center transition-colors"
-                    >
-                      {link.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-            <div className="flex flex-col gap-4 md:col-span-3">
-              <ContactDetails
-                email={layout?.contactEmail ?? null}
-                phone={layout?.phone ?? null}
-                address={null}
-              />
-              <SocialLinks links={layout?.socialLinks ?? []} />
-            </div>
-          </div>
-          <p
-            aria-hidden
-            data-decorative
-            data-ct-footer-mark
-            className="ct-footer-mark font-hero stretch-hero text-center whitespace-nowrap select-none"
-          >
-            STAGER
-          </p>
-          <div className="border-line text-body-sm text-ink-muted flex flex-col gap-1 border-t pt-5 sm:flex-row sm:justify-between">
-            <p>
-              © {new Date().getFullYear()} {siteName}
-            </p>
-            <p>{t('home.rights')}</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter
+        layout={layout}
+        links={links}
+        privacy={privacyHref ? { href: privacyHref, label: t('privacy.title') } : null}
+        labels={{ sections: t('home.sections'), rights: t('home.rights') }}
+      />
 
-      <RegistrationDialog locale={locale} />
+      <RegistrationDialog locale={locale} privacyHref={privacyHref} />
       <ScreeningPlayer
         videos={videos.items.map((video) => ({
           id: video.id,

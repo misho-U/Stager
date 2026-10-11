@@ -54,6 +54,9 @@ Do not add a library outside this list without raising it first.
   routing, CSP and session refresh with it.
 - `revalidateTag(tag, { expire: 0 })` — anything else serves stale content right
   after an admin saves.
+- **A new page needs a data migration**: the dashboard cannot create pages or
+  sections, and the seed never runs in production. A new `PageKey` value goes
+  in a migration of its own (AGENTS.md § Version traps).
 - **A field added to a public response can be missing from a cached copy**
   after a deploy: the data cache outlives the code. Fill it in where it is
   read (AGENTS.md § Caching); a projects list without `gallery` crashed the
@@ -144,5 +147,7 @@ can do in Vercel and Supabase. Read it before planning operations, security
 or test work.
 
 The client chose one design, "Chef's Table" (dark, `site.css`, `[data-site]`
-on every public page). AGENTS.md § 7 records what the design review changed
-and what is still open (the real figures, static rendering, the noindex).
+on every public page). The site is the home page and a privacy policy, with
+an article page to come; About, Team, services and contact live on the home
+page. AGENTS.md § 7 records the decisions and what is still open (the real
+figures, the policy's text, static rendering, the noindex).

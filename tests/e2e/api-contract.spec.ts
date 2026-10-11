@@ -48,6 +48,7 @@ const LOCALES = ['KA', 'EN'] as const;
 const READS: [string, z.ZodType][] = [
   ['/api/public/layout', publicLayoutDataSchema],
   ['/api/public/pages/HOME', publicPageSchema],
+  ['/api/public/pages/PRIVACY', publicPageSchema],
   ['/api/public/projects', publicProjectListResponseSchema],
   ['/api/public/services', publicServiceListResponseSchema],
   ['/api/public/insights', publicInsightListResponseSchema],

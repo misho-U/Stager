@@ -44,6 +44,14 @@ rather than adding a dependency.
   URL lives in `prisma.config.ts`; the runtime URL is passed to the pg driver
   adapter in `pkg/db/prisma.ts`.
 - **Prisma 7 requires a driver adapter.** We use `@prisma/adapter-pg`.
+- **A new page needs a data migration, not just code.** The dashboard edits a
+  page's copy but can neither create a page nor add a section, and the seed
+  never runs in production. So a page's rows come from a migration
+  (`20261011230743_privacy_page`: inserts that skip what exists), mirrored in
+  `prisma/seed.ts` for fresh databases. A new `PageKey` value goes in its own
+  migration first: PostgreSQL refuses an enum value inside the transaction
+  that added it. And a home-page section the database lacks is hidden
+  (`homeSections`), so a new home block must not depend on a section row.
 - **The middleware file is `src/proxy.ts`.** Next 16 renamed the convention from
   `middleware.ts` to `proxy.ts` (default export, not a named `middleware`
   export). It must sit next to `src/app`; at the repo root it is silently
@@ -217,7 +225,9 @@ Non-negotiable. Each exists because of a specific failure mode.
    already run everywhere, so adding to its list would change nothing.
 5. **Validate at the boundary.** Every route handler parses its input with zod.
 6. **Sanitize rich text on write**, never on read — the database must only ever
-   hold safe HTML.
+   hold safe HTML. Text saved without any tag (typed or pasted into a body
+   field) becomes paragraphs on the way in: a blank line starts one, a single
+   break stays a break (`plainTextToHtml`, `pkg/security/sanitize-options.ts`).
 7. **`process.env` is read only in `pkg/config`.** An ESLint rule enforces it, so
    a missing variable fails loudly at boot instead of becoming `undefined` deep
    in a request.
@@ -537,10 +547,12 @@ Lenis. The dashboard has none.
 The **public site is dark**, by decision: the client chose "Chef's Table" in
 October 2026. It is not a theme and has no switch. `src/shared/brandbook/site.css`
 remaps the colour roles, type sizes, spacing and shape inside `[data-site]`,
-which every public page renders around itself (the home page, the 404, the
-error page), and sets `color-scheme: dark` on the document. A new public page
-wraps itself in `[data-site]` too, or it renders in the brandbook's light
-roles. Only the **dashboard** has a theme switch — Light / Dark, beside the
+which every public page renders around itself (the home page, the privacy
+policy, the 404, the error page), and sets `color-scheme: dark` on the
+document. A new public page wraps itself in `[data-site]` too, or it renders
+in the brandbook's light roles, and uses the shared header and footer
+(`widgets/site-header`, `widgets/site-footer`): off the home page, the menu's
+section links are `/{locale}#id`, and a header given no links has no menu. Only the **dashboard** has a theme switch — Light / Dark, beside the
 wordmark in the sidebar. Until one is picked, the dashboard follows the OS
 (the `system` cookie state).
 
@@ -762,10 +774,21 @@ no longer asks for a write-up, search fields or a video (stored values stay);
 "Why STAGER" is a heading beside numbered lines. A course's "related
 service" left the course form with the Academy link (the column stays).
 
-Still open: the real figures (the samples are placeholders, marked);
-rendering the home page statically (the per-request CSP nonce keeps it
-dynamic, see `docs/AUDIT-HANDOFF.md`); the SEO fields; and the noindex,
-which stays until launch. Keep the data-loading pattern in
+**The site's pages, decided with the owner:** the home page, the privacy
+policy (`/[locale]/privacy`, its text written under Page copy → Privacy
+policy), and later an article page for Insights. Services, contact, About and
+Team live on the home page: the team (`/api/public/team`, dashboard → Team)
+follows the intro, each member's portrait beside their role and bio. Until
+the policy has text, its page says so and nothing links to it; once it has,
+the footer and the contact forms link to it. Page copy offers only the pages
+the site renders (`SITE_PAGE_KEYS`): HOME and PRIVACY. The other six page
+rows stay in the database, unused.
+
+Still open: the real figures (the samples are placeholders, marked); the
+policy's text (the client's lawyer); the article page, when articles are
+published; rendering the home page statically (the per-request CSP nonce
+keeps it dynamic, see `docs/AUDIT-HANDOFF.md`); the SEO fields; and the
+noindex, which stays until launch. Keep the data-loading pattern in
 `home-page.service.ts`.
 
 Decided for the design phase: Noto Sans Georgian for both scripts, so headlines

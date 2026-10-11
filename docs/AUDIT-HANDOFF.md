@@ -191,7 +191,9 @@ Before launch:
 
 7. Vercel Pro under the client's account (Hobby forbids commercial use).
 8. Supabase Pro: the free plan has no backups and pauses after a quiet week.
-9. Logo files (favicon, share image) and a privacy policy for the contact form.
+9. Logo files (favicon, share image), and the privacy policy's text: the page
+   exists (`/ka/privacy`, `/en/privacy`); write it under Dashboard → Page copy
+   → Privacy policy. Until then nothing links to it.
 
 ## Where the rules live
 

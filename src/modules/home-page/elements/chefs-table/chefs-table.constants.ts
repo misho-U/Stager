@@ -28,6 +28,4 @@ export const CT_MOTION = {
   flip: { duration: 0.55, ease: 'power3.inOut' },
   /** The video player opening out of the card that was pressed. */
   player: { duration: 0.75, ease: 'expo.inOut' },
-  /** The menu's links rising in. */
-  menu: { duration: 0.8, ease: 'expo.out', stagger: 0.06 },
 } as const;

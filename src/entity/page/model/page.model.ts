@@ -8,7 +8,8 @@ import {
   seoFieldsSchema,
   seoInputSchema,
 } from '@/shared/types/api';
-import { pageKeySchema } from '@/shared/types/enums';
+import { isBlankHtml } from '@/shared/lib/content';
+import { pageKeySchema, type PageKey } from '@/shared/types/enums';
 
 /**
  * Editable page copy.
@@ -151,4 +152,43 @@ export function homeSections(page: PublicPage | null): HomeSections {
     insights: find(HOME_SECTION_KEYS.insights),
     cta: find(HOME_SECTION_KEYS.cta),
   };
+}
+
+// --- The pages the site renders ---
+
+/**
+ * The pages with copy the site actually shows, and so the only ones the
+ * dashboard offers under Page copy. The others (ABOUT, SERVICES, PROJECTS,
+ * TEAM, INSIGHTS, CONTACT) are kept in the database, unused, since the
+ * client chose one page: their sections live on the home page now.
+ */
+export const SITE_PAGE_KEYS = ['HOME', 'PRIVACY'] as const satisfies readonly PageKey[];
+
+export function isSitePage(key: PageKey): boolean {
+  return (SITE_PAGE_KEYS as readonly PageKey[]).includes(key);
+}
+
+/** Where the privacy policy lives, under each locale (`/ka/privacy`). */
+export const PRIVACY_PATH = '/privacy';
+
+/** The privacy policy's one section, as the migration and the seed create it. */
+export const PRIVACY_SECTION_KEY = 'policy';
+
+/**
+ * Sections the site shows as a heading and a text only, so the dashboard
+ * offers nothing else for them: no subheading, button or image that would
+ * appear nowhere.
+ */
+export function isTextOnlySection(key: string): boolean {
+  return key === PRIVACY_SECTION_KEY;
+}
+
+/**
+ * The privacy policy's text, or null while the dashboard holds none: an
+ * empty policy is never linked to, from the footer or the contact form.
+ */
+export function privacyPolicy(page: PublicPage | null): { heading: string; body: string } | null {
+  const section = page?.sections.find((item) => item.key === PRIVACY_SECTION_KEY);
+  if (!section || isBlankHtml(section.body)) return null;
+  return { heading: section.heading, body: section.body };
 }

@@ -49,6 +49,17 @@ test.describe('the public site', () => {
     await skipToContent(page, en.common.skipToContent);
   });
 
+  test('the privacy policy also starts with a skip to the content', async ({ page }) => {
+    await page.goto('/en/privacy');
+    await expect(page.locator('main#content')).toHaveCount(1);
+    // The skip and its landing; a policy not yet written holds nothing to
+    // Tab to, so the step after it is the home page's to check.
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('link', { name: en.common.skipToContent })).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('main#content')).toBeFocused();
+  });
+
   test('Start a Project takes the keyboard to the form', async ({ page }) => {
     // With smooth scrolling on, which takes over the browser's own jump.
     await page.emulateMedia({ reducedMotion: 'no-preference' });

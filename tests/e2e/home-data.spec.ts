@@ -360,3 +360,82 @@ test.describe("a project's photos", () => {
     }
   });
 });
+
+test.describe('the team on the home page', () => {
+  test('shows only when the dashboard has published members', async ({ page, request }) => {
+    const response = await request.get('/api/public/team?locale=EN');
+    expect(response.ok()).toBeTruthy();
+    const { items } = (await response.json()) as { items: Array<{ name: string }> };
+    await page.goto('/en');
+    if (items.length === 0) {
+      await expect(page.locator('#team')).toHaveCount(0);
+    } else {
+      await expect(page.getByTestId('team-list').locator('h3')).toHaveText(
+        items.map((member) => member.name),
+      );
+    }
+  });
+});
+
+test.describe('team members added in the dashboard', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(!DB_WRITES_ALLOWED, DB_WRITES_SKIP_REASON);
+    test.skip(
+      testInfo.project.name !== 'chromium',
+      'Writes shared rows; runs once, under chromium.',
+    );
+  });
+
+  test.afterAll(disconnectTestPrisma);
+
+  test('a published one is shown with its role and bio, a draft never', async ({
+    page,
+    request,
+  }) => {
+    const prisma = testPrisma();
+    const run = `e2e-team-${Date.now()}`;
+    const revalidate = () =>
+      request.post('/api/dev/revalidate-probe', {
+        data: { entity: 'teamMember' },
+        headers: { 'sec-fetch-site': 'same-origin' },
+      });
+    const member = (suffix: string, status: 'PUBLISHED' | 'DRAFT') =>
+      prisma.teamMember.create({
+        data: {
+          slug: `${run}-${suffix.toLowerCase()}`,
+          status,
+          order: 10_000,
+          translations: {
+            create: [
+              {
+                locale: 'EN',
+                name: `E2E ${suffix} Member`,
+                position: 'Head chef',
+                bio: 'First line of the bio.\nSecond line.',
+              },
+              { locale: 'KA', name: `E2E ${suffix} Member`, position: 'შეფ-მზარეული' },
+            ],
+          },
+        },
+      });
+    const published = await member('Published', 'PUBLISHED');
+    const draft = await member('Draft', 'DRAFT');
+
+    try {
+      expect((await revalidate()).ok()).toBeTruthy();
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.goto('/en');
+      const team = page.locator('#team');
+      const card = team.locator('li', { hasText: 'E2E Published Member' });
+      await expect(card).toBeVisible();
+      await expect(card).toContainText('Head chef');
+      await expect(card).toContainText('First line of the bio.');
+      // No photo yet: the member's initials stand in, never a stock face.
+      await expect(card.locator('[aria-hidden]').first()).toContainText('EP');
+      await expect(team).not.toContainText('E2E Draft Member');
+    } finally {
+      await prisma.teamMember.deleteMany({ where: { id: { in: [published.id, draft.id] } } });
+      await revalidate();
+    }
+  });
+});

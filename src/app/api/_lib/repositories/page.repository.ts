@@ -4,7 +4,12 @@ import {
   toTranslationMap,
   translationUpsert,
 } from '@/app/api/_lib/serializers';
-import type { AdminPage, PageUpdateInput, PublicPage } from '@/entity/page/model/page.model';
+import {
+  SITE_PAGE_KEYS,
+  type AdminPage,
+  type PageUpdateInput,
+  type PublicPage,
+} from '@/entity/page/model/page.model';
 import type { DbLocale, PageKey } from '@/shared/types/enums';
 import { prisma } from '@pkg/db/prisma';
 import { sanitizeRichText } from '@pkg/security/sanitize';
@@ -72,8 +77,16 @@ function toAdminPage(row: AdminRow): AdminPage {
   };
 }
 
+/**
+ * The pages the dashboard offers: those the site renders. The rest stay in
+ * the database, unused (see SITE_PAGE_KEYS).
+ */
 export async function listAdminPages() {
-  const rows = await prisma.page.findMany({ include: adminInclude, orderBy: { key: 'asc' } });
+  const rows = await prisma.page.findMany({
+    where: { key: { in: [...SITE_PAGE_KEYS] } },
+    include: adminInclude,
+    orderBy: { key: 'asc' },
+  });
   return { items: rows.map(toAdminPage), total: rows.length };
 }
 

@@ -18,6 +18,12 @@ type InquiryFormProps = {
   layout?: 'stacked' | 'two-column';
   /** Where the form starts (see InquiryDefaults); read once, when it mounts. */
   defaults?: InquiryDefaults;
+  /**
+   * The privacy policy, once it has text: a line under the button links to
+   * it. Without one (nothing written yet) the line is left out, never a link
+   * to an empty page.
+   */
+  privacyHref?: string | null;
 };
 
 /**
@@ -40,6 +46,7 @@ function InquiryFormFields({
   submitLabel,
   layout = 'stacked',
   defaults,
+  privacyHref = null,
 }: InquiryFormProps) {
   const t = useTranslations('contact');
   const { form, onSubmit, fieldError, formError, sent, isSubmitting } = useInquiryForm(
@@ -128,6 +135,21 @@ function InquiryFormFields({
       <Button type="submit" size="lg" loading={isSubmitting} className="self-start">
         {isSubmitting ? t('submitting') : (submitLabel ?? t('submit'))}
       </Button>
+
+      {privacyHref ? (
+        <p data-testid="privacy-note" className="text-body-sm text-ink-muted text-pretty">
+          {t.rich('privacyNote', {
+            link: (chunks) => (
+              <a
+                href={privacyHref}
+                className="text-ink underline underline-offset-4 hover:no-underline"
+              >
+                {chunks}
+              </a>
+            ),
+          })}
+        </p>
+      ) : null}
     </form>
   );
 }

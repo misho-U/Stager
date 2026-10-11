@@ -10,11 +10,13 @@ import type { PublicPage } from '@/entity/page/model/page.model';
 import type { PublicProjectListItem } from '@/entity/project/model/project.model';
 import type { PublicServiceListItem } from '@/entity/service/model/service.model';
 import type { PublicStat } from '@/entity/stat/model/stat.model';
+import type { PublicTeamMember } from '@/entity/team-member/model/team-member.model';
 import type { PublicLayoutData } from '@/entity/site-setting/model/site-setting.model';
 import type { PublicVideo } from '@/entity/video/model/video.model';
 import type { ListResponse } from '@/shared/types/api';
 import type { DbLocale } from '@/shared/types/enums';
 import { collectionTag, detailTag, LAYOUT_TAG, PUBLIC_REVALIDATE_SECONDS } from '@pkg/cache/tags';
+import { ApiError } from '@pkg/http/api-error';
 import { serverFetch } from '@pkg/http/fetcher';
 import { logger, serialiseError } from '@pkg/logger';
 
@@ -60,97 +62,130 @@ async function read<T>(label: string, request: Promise<T>, fallback: T): Promise
   }
 }
 
+/**
+ * The privacy policy page, or null where the database has no such page yet:
+ * a preview, sharing the live database, runs before the migration that
+ * creates it (20261011230743_privacy_page) has been deployed. Missing is not
+ * a failed read; anything else is.
+ */
+function readPrivacyPage(locale: DbLocale): Promise<PublicPage | null> {
+  return serverFetch<PublicPage>(`/api/public/pages/PRIVACY?locale=${locale}`, {
+    tags: [collectionTag('page'), detailTag('page', 'PRIVACY')],
+    revalidate: PUBLIC_REVALIDATE_SECONDS,
+  }).catch((error: unknown) => {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  });
+}
+
 export async function loadHomePageData(locale: DbLocale) {
-  const [layout, page, stats, projects, services, insights, courses, videos] = await Promise.all([
-    read<PublicLayoutData | null>(
-      'layout',
-      serverFetch<PublicLayoutData>(`/api/public/layout?locale=${locale}`, {
-        tags: [LAYOUT_TAG],
-        revalidate: PUBLIC_REVALIDATE_SECONDS,
-      }),
-      null,
-    ),
-
-    read<PublicPage | null>(
-      'page:HOME',
-      serverFetch<PublicPage>(`/api/public/pages/HOME?locale=${locale}`, {
-        tags: [collectionTag('page'), detailTag('page', 'HOME')],
-        revalidate: PUBLIC_REVALIDATE_SECONDS,
-      }),
-      null,
-    ),
-
-    read<ListResponse<PublicStat>>(
-      'stats',
-      serverFetch<ListResponse<PublicStat>>(`/api/public/company-stats?locale=${locale}`, {
-        tags: [collectionTag('stat')],
-        revalidate: PUBLIC_REVALIDATE_SECONDS,
-      }),
-      { items: [], total: 0 },
-    ),
-
-    read<CachedProjectList>(
-      'projects',
-      serverFetch<CachedProjectList>(`/api/public/projects?locale=${locale}&limit=6`, {
-        tags: [collectionTag('project')],
-        revalidate: PUBLIC_REVALIDATE_SECONDS,
-      }),
-      { items: [], total: 0 },
-    ),
-
-    // Every published service, up to the API's maximum: they are the whole
-    // offering, not a selection (projects and videos show the latest few).
-    // At 12, a thirteenth service added in the dashboard never appeared here.
-    read<ListResponse<PublicServiceListItem>>(
-      'services',
-      serverFetch<ListResponse<PublicServiceListItem>>(
-        `/api/public/services?locale=${locale}&limit=100`,
-        {
-          tags: [collectionTag('service')],
+  const [layout, page, privacy, stats, team, projects, services, insights, courses, videos] =
+    await Promise.all([
+      read<PublicLayoutData | null>(
+        'layout',
+        serverFetch<PublicLayoutData>(`/api/public/layout?locale=${locale}`, {
+          tags: [LAYOUT_TAG],
           revalidate: PUBLIC_REVALIDATE_SECONDS,
-        },
+        }),
+        null,
       ),
-      { items: [], total: 0 },
-    ),
 
-    read<ListResponse<PublicInsightListItem>>(
-      'insights',
-      serverFetch<ListResponse<PublicInsightListItem>>(
-        `/api/public/insights?locale=${locale}&limit=3`,
-        {
-          tags: [collectionTag('insight')],
+      read<PublicPage | null>(
+        'page:HOME',
+        serverFetch<PublicPage>(`/api/public/pages/HOME?locale=${locale}`, {
+          tags: [collectionTag('page'), detailTag('page', 'HOME')],
           revalidate: PUBLIC_REVALIDATE_SECONDS,
-        },
+        }),
+        null,
       ),
-      { items: [], total: 0 },
-    ),
 
-    // A course leaves this list once its start date has passed. The API
-    // decides that per request, so a cached copy can show one for up to
-    // PUBLIC_REVALIDATE_SECONDS after Tbilisi midnight.
-    read<ListResponse<PublicCourse>>(
-      'courses',
-      serverFetch<ListResponse<PublicCourse>>(`/api/public/courses?locale=${locale}`, {
-        tags: [collectionTag('course')],
-        revalidate: PUBLIC_REVALIDATE_SECONDS,
-      }),
-      { items: [], total: 0 },
-    ),
+      // Only to know whether the footer and the form may link to it.
+      read<PublicPage | null>('page:PRIVACY', readPrivacyPage(locale), null),
 
-    read<ListResponse<PublicVideo>>(
-      'videos',
-      serverFetch<ListResponse<PublicVideo>>(`/api/public/videos?locale=${locale}&limit=6`, {
-        tags: [collectionTag('video')],
-        revalidate: PUBLIC_REVALIDATE_SECONDS,
-      }),
-      { items: [], total: 0 },
-    ),
-  ]);
+      read<ListResponse<PublicStat>>(
+        'stats',
+        serverFetch<ListResponse<PublicStat>>(`/api/public/company-stats?locale=${locale}`, {
+          tags: [collectionTag('stat')],
+          revalidate: PUBLIC_REVALIDATE_SECONDS,
+        }),
+        { items: [], total: 0 },
+      ),
+
+      // The people behind STAGER, after the intro. A failed read shows no one
+      // (and the page says it failed), never placeholder people.
+      read<ListResponse<PublicTeamMember>>(
+        'team',
+        serverFetch<ListResponse<PublicTeamMember>>(`/api/public/team?locale=${locale}&limit=24`, {
+          tags: [collectionTag('teamMember')],
+          revalidate: PUBLIC_REVALIDATE_SECONDS,
+        }),
+        { items: [], total: 0 },
+      ),
+
+      read<CachedProjectList>(
+        'projects',
+        serverFetch<CachedProjectList>(`/api/public/projects?locale=${locale}&limit=6`, {
+          tags: [collectionTag('project')],
+          revalidate: PUBLIC_REVALIDATE_SECONDS,
+        }),
+        { items: [], total: 0 },
+      ),
+
+      // Every published service, up to the API's maximum: they are the whole
+      // offering, not a selection (projects and videos show the latest few).
+      // At 12, a thirteenth service added in the dashboard never appeared here.
+      read<ListResponse<PublicServiceListItem>>(
+        'services',
+        serverFetch<ListResponse<PublicServiceListItem>>(
+          `/api/public/services?locale=${locale}&limit=100`,
+          {
+            tags: [collectionTag('service')],
+            revalidate: PUBLIC_REVALIDATE_SECONDS,
+          },
+        ),
+        { items: [], total: 0 },
+      ),
+
+      read<ListResponse<PublicInsightListItem>>(
+        'insights',
+        serverFetch<ListResponse<PublicInsightListItem>>(
+          `/api/public/insights?locale=${locale}&limit=3`,
+          {
+            tags: [collectionTag('insight')],
+            revalidate: PUBLIC_REVALIDATE_SECONDS,
+          },
+        ),
+        { items: [], total: 0 },
+      ),
+
+      // A course leaves this list once its start date has passed. The API
+      // decides that per request, so a cached copy can show one for up to
+      // PUBLIC_REVALIDATE_SECONDS after Tbilisi midnight.
+      read<ListResponse<PublicCourse>>(
+        'courses',
+        serverFetch<ListResponse<PublicCourse>>(`/api/public/courses?locale=${locale}`, {
+          tags: [collectionTag('course')],
+          revalidate: PUBLIC_REVALIDATE_SECONDS,
+        }),
+        { items: [], total: 0 },
+      ),
+
+      read<ListResponse<PublicVideo>>(
+        'videos',
+        serverFetch<ListResponse<PublicVideo>>(`/api/public/videos?locale=${locale}&limit=6`, {
+          tags: [collectionTag('video')],
+          revalidate: PUBLIC_REVALIDATE_SECONDS,
+        }),
+        { items: [], total: 0 },
+      ),
+    ]);
 
   return {
     layout: layout.data,
     page: page.data,
+    privacy: privacy.data,
     stats: orSamples(stats, () => sampleStats(locale)),
+    team: team.data,
     projects: withGalleries(projects.data),
     services: services.data,
     insights: insights.data,
@@ -161,7 +196,9 @@ export async function loadHomePageData(locale: DbLocale) {
     readFailed:
       layout.failed ||
       page.failed ||
+      privacy.failed ||
       stats.failed ||
+      team.failed ||
       projects.failed ||
       services.failed ||
       insights.failed ||
