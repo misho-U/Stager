@@ -46,7 +46,8 @@ for (const locale of LOCALES) {
           'href',
           `/${locale}`,
         );
-        const here = menu.locator(`a[href="/${locale}/${path}"]`);
+        // The menu's own entry, not the language switch (which also leads here).
+        const here = menu.locator(`a[data-menu-link][href="/${locale}/${path}"]`);
         if ((await here.count()) > 0) await expect(here).toHaveAttribute('aria-current', 'page');
       });
 
