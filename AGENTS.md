@@ -337,11 +337,13 @@ Non-negotiable. Each exists because of a specific failure mode.
   Sans Georgian, variable, split into georgian / latin / latin-ext files by
   `unicode-range` (SIL OFL 1.1 — see `fonts/OFL.txt`). One stack:
   `'BPG Nino Mtavruli', 'Noto Sans Georgian', …`. **On the site's Georgian
-  pages, Latin and digits are BPG's own** (`--font-sans-ka`, family `BPG
-  Nino Mtavruli Latin`, the same files): BPG draws its letters about 5% of
-  the size above the baseline and Noto's Latin sits on it, so a Latin word
-  in a Georgian line ("რატომ STAGER") looked a step lower. The wordmark is
-  `font-brand` (Noto) everywhere. **The Mtavruli licence is
+  pages, Latin and digits are Noto raised onto BPG's line** (`--font-sans-ka`,
+  family `Stager Latin`, `fonts/STAGER-LATIN.txt`): BPG draws its letters
+  about 5% of the size above the baseline and Noto's Latin sits on it, so a
+  Latin word in a Georgian line ("რატომ STAGER") looked a step lower. The
+  letters stay Noto's (the client likes the English as it is; BPG's own
+  Latin was tried and rejected), and English pages load the original files
+  only. The wordmark is `font-brand` (Noto) everywhere. **The Mtavruli licence is
   not confirmed** (`fonts/BPG-NINO-MTAVRULI.txt`: the npm packages name CC
   BY-NC-ND 4.0, the files say "free gift"); the owner clears it before
   launch, and nobody modifies the files.

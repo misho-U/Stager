@@ -142,29 +142,37 @@ test.describe('typography', () => {
     expect(externalFontRequests).toEqual([]);
 
     // And that text resolves to the bundled families first, not a system
-    // stack: on a Georgian page, the Georgian letters' face, its own Latin
-    // (on the same line as its Georgian), then Noto for the rest.
+    // stack: on a Georgian page, the Georgian letters' face, Noto's Latin
+    // raised onto its line ('Stager Latin'), then Noto for the rest.
     const fontFamily = await page
       .getByTestId('hero-heading')
       .evaluate((node) => getComputedStyle(node).fontFamily);
 
-    expect(fontFamily).toMatch(
-      /^"?BPG Nino Mtavruli"?, "?BPG Nino Mtavruli Latin"?, "?Noto Sans Georgian"?,/,
-    );
+    expect(fontFamily).toMatch(/^"?BPG Nino Mtavruli"?, "?Stager Latin"?, "?Noto Sans Georgian"?,/);
+  });
 
-    // An English page keeps Noto's Latin: Georgian letters, then Noto.
+  test('an English page keeps Noto as it is, and never loads the raised copy', async ({ page }) => {
+    // The raised Latin is for Georgian pages only (brandbook.css,
+    // 'Stager Latin'); English text is the original Noto files.
+    const raised: string[] = [];
+    page.on('request', (request) => {
+      if (/stager[_-]latin/i.test(request.url())) raised.push(request.url());
+    });
     await page.goto('/en');
+    await expect(page.getByTestId('hero-heading')).toBeVisible();
     const english = await page
       .getByTestId('hero-heading')
       .evaluate((node) => getComputedStyle(node).fontFamily);
     expect(english).toMatch(/^"?BPG Nino Mtavruli"?, "?Noto Sans Georgian"?,/);
+    await page.evaluate(() => document.fonts.ready);
+    expect(raised).toEqual([]);
   });
 
   test('a Latin word in a Georgian line sits on the line with it', async ({ page }) => {
     // BPG Nino Mtavruli draws its letters a little above the baseline; Noto's
     // Latin sits on it, so "რატომ STAGER" read as two lines out of step. On
-    // a Georgian page Latin takes BPG's own, and both scripts' letters end
-    // within a pixel of each other at 48px.
+    // a Georgian page Latin is Noto raised onto BPG's line, and both
+    // scripts' letters end within a pixel of each other at 48px.
     await page.goto('/ka');
     await page.evaluate(() => document.fonts.ready);
     const gap = await page.evaluate(() => {

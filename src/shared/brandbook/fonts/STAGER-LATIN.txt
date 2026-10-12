@@ -1,0 +1,53 @@
+Stager Latin: stager-latin-raised.woff2, stager-latin-ext-raised.woff2
+
+A modified version of Noto Sans Georgian (latin and latin-ext files in this
+folder), Copyright 2022 The Noto Project Authors, under the SIL Open Font
+License 1.1 (OFL.txt). It is released under the same licence.
+
+The only change: every outline is raised 49 units (0.049 em at 1000 units
+per em), so Latin letters and digits start from the same height as BPG Nino
+Mtavruli's Georgian letters (100/2048 em above the baseline). Line metrics,
+widths, weights and kerning are untouched. The family is renamed "Stager
+Latin" as a modified version. Only the site's Georgian pages use it; English
+pages use the original Noto files.
+
+Made with fontTools (Python), outside the project's stack; to remake it from
+new Noto files, run this once per file:
+
+"""Raise every outline of a Noto Sans Georgian Latin subset by DY font units.
+
+Line metrics (hhea, OS/2) stay as they are, so a line box is unchanged; only
+the letters sit higher, on the line BPG Nino Mtavruli draws its Georgian on.
+Variable outlines: gvar deltas are relative to the default outline, so moving
+the default moves every instance. Composite glyphs follow their components.
+"""
+import sys
+from fontTools.ttLib import TTFont
+
+DY = 49  # 0.049 em at 1000 units: BPG's Georgian letters start 100/2048 em up
+src, dst = sys.argv[1], sys.argv[2]
+font = TTFont(src)
+glyf = font['glyf']
+for name in font.getGlyphOrder():
+    glyph = glyf[name]
+    if glyph.isComposite() or glyph.numberOfContours <= 0:
+        continue
+    glyph.coordinates.translate((0, DY))
+    glyph.recalcBounds(glyf)
+for name in font.getGlyphOrder():
+    if glyf[name].isComposite():
+        glyf[name].recalcBounds(glyf)
+font['head'].yMin += DY
+font['head'].yMax += DY
+# A modified version carries its own name (SIL OFL 1.1, §3 spirit).
+for record in font['name'].names:
+    if record.nameID in (1, 16):
+        record.string = 'Stager Latin'
+    elif record.nameID == 4:
+        record.string = 'Stager Latin Regular'
+    elif record.nameID == 6:
+        record.string = 'StagerLatin-Regular'
+    elif record.nameID == 3:
+        record.string = 'Stager Latin (Noto Sans Georgian, raised 49 units)'
+font.flavor = 'woff2'
+font.save(dst)

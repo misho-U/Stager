@@ -114,14 +114,14 @@
      face can differ later without touching body text. */
   --font-sans: 'BPG Nino Mtavruli', 'Noto Sans Georgian', ui-sans-serif, system-ui, sans-serif;
   --font-display: 'BPG Nino Mtavruli', 'Noto Sans Georgian', ui-sans-serif, system-ui, sans-serif;
-  /* Georgian pages of the site (site.css, [data-site]:lang(ka)): a Latin
-     word or a digit in a Georgian line takes BPG Nino Mtavruli's own Latin,
-     which sits on the same line as its Georgian. Noto's Latin sits lower
-     (BPG draws its letters 5% of the size above the baseline), so "რატომ
-     STAGER" read as two lines out of step. */
+  /* Georgian pages of the site (site.css, [data-site]:lang(ka)): Latin and
+     digits are Noto's own letters, raised to the line BPG Nino Mtavruli
+     draws its Georgian on ('Stager Latin', below). BPG sets its letters 5%
+     of the size above the baseline, so with Noto as it is "რატომ STAGER"
+     read as two lines out of step. The letters are Noto's either way: the
+     English pages keep Noto untouched. */
   --font-sans-ka:
-    'BPG Nino Mtavruli', 'BPG Nino Mtavruli Latin', 'Noto Sans Georgian', ui-sans-serif, system-ui,
-    sans-serif;
+    'BPG Nino Mtavruli', 'Stager Latin', 'Noto Sans Georgian', ui-sans-serif, system-ui, sans-serif;
   /* The STAGER wordmark: one face in both languages, whatever the page's
      text is set in. */
   --font-brand: 'Noto Sans Georgian', ui-sans-serif, system-ui, sans-serif;
@@ -566,31 +566,35 @@
   unicode-range: U+10D0-10F6, U+10FB;
 }
 
-/* The same files' Latin, digits and punctuation, exactly what they hold:
-   only Georgian pages ask for this family (--font-sans-ka). One download
-   serves both families. */
+/* 'Stager Latin': Noto Sans Georgian's Latin files with every outline raised
+   49 units (0.049 em), onto the line BPG Nino Mtavruli's Georgian starts
+   from, and nothing else changed: same letters, weights, widths and line
+   metrics. Only Georgian pages ask for it (--font-sans-ka). SIL OFL 1.1
+   like the original (fonts/OFL.txt); how it was made, and how to make it
+   again from new Noto files, is in fonts/STAGER-LATIN.txt. */
 @font-face {
-  font-family: 'BPG Nino Mtavruli Latin';
+  font-family: 'Stager Latin';
   font-style: normal;
-  font-weight: 100 549;
+  font-weight: 100 900;
+  font-stretch: 62.5% 100%;
   font-display: swap;
-  src: url('./fonts/bpg-nino-mtavruli.woff2') format('woff2');
+  src: url('./fonts/stager-latin-raised.woff2') format('woff2');
   unicode-range:
-    U+0020-007E, U+00A0, U+00A4, U+00A6-00A7, U+00A9, U+00AB-00B1, U+00B4, U+00B6-00B7, U+00BA-00BB,
-    U+02DA, U+02DC, U+2000-200A, U+2010-2014, U+2018-201A, U+201C-201E, U+2020, U+2022, U+2026,
-    U+202F, U+2039-203A, U+205F, U+20AC, U+2122;
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-  font-family: 'BPG Nino Mtavruli Latin';
+  font-family: 'Stager Latin';
   font-style: normal;
-  font-weight: 550 900;
+  font-weight: 100 900;
+  font-stretch: 62.5% 100%;
   font-display: swap;
-  src: url('./fonts/bpg-nino-mtavruli-bold.woff2') format('woff2');
+  src: url('./fonts/stager-latin-ext-raised.woff2') format('woff2');
   unicode-range:
-    U+0020-007E, U+00A0, U+00A4, U+00A6-00A7, U+00A9, U+00AB-00B1, U+00B4, U+00B6-00B7, U+00BA-00BB,
-    U+02DA, U+02DC, U+2000-200A, U+2010-2014, U+2018-201A, U+201C-201E, U+2020, U+2022, U+2026,
-    U+202F, U+2039-203A, U+205F, U+20AC, U+2122;
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
 }
 
 /* Georgian beyond those letters (Mtavruli capitals, old scripts): rare. */

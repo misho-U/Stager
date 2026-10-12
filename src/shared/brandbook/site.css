@@ -23,8 +23,8 @@
 
    Type: Georgian letters in BPG Nino Mtavruli (capital-style throughout,
    the client's choice), everything else in Noto Sans Georgian at its own
-   width, except on Georgian pages, where Latin and digits are BPG's own so
-   they sit on the line with the Georgian; the wordmark is Noto everywhere.
+   width; on Georgian pages that Latin is raised a little ('Stager Latin') so
+   it sits on the line with the Georgian. The wordmark is Noto everywhere.
    A medium weight for Latin headings, regular for reading. Sizes
    stay moderate: the largest is the hero's headline, and no other heading
    comes near it. Georgian steps down a little and keeps the regular
@@ -191,8 +191,8 @@
    are longer, so the two largest sizes step down a little, set lighter and
    keep the brandbook's letter spacing. */
 [data-site]:lang(ka) {
-  /* Latin and digits in BPG Nino Mtavruli's own design, on the line its
-     Georgian sits on (brandbook.css, --font-sans-ka). */
+  /* Latin and digits on the line the Georgian sits on: Noto, raised
+     (brandbook.css, --font-sans-ka). */
   --font-sans: var(--font-sans-ka);
   --font-display: var(--font-sans-ka);
   font-family: var(--font-sans-ka);

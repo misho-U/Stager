@@ -95,9 +95,10 @@ Do not add a library outside this list without raising it first.
   either: its per-face "Fallback" family rendered all Latin text in Arial.
   **The Mtavruli licence is unconfirmed** (`fonts/BPG-NINO-MTAVRULI.txt`);
   never modify those files. BPG sits its letters above the baseline, so on
-  the site's Georgian pages Latin is BPG's own too (`--font-sans-ka`), or a
-  Latin word in a Georgian line looks a step lower; the wordmark stays
-  `font-brand`.
+  the site's Georgian pages Latin is Noto raised to match (`Stager Latin`,
+  `--font-sans-ka`), or a Latin word in a Georgian line looks a step lower.
+  Never swap the English letters for another design: the client likes them
+  as they are.
 - **`pkg/brand/hex.generated.ts` is generated** from `brandbook.css` on install,
   dev and build, for the email and the theme-color meta tag. Never edit it.
   Brand colours must be hex, or the build fails.
