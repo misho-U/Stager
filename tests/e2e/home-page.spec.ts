@@ -479,6 +479,38 @@ test.describe('the tickets, the screening room and the menu', () => {
     await expect(menu).toBeHidden();
     await expect(page.locator('#academy-title')).toBeInViewport();
   });
+
+  test('the menu is a panel under its button, and a click outside closes it', async ({ page }) => {
+    await openHome(page, 'en');
+    const button = page.locator('[data-ct-header] button[aria-haspopup="dialog"]');
+    await button.click();
+    const menu = page.locator('dialog[open]');
+    await expect(menu).toBeVisible();
+
+    // Compact, not the whole screen: under the button, its right edge level
+    // with the button's, narrower than the page on a wide screen.
+    const [panel, trigger, viewport] = await Promise.all([
+      menu.boundingBox(),
+      button.boundingBox(),
+      page.viewportSize(),
+    ]);
+    expect(panel && trigger && viewport).toBeTruthy();
+    expect(panel!.y).toBeGreaterThanOrEqual(trigger!.y + trigger!.height);
+    expect(Math.abs(panel!.x + panel!.width - (trigger!.x + trigger!.width))).toBeLessThan(2);
+    expect(panel!.height).toBeLessThan(viewport!.height);
+    if (viewport!.width >= 768) expect(panel!.width).toBeLessThan(viewport!.width / 2);
+
+    // A click beside it closes it, and the keyboard is back on the button.
+    await page.mouse.click(10, viewport!.height - 10);
+    await expect(menu).toBeHidden();
+    await expect(button).toBeFocused();
+
+    // So does Escape.
+    await button.click();
+    await expect(page.locator('dialog[open]')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('dialog[open]')).toHaveCount(0);
+  });
 });
 
 test.describe('the company, its services and its projects', () => {

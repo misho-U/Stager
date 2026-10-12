@@ -9,7 +9,8 @@
      - Brand palette           --color-brand-*   (hex only: the email needs hex)
      - Which colour does what  --color-surface, --color-ink, --color-line, …
      - Status colours          --color-success, --color-warning, --color-danger
-     - Typeface                --font-sans, --font-display
+     - Typeface                --font-sans, --font-display, --font-sans-ka,
+                               --font-brand
      - Type scale              --text-*
      - Letter-spacing          --tracking-*
      - Spacing, radii, shadow  --spacing-*, --radius-*, --shadow-*
@@ -113,6 +114,17 @@
      face can differ later without touching body text. */
   --font-sans: 'BPG Nino Mtavruli', 'Noto Sans Georgian', ui-sans-serif, system-ui, sans-serif;
   --font-display: 'BPG Nino Mtavruli', 'Noto Sans Georgian', ui-sans-serif, system-ui, sans-serif;
+  /* Georgian pages of the site (site.css, [data-site]:lang(ka)): a Latin
+     word or a digit in a Georgian line takes BPG Nino Mtavruli's own Latin,
+     which sits on the same line as its Georgian. Noto's Latin sits lower
+     (BPG draws its letters 5% of the size above the baseline), so "რატომ
+     STAGER" read as two lines out of step. */
+  --font-sans-ka:
+    'BPG Nino Mtavruli', 'BPG Nino Mtavruli Latin', 'Noto Sans Georgian', ui-sans-serif, system-ui,
+    sans-serif;
+  /* The STAGER wordmark: one face in both languages, whatever the page's
+     text is set in. */
+  --font-brand: 'Noto Sans Georgian', ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
 
   /* How heavy the two headline levels are: the hero headline, and section
@@ -552,6 +564,33 @@
   font-display: swap;
   src: url('./fonts/bpg-nino-mtavruli-bold.woff2') format('woff2');
   unicode-range: U+10D0-10F6, U+10FB;
+}
+
+/* The same files' Latin, digits and punctuation, exactly what they hold:
+   only Georgian pages ask for this family (--font-sans-ka). One download
+   serves both families. */
+@font-face {
+  font-family: 'BPG Nino Mtavruli Latin';
+  font-style: normal;
+  font-weight: 100 549;
+  font-display: swap;
+  src: url('./fonts/bpg-nino-mtavruli.woff2') format('woff2');
+  unicode-range:
+    U+0020-007E, U+00A0, U+00A4, U+00A6-00A7, U+00A9, U+00AB-00B1, U+00B4, U+00B6-00B7, U+00BA-00BB,
+    U+02DA, U+02DC, U+2000-200A, U+2010-2014, U+2018-201A, U+201C-201E, U+2020, U+2022, U+2026,
+    U+202F, U+2039-203A, U+205F, U+20AC, U+2122;
+}
+
+@font-face {
+  font-family: 'BPG Nino Mtavruli Latin';
+  font-style: normal;
+  font-weight: 550 900;
+  font-display: swap;
+  src: url('./fonts/bpg-nino-mtavruli-bold.woff2') format('woff2');
+  unicode-range:
+    U+0020-007E, U+00A0, U+00A4, U+00A6-00A7, U+00A9, U+00AB-00B1, U+00B4, U+00B6-00B7, U+00BA-00BB,
+    U+02DA, U+02DC, U+2000-200A, U+2010-2014, U+2018-201A, U+201C-201E, U+2020, U+2022, U+2026,
+    U+202F, U+2039-203A, U+205F, U+20AC, U+2122;
 }
 
 /* Georgian beyond those letters (Mtavruli capitals, old scripts): rare. */

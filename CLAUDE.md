@@ -94,7 +94,10 @@ Do not add a library outside this list without raising it first.
   fallback — which is worst for Georgian. Do not bring back `next/font/local`
   either: its per-face "Fallback" family rendered all Latin text in Arial.
   **The Mtavruli licence is unconfirmed** (`fonts/BPG-NINO-MTAVRULI.txt`);
-  never modify those files.
+  never modify those files. BPG sits its letters above the baseline, so on
+  the site's Georgian pages Latin is BPG's own too (`--font-sans-ka`), or a
+  Latin word in a Georgian line looks a step lower; the wordmark stays
+  `font-brand`.
 - **`pkg/brand/hex.generated.ts` is generated** from `brandbook.css` on install,
   dev and build, for the email and the theme-color meta tag. Never edit it.
   Brand colours must be hex, or the build fails.

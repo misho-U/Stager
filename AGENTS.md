@@ -336,7 +336,12 @@ Non-negotiable. Each exists because of a specific failure mode.
   alone. Everything else (Latin, digits, punctuation, rarer Georgian) is Noto
   Sans Georgian, variable, split into georgian / latin / latin-ext files by
   `unicode-range` (SIL OFL 1.1 — see `fonts/OFL.txt`). One stack:
-  `'BPG Nino Mtavruli', 'Noto Sans Georgian', …`. **The Mtavruli licence is
+  `'BPG Nino Mtavruli', 'Noto Sans Georgian', …`. **On the site's Georgian
+  pages, Latin and digits are BPG's own** (`--font-sans-ka`, family `BPG
+  Nino Mtavruli Latin`, the same files): BPG draws its letters about 5% of
+  the size above the baseline and Noto's Latin sits on it, so a Latin word
+  in a Georgian line ("რატომ STAGER") looked a step lower. The wordmark is
+  `font-brand` (Noto) everywhere. **The Mtavruli licence is
   not confirmed** (`fonts/BPG-NINO-MTAVRULI.txt`: the npm packages name CC
   BY-NC-ND 4.0, the files say "free gift"); the owner clears it before
   launch, and nobody modifies the files.
@@ -568,8 +573,10 @@ which every public page renders around itself (the home page, the team, the
 articles, an article, the privacy policy, the 404, the error page), and sets `color-scheme: dark` on the
 document. A new public page wraps itself in `[data-site]` too, or it renders
 in the brandbook's light roles, and uses the shared header and footer
-(`widgets/site-header`, `widgets/site-footer`). A page beside the home page
-is a `SubpageShell` with a `PageHero` (`widgets/site-chrome`): the header,
+(`widgets/site-header`, `widgets/site-footer`). The menu is a compact panel
+dropped from its button (`.ct-menu`, placed under the button as it opens; a
+click outside, or Escape, closes it), not a full screen. A page beside the
+home page is a `SubpageShell` with a `PageHero` (`widgets/site-chrome`): the header,
 footer, motion and one `<main>`, its menu leading home, to the other pages
 and to the form; `loadSiteChrome()` reads what they need, including which
 pages have anything to show (nothing links to an empty page). A header
@@ -822,9 +829,10 @@ noindex, which stays until launch. Keep the data-loading pattern in
 `home-page.service.ts`.
 
 Decided with the client: BPG Nino Mtavruli for Georgian letters and Noto Sans
-Georgian for the rest (October 2026), the site's teal turned 12° toward green
-from the logo's (`--ct-hue-shift`, `site.css`), and GSAP + Lenis motion under
-the rules in § Motion.
+Georgian for the rest (October 2026); the site's teal turned 12° toward green
+from the logo's (`--ct-hue-shift`, `site.css`) and the accent 34°, the brand's
+green the client asked for (`--ct-accent-shift`); and GSAP + Lenis motion
+under the rules in § Motion.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

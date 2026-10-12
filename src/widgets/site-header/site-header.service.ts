@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
 
 import { SITE_MENU_MOTION } from '@/widgets/site-header/site-header.constants';
 import { gsap } from '@/shared/lib/motion/gsap';
@@ -28,18 +28,37 @@ export function useScrolled() {
   return { marker, scrolled };
 }
 
+/** Puts the menu under its button, right edges level (site.css, .ct-menu). */
+function placeMenu(menu: HTMLDialogElement | null, button: HTMLElement | null) {
+  if (!menu || !button) return;
+  const box = button.getBoundingClientRect();
+  menu.style.setProperty('--menu-top', `${box.bottom}px`);
+  menu.style.setProperty('--menu-right', `${window.innerWidth - box.right}px`);
+}
+
 /**
- * The full-screen menu: a native modal <dialog> (focus held inside, Escape
- * closes, focus returns to the button). Its links rise in one after another;
- * a link to a section of this page closes the menu first, then glides there.
- * A link to another page is simply followed (see the module).
+ * The menu: a compact panel that drops from its button, a native modal
+ * <dialog> (focus held inside, Escape closes, focus returns to the button).
+ * It is placed under the button as it opens (the header moves between a
+ * bar and a pill, so the spot is measured, not fixed), follows it through a
+ * resize, and closes on a click outside it. Its links rise in one after
+ * another; a link to a section of this page closes the menu first, then
+ * glides there. A link to another page is simply followed (see the module).
  */
 export function useMenu() {
   const dialog = useRef<HTMLDialogElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const onResize = () => placeMenu(dialog.current, trigger.current);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const open = () => {
     const element = dialog.current;
     if (!element) return;
+    placeMenu(element, trigger.current);
     element.showModal();
     getSmoothScroll()?.stop();
     if (!reducedMotion()) {
@@ -47,12 +66,28 @@ export function useMenu() {
       gsap.fromTo(
         element.querySelectorAll('[data-menu-link]'),
         { yPercent: 110 },
-        { yPercent: 0, duration, ease, stagger, delay: 0.1 },
+        { yPercent: 0, duration, ease, stagger, delay: 0.05 },
       );
     }
   };
   const close = () => dialog.current?.close();
   const onClose = () => getSmoothScroll()?.start();
+
+  /**
+   * A click on the backdrop reaches the dialog itself, as does one on its
+   * padding: only one outside the panel's box closes it.
+   */
+  const onDialogClick = (event: MouseEvent<HTMLDialogElement>) => {
+    const element = dialog.current;
+    if (!element || event.target !== element) return;
+    const box = element.getBoundingClientRect();
+    const inside =
+      event.clientX >= box.left &&
+      event.clientX <= box.right &&
+      event.clientY >= box.top &&
+      event.clientY <= box.bottom;
+    if (!inside) close();
+  };
 
   /** Glides to a section of this page (`#id`). */
   const follow = (href: string) => {
@@ -64,5 +99,5 @@ export function useMenu() {
     window.requestAnimationFrame(() => glideTo(target, { focus: true }));
   };
 
-  return { dialog, open, close, onClose, follow };
+  return { dialog, trigger, open, close, onClose, onDialogClick, follow };
 }

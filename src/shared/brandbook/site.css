@@ -10,10 +10,10 @@
 
    Colour rule: a near-black teal night (the site's teal taken toward
    black) carries the page; cream is the text and the primary button. The
-   one accent is the site's teal lifted for the dark (the same hue,
-   lighter), for active states, links, small highlights and the stage
-   lights. The finale is the brand teal itself. Every colour is the palette
-   or a mix.
+   one accent is the brand's green: the brand teal lifted for the dark and
+   turned further toward green (--ct-accent-shift), for active states,
+   links, small highlights and the stage lights. The finale is the brand
+   teal itself. Every colour is the palette or a mix.
 
    The site's teal (--ct-teal) is the brand teal turned a little toward
    green (--ct-hue-shift): lifted toward cream or sunk toward black, the
@@ -23,7 +23,9 @@
 
    Type: Georgian letters in BPG Nino Mtavruli (capital-style throughout,
    the client's choice), everything else in Noto Sans Georgian at its own
-   width; a medium weight for Latin headings, regular for reading. Sizes
+   width, except on Georgian pages, where Latin and digits are BPG's own so
+   they sit on the line with the Georgian; the wordmark is Noto everywhere.
+   A medium weight for Latin headings, regular for reading. Sizes
    stay moderate: the largest is the hero's headline, and no other heading
    comes near it. Georgian steps down a little and keeps the regular
    weight, since a line of capitals reads larger and its words are longer.
@@ -43,14 +45,17 @@
   /* How far the site's teal turns from the brand teal toward green, in
      degrees of OKLCH hue (see the colour rule above). */
   --ct-hue-shift: 12;
+  /* And the accent's turn, further: lifted toward cream, a teal reads
+     aqua, and the client asked for the brand's green (October 2026). */
+  --ct-accent-shift: 34;
   /* The site's teal (see the @supports rule below); a browser without
      relative colours keeps the brand teal. */
   --ct-teal: var(--color-brand-teal);
   --ct-night: color-mix(in oklab, var(--ct-teal) 32%, black);
   --ct-raised: color-mix(in oklab, var(--ct-teal) 50%, black);
   --ct-lifted: color-mix(in oklab, var(--ct-teal) 64%, black);
-  /* The site's teal, lifted for the dark (see the @supports rule below for
-     the exact colour); a browser without relative colours gets sage. */
+  /* The brand's green, lifted for the dark (see the @supports rule below
+     for the exact colour); a browser without relative colours gets sage. */
   --ct-accent: color-mix(in oklab, var(--color-brand-sage) 55%, var(--color-brand-cream-light));
 
   color-scheme: dark;
@@ -136,6 +141,8 @@
   --ct-hero-h: 78dvh; /* the hero: the figures below it show on arrival */
   --ct-hero-measure: 14em; /* the headline's longest line, in its own size */
   --ct-header-h: 4.5rem;
+  --ct-menu-w: 22rem; /* the menu's panel */
+  --ct-menu-gap: 0.5rem; /* between the menu button and its panel */
   --ct-pill-h: 3.75rem; /* the header once it has become a pill */
   /* The services' journey: a stage's marker, and the gap between stages
      (the line from one marker to the next spans it). */
@@ -170,12 +177,13 @@
 }
 
 /* The site's teal and the accent proper: the brand teal turned a little
-   toward green, and the accent that teal's hue, lighter and a little richer,
-   so it reads on the night. Relative colour, derived from the token. */
+   toward green, and the accent the brand teal turned further, lighter and
+   richer, so it reads green on the night. Relative colour, derived from the
+   token. */
 @supports (color: oklch(from white l c h)) {
   [data-site] {
     --ct-teal: oklch(from var(--color-brand-teal) l c calc(h - var(--ct-hue-shift)));
-    --ct-accent: oklch(from var(--ct-teal) 0.8 0.075 h);
+    --ct-accent: oklch(from var(--color-brand-teal) 0.79 0.09 calc(h - var(--ct-accent-shift)));
   }
 }
 
@@ -183,6 +191,11 @@
    are longer, so the two largest sizes step down a little, set lighter and
    keep the brandbook's letter spacing. */
 [data-site]:lang(ka) {
+  /* Latin and digits in BPG Nino Mtavruli's own design, on the line its
+     Georgian sits on (brandbook.css, --font-sans-ka). */
+  --font-sans: var(--font-sans-ka);
+  --font-display: var(--font-sans-ka);
+  font-family: var(--font-sans-ka);
   --font-weight-hero: 500;
   --font-weight-heading: 500;
   --text-display: clamp(2rem, 1.3rem + 2.7vw, 3.625rem);
@@ -308,6 +321,7 @@
 
   /* The footer's wordmark, as wide as its container, drawn in outline. */
   [data-site] .ct-footer-mark {
+    font-family: var(--font-brand);
     font-size: var(--ct-footer-mark);
     line-height: 0.82;
     letter-spacing: 0;
@@ -315,7 +329,7 @@
     -webkit-text-stroke: 1px var(--color-line-input);
   }
 
-  /* The full-screen video player and the menu: the whole screen. */
+  /* The full-screen video player: the whole screen. */
   [data-site] .ct-fullscreen {
     margin: 0;
     width: 100%;
@@ -340,15 +354,47 @@
     }
   }
 
-  /* The menu fades in over the page. */
+  /* The menu: a compact panel dropped from its button (--menu-top and
+     --menu-right, set as it opens), never wider than the screen allows. It
+     fades and settles into place; the page behind dims a little. */
   [data-site] .ct-menu {
+    position: fixed;
+    inset: calc(var(--menu-top, var(--ct-header-h)) + var(--ct-menu-gap))
+      var(--menu-right, var(--spacing-gutter)) auto auto;
+    width: min(var(--ct-menu-w), calc(100vw - 2 * var(--spacing-gutter)));
+    max-width: none;
+    max-height: calc(100dvh - var(--menu-top, var(--ct-header-h)) - 2 * var(--ct-menu-gap));
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-lg);
+    background-color: color-mix(in oklab, var(--ct-raised) 92%, transparent);
+    backdrop-filter: blur(18px) saturate(140%);
+    box-shadow: var(--shadow-card);
+    color: var(--color-ink);
     opacity: 1;
-    transition: opacity var(--duration-base) var(--ease-brand);
+    translate: 0 0;
+    transform-origin: top right;
+    transition:
+      opacity var(--duration-base) var(--ease-brand),
+      translate var(--duration-base) var(--ease-brand);
+
+    &::backdrop {
+      background-color: color-mix(in oklab, var(--ct-night) 45%, transparent);
+    }
 
     @starting-style {
       &[open] {
         opacity: 0;
+        translate: 0 -0.5rem;
       }
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    [data-site] .ct-menu {
+      background-color: var(--ct-raised);
+      backdrop-filter: none;
     }
   }
 

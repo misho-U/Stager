@@ -298,12 +298,10 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
           nextCourse ? (
             <a
               href="#academy"
-              className="bg-surface-raised hover:bg-surface-muted flex flex-col gap-2 rounded-lg p-6 transition-colors"
+              className="bg-surface-muted hover:bg-surface-raised border-line flex flex-col gap-1 rounded-lg border p-4 transition-colors"
             >
               <span className="text-body-sm text-accent font-medium">{t('academy.next')}</span>
-              <span className="text-title font-heading stretch-heading text-balance">
-                {nextCourse.title}
-              </span>
+              <span className="text-body font-heading text-balance">{nextCourse.title}</span>
               <span className="text-body-sm text-ink-muted">
                 {nextCourse.startsAt
                   ? t('academy.starts', { date: longDate(nextCourse.startsAt) })
