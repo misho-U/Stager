@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { describeDbError, isUniqueViolationOn } from '@pkg/db/errors';
+import { describeDbError, isUniqueViolationOn, isUnknownEnumValue } from '@pkg/db/errors';
 
 import {
   DB_WRITES_ALLOWED,
@@ -37,6 +37,12 @@ const MISSING_LINK = {
   meta: { driverAdapterError: { cause: { constraint: { index: 'insights_categoryId_fkey' } } } },
 };
 
+/** Captured from a run against a database whose PageKey had no PRIVACY yet. */
+const UNKNOWN_PAGE_KEY = {
+  code: 'P2007',
+  message: 'Invalid input value: invalid input value for enum "PageKey": "PRIVACY"',
+};
+
 test.describe('database errors', () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium', 'Pure logic; once is enough.');
@@ -62,6 +68,14 @@ test.describe('database errors', () => {
     expect(isUniqueViolationOn(UNIQUE_SLUG, 'slug')).toBe(true);
     expect(isUniqueViolationOn(UNIQUE_GALLERY, 'slug')).toBe(false);
     expect(isUniqueViolationOn(MISSING_LINK, 'slug')).toBe(false);
+  });
+
+  test('a page key the database does not hold yet reads as no such page', () => {
+    // A preview asked the live database for PRIVACY before the migration
+    // that adds it had run, and every page said content failed to load.
+    expect(isUnknownEnumValue(UNKNOWN_PAGE_KEY)).toBe(true);
+    expect(isUnknownEnumValue(UNIQUE_SLUG)).toBe(false);
+    expect(isUnknownEnumValue(new Error('not a database error'))).toBe(false);
   });
 });
 

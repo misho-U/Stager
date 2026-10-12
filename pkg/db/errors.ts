@@ -48,3 +48,15 @@ export function isUniqueViolationOn(error: unknown, field: string): boolean {
   if (info?.code !== 'P2002') return false;
   return info.constraint === null || info.constraint.split(/[_,]/).includes(field);
 }
+
+/**
+ * The database refused a value its column's type does not hold (P2007): an
+ * enum value the code knows and the database does not have yet. A Vercel
+ * preview runs new code against the live database before the migration
+ * that adds the value has run, which only happens when the code ships; a
+ * page asked for by a key the live database has never heard of is a page it
+ * does not have, not a failed read.
+ */
+export function isUnknownEnumValue(error: unknown): boolean {
+  return describeDbError(error)?.code === 'P2007';
+}

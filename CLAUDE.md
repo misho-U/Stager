@@ -56,7 +56,10 @@ Do not add a library outside this list without raising it first.
   after an admin saves.
 - **A new page needs a data migration**: the dashboard cannot create pages or
   sections, and the seed never runs in production. A new `PageKey` value goes
-  in a migration of its own (AGENTS.md § Version traps).
+  in a migration of its own (AGENTS.md § Version traps). Previews run before
+  that migration, against the live database: a lookup by the new key must
+  read "no page", not fail (`byKey`, `isUnknownEnumValue`), or every preview
+  page says content failed to load.
 - **A field added to a public response can be missing from a cached copy**
   after a deploy: the data cache outlives the code. Fill it in where it is
   read (AGENTS.md § Caching); a projects list without `gallery` crashed the

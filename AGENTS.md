@@ -52,6 +52,12 @@ rather than adding a dependency.
   migration first: PostgreSQL refuses an enum value inside the transaction
   that added it. And a home-page section the database lacks is hidden
   (`homeSections`), so a new home block must not depend on a section row.
+  **Until the migration runs, a preview asks the live database for a key it
+  does not hold**, and PostgreSQL refuses the query (P2007), not "not
+  found": the privacy read failed that way and every preview page said
+  content had failed to load. Page lookups go through `byKey`
+  (`page.repository.ts`, `isUnknownEnumValue`), which reads that as no page,
+  and the dashboard's list filters its keys after the query, not in it.
 - **The middleware file is `src/proxy.ts`.** Next 16 renamed the convention from
   `middleware.ts` to `proxy.ts` (default export, not a named `middleware`
   export). It must sit next to `src/app`; at the repo root it is silently
