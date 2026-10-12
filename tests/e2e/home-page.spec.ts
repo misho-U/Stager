@@ -183,7 +183,8 @@ test.describe('split text and screen readers', () => {
     test.skip(testInfo.project.name !== 'chromium', 'Writes the intro; one browser is enough.');
   });
 
-  const SPLIT_TEXT = '[data-ct-headline], [data-read-along]';
+  // The hero's headline, the intro, and every section heading rising into view.
+  const SPLIT_TEXT = '[data-ct-headline], [data-read-along], [data-rise]';
   const INTRO_TEXT = '[data-read-along]';
   const INTRO =
     '<p>STAGER builds better food businesses.</p><p>We work in the kitchen, not only in the office.</p>';
@@ -241,8 +242,8 @@ test.describe('split text and screen readers', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/en');
     const whole = await readOut();
-    // The headline and the intro, at least.
-    expect(whole.length).toBeGreaterThanOrEqual(2);
+    // The headline, the intro and a section heading, at least.
+    expect(whole.length).toBeGreaterThanOrEqual(3);
 
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.goto('/en');
@@ -309,56 +310,58 @@ test('the headings never skip a level', async ({ page }) => {
  * scroll to the bottom and back, nothing a visitor needs may be left hidden.
  * The motion starts things invisible and relies on its script to show them.
  */
-test('with motion on, the page settles fully visible', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'chromium', 'one browser is enough for motion');
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.goto('/en');
-  await expect(page.locator('[data-site]')).toBeVisible();
-  await page.waitForTimeout(4500);
+for (const path of ['/en', '/en/team', '/en/insights']) {
+  test(`with motion on, ${path} settles fully visible`, async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium', 'one browser is enough for motion');
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto(path);
+    await expect(page.locator('[data-site]')).toBeVisible();
+    await page.waitForTimeout(path === '/en' ? 4500 : 2000);
 
-  // Scroll through like a visitor, so every scroll-driven entrance fires,
-  // then back to the top, where the first scene is shown in full again.
-  const height = await page.evaluate(() => document.documentElement.scrollHeight);
-  for (const step of [500, -500]) {
-    for (let y = 0; y <= height; y += 500) {
-      await page.mouse.wheel(0, step);
-      await page.waitForTimeout(100);
-    }
-    await page.waitForTimeout(1500);
-  }
-
-  const hidden = await page.evaluate(() => {
-    const shown = (element: Element) => {
-      for (let node: Element | null = element; node; node = node.parentElement) {
-        const style = getComputedStyle(node);
-        if (style.display === 'none' || style.visibility === 'hidden') return false;
-        if (Number(style.opacity) < 0.99) return false;
+    // Scroll through like a visitor, so every scroll-driven entrance fires,
+    // then back to the top, where the first scene is shown in full again.
+    const height = await page.evaluate(() => document.documentElement.scrollHeight);
+    for (const step of [500, -500]) {
+      for (let y = 0; y <= height; y += 500) {
+        await page.mouse.wheel(0, step);
+        await page.waitForTimeout(100);
       }
-      return true;
-    };
-    return [
-      ...document.querySelectorAll(
-        '[data-site] h1, [data-site] h2, [data-site] h3, [data-testid="inquiry-form"]',
-      ),
-    ]
-      .filter((element) => !element.closest('dialog, [role="dialog"]'))
-      .filter((element) => !shown(element))
-      .map((element) => (element.textContent ?? '').trim().slice(0, 40));
-  });
-  expect(hidden).toEqual([]);
+      await page.waitForTimeout(1500);
+    }
 
-  // Every figure has counted all the way up to its own number.
-  const figures = await page.evaluate(() =>
-    [...document.querySelectorAll<HTMLElement>('[data-count-to]')].map((figure) => {
-      const to = Number(figure.dataset.countTo);
-      const expected = figure.hasAttribute('data-grouped')
-        ? to.toLocaleString('en-US')
-        : String(to);
-      return { shown: figure.textContent, expected };
-    }),
-  );
-  for (const { shown, expected } of figures) expect(shown).toBe(expected);
-});
+    const hidden = await page.evaluate(() => {
+      const shown = (element: Element) => {
+        for (let node: Element | null = element; node; node = node.parentElement) {
+          const style = getComputedStyle(node);
+          if (style.display === 'none' || style.visibility === 'hidden') return false;
+          if (Number(style.opacity) < 0.99) return false;
+        }
+        return true;
+      };
+      return [
+        ...document.querySelectorAll(
+          '[data-site] h1, [data-site] h2, [data-site] h3, [data-testid="inquiry-form"]',
+        ),
+      ]
+        .filter((element) => !element.closest('dialog, [role="dialog"]'))
+        .filter((element) => !shown(element))
+        .map((element) => (element.textContent ?? '').trim().slice(0, 40));
+    });
+    expect(hidden).toEqual([]);
+
+    // Every figure has counted all the way up to its own number.
+    const figures = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>('[data-count-to]')].map((figure) => {
+        const to = Number(figure.dataset.countTo);
+        const expected = figure.hasAttribute('data-grouped')
+          ? to.toLocaleString('en-US')
+          : String(to);
+        return { shown: figure.textContent, expected };
+      }),
+    );
+    for (const { shown, expected } of figures) expect(shown).toBe(expected);
+  });
+}
 
 /**
  * The Academy and the videos: entries the dashboard cannot hold yet are

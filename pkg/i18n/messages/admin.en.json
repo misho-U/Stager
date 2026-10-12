@@ -155,7 +155,7 @@
       },
       "editPages": {
         "label": "Edit page copy",
-        "description": "Change the words on the home page and the privacy policy, without a deploy."
+        "description": "Change the words on the home page, the Team and Insights pages and the privacy policy, without a deploy."
       },
       "companyStats": {
         "label": "Company in figures",
@@ -518,7 +518,7 @@
       "intro": "Introduction",
       "what-we-do": "What we do",
       "selected-projects": "Selected projects",
-      "why-stager": "Why STAGER",
+      "why-stager": "Why STAGER (shown under the introduction)",
       "insights": "Latest articles",
       "cta": "Closing call to action",
       "story": "Our story",

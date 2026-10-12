@@ -12,6 +12,8 @@ type SiteFooterProps = {
   links: readonly Link[];
   /** The privacy policy, once it has text; until then no link to an empty page. */
   privacy: Link | null;
+  /** The link to the page being shown, if listed: marked as current. */
+  current?: string | null;
   labels: { sections: string; rights: string };
 };
 
@@ -20,7 +22,7 @@ type SiteFooterProps = {
  * lines, "STAGER" drawn in outline across it (decoration, risen by the home
  * page's motion), and the small print.
  */
-export function SiteFooter({ layout, links, privacy, labels }: SiteFooterProps) {
+export function SiteFooter({ layout, links, privacy, current = null, labels }: SiteFooterProps) {
   const siteName = layout?.siteName || 'STAGER';
 
   return (
@@ -39,6 +41,7 @@ export function SiteFooter({ layout, links, privacy, labels }: SiteFooterProps) 
                 <li key={link.href}>
                   <a
                     href={link.href}
+                    aria-current={link.href === current ? 'page' : undefined}
                     className="text-body text-ink-muted hover:text-ink inline-flex min-h-11 items-center transition-colors"
                   >
                     {link.label}

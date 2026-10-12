@@ -1,0 +1,21 @@
+BPG Nino Mtavruli: bpg-nino-mtavruli.woff2 (Regular), bpg-nino-mtavruli-bold.woff2 (Bold)
+
+Designer:   Besarion Gugushvili, BPG InfoTech
+In the files: "Copyright (c) BPG InfoTech, 2008. All rights reserved."
+              "BPG-InfoTech free gift by Bessarion Gugushvili by name of
+               Nino Gugushvili-Mikaberidze"
+              Version 2.001 2008
+
+Taken unchanged from the npm web-font packages bpg-nino-mtavruli@1.0.0 and
+bpg-nino-mtavruli-bold@1.0.0 (https://github.com/web-fonts/bpg-nino-mtavruli),
+whose package.json lists the licences "CC-BY-NC-ND 4.0" and "MIT".
+
+Licence status: NOT CONFIRMED for this site. The font files say "free gift"
+and "all rights reserved"; the packages name a non-commercial licence
+(CC BY-NC-ND 4.0). STAGER's site is commercial, so the owner confirms the
+terms with BPG InfoTech (or the source the client licensed the font from)
+before the site launches with it. Until then this is a design decision
+awaiting a licence, not a cleared asset.
+
+Do not modify these files (the NoDerivatives term, if it applies, forbids
+it): no subsetting, re-hinting or baseline shifting.

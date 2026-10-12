@@ -25,6 +25,8 @@ type SiteHeaderProps = {
   menuLanguage: ReactNode;
   /** Shown beside the links in the menu: what is next at the Academy. */
   teaser?: ReactNode;
+  /** The link to the page being shown, if the menu lists it: marked as current. */
+  current?: string | null;
   labels: { nav: string; menu: string; close: string };
 };
 
@@ -44,6 +46,7 @@ export function SiteHeader({
   language,
   menuLanguage,
   teaser,
+  current = null,
   labels,
 }: SiteHeaderProps) {
   const { marker, scrolled } = useScrolled();
@@ -123,6 +126,7 @@ export function SiteHeader({
                       <a
                         href={link.href}
                         data-menu-link
+                        aria-current={link.href === current ? 'page' : undefined}
                         onClick={onMenuLink(link.href)}
                         className="text-headline font-hero stretch-hero hover:text-accent block pt-1 pb-2 transition-colors"
                       >

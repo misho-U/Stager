@@ -76,9 +76,21 @@ test('the sitemap lists every page in both languages, each naming the other', as
   expect(response.status()).toBe(200);
   const xml = await response.text();
   expect(xml.match(/<loc>[^<]+\/(ka|en)<\/loc>/g)).toHaveLength(2);
-  expect(xml.match(/<loc>[^<]+\/(ka|en)\/privacy<\/loc>/g)).toHaveLength(2);
+  for (const path of ['team', 'insights', 'privacy']) {
+    expect(xml.match(new RegExp(`<loc>[^<]+/(ka|en)/${path}</loc>`, 'g'))).toHaveLength(2);
+  }
   for (const lang of ['ka', 'en', 'x-default']) {
     expect(xml).toContain(`hreflang="${lang}"`);
+  }
+
+  // Every published article, in both languages.
+  const articles = (await (
+    await request.get('/api/public/insights?locale=EN&limit=100')
+  ).json()) as {
+    items: Array<{ slug: string }>;
+  };
+  for (const { slug } of articles.items) {
+    expect(xml.match(new RegExp(`<loc>[^<]+/(ka|en)/insights/${slug}</loc>`, 'g'))).toHaveLength(2);
   }
 });
 

@@ -56,7 +56,8 @@ for (const locale of LOCALES) {
       await expect(
         menu.getByRole('link', { name: (locale === 'ka' ? ka : en).nav.home }),
       ).toHaveAttribute('href', `/${locale}`);
-      await expect(menu.locator(`a[href="/${locale}#inquiry"]`)).toBeVisible();
+      // Listed with the pages, and as the menu's button, as on the home page.
+      await expect(menu.locator(`a[href="/${locale}#inquiry"]`).first()).toBeVisible();
     });
 
     test('fits the screen and meets the contrast minimums', async ({ page }) => {

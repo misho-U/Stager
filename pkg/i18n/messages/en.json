@@ -66,7 +66,6 @@
     "readFailed": "Some content failed to load. This page may be incomplete.",
     "noProjects": "Projects will be added soon.",
     "stats": "STAGER in figures",
-    "team": "Team",
     "linkedin": "{name} on LinkedIn",
     "photos": {
       "label": "Photos: {title}",
@@ -144,5 +143,15 @@
     "title": "Privacy policy",
     "pending": "The privacy policy will appear here once it has been written in the dashboard.",
     "pendingHint": "Dashboard → Page copy → Privacy policy"
+  },
+  "team": {
+    "empty": "The team will be introduced here soon."
+  },
+  "insights": {
+    "all": "All articles",
+    "empty": "No articles yet. The first ones are on their way.",
+    "minutes": "{count, plural, one {# min read} other {# min read}}",
+    "by": "By {name}",
+    "more": "More articles"
   }
 }

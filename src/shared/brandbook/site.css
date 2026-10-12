@@ -8,16 +8,25 @@
    open full screen, and the page ends at dawn: an iris opening onto teal.
    Calm by the client's request: the type reads, it does not shout.
 
-   Colour rule: a near-black teal night (the brand teal taken toward black)
-   carries the page; cream is the text and the primary button. The one
-   accent is the brand teal lifted for the dark (the same hue, lighter),
-   for active states, links, small highlights and the stage lights. The
-   finale is the brand teal itself. Every colour is the palette or a mix.
+   Colour rule: a near-black teal night (the site's teal taken toward
+   black) carries the page; cream is the text and the primary button. The
+   one accent is the site's teal lifted for the dark (the same hue,
+   lighter), for active states, links, small highlights and the stage
+   lights. The finale is the brand teal itself. Every colour is the palette
+   or a mix.
 
-   Type: Noto Sans Georgian at its own width, a medium weight for headings
-   and regular for reading. Sizes stay moderate: the largest is the hero's
-   headline, and no other heading comes near it. Georgian steps down a
-   little and sets lighter, since Mkhedruli is taller and its words longer.
+   The site's teal (--ct-teal) is the brand teal turned a little toward
+   green (--ct-hue-shift): lifted toward cream or sunk toward black, the
+   logo's hue reads bluer than the logo does, and the client found the site
+   bluer than the brand. The logo's own colour stays exact wherever it
+   appears as itself: the finale, the posters, text on cream.
+
+   Type: Georgian letters in BPG Nino Mtavruli (capital-style throughout,
+   the client's choice), everything else in Noto Sans Georgian at its own
+   width; a medium weight for Latin headings, regular for reading. Sizes
+   stay moderate: the largest is the hero's headline, and no other heading
+   comes near it. Georgian steps down a little and keeps the regular
+   weight, since a line of capitals reads larger and its words are longer.
    No capitals as a style, no italics, leading never under 1.1.
 
    Shape rule: buttons, chips and one-line fields are pills; cards, frames,
@@ -31,10 +40,16 @@
    public page wraps itself in it. The dashboard never does.
    =========================================================================== */
 [data-site] {
-  --ct-night: color-mix(in oklab, var(--color-brand-teal) 32%, black);
-  --ct-raised: color-mix(in oklab, var(--color-brand-teal) 50%, black);
-  --ct-lifted: color-mix(in oklab, var(--color-brand-teal) 64%, black);
-  /* The brand teal, lifted for the dark (see the @supports rule below for
+  /* How far the site's teal turns from the brand teal toward green, in
+     degrees of OKLCH hue (see the colour rule above). */
+  --ct-hue-shift: 12;
+  /* The site's teal (see the @supports rule below); a browser without
+     relative colours keeps the brand teal. */
+  --ct-teal: var(--color-brand-teal);
+  --ct-night: color-mix(in oklab, var(--ct-teal) 32%, black);
+  --ct-raised: color-mix(in oklab, var(--ct-teal) 50%, black);
+  --ct-lifted: color-mix(in oklab, var(--ct-teal) 64%, black);
+  /* The site's teal, lifted for the dark (see the @supports rule below for
      the exact colour); a browser without relative colours gets sage. */
   --ct-accent: color-mix(in oklab, var(--color-brand-sage) 55%, var(--color-brand-cream-light));
 
@@ -44,7 +59,7 @@
   --color-surface: var(--ct-night);
   --color-surface-raised: var(--ct-raised);
   --color-surface-muted: var(--ct-lifted);
-  --color-surface-inset: color-mix(in oklab, var(--color-brand-teal) 40%, black);
+  --color-surface-inset: color-mix(in oklab, var(--ct-teal) 40%, black);
   --color-surface-inverse: var(--color-brand-teal);
   --color-ink: var(--color-brand-cream-light);
   --color-ink-muted: color-mix(in oklab, var(--color-brand-cream) 70%, var(--color-brand-sage));
@@ -139,14 +154,28 @@
      it, as a share of the frame's width (16:9 at any size). */
   --ct-play-lift: 14%;
   --ct-spot: 22rem; /* the light that follows the pointer over a card */
+  /* Behind a section (StageDecor): a pool of light, and the stage floor, a
+     grid of faint points fading out from one spot. Both drift a little as
+     the page scrolls; --ct-drift-room is how far past the section they
+     reach, so the drift never shows their edge. */
+  --ct-pool: 30rem;
+  --ct-floor-step: 1.75rem;
+  --ct-floor-reach: 34rem;
+  --ct-floor-dot: color-mix(in oklab, var(--color-brand-cream) 16%, transparent);
+  --ct-pool-glow: color-mix(in oklab, var(--ct-accent) 15%, transparent);
+  --ct-drift-room: 15%;
+  /* A section's number and the accent rule beside it. */
+  --ct-rule: 3rem;
   --ct-footer-mark: 18cqi; /* "STAGER", in outline, across part of the footer */
 }
 
-/* The accent proper: the brand teal's own hue, lighter and a little richer,
+/* The site's teal and the accent proper: the brand teal turned a little
+   toward green, and the accent that teal's hue, lighter and a little richer,
    so it reads on the night. Relative colour, derived from the token. */
 @supports (color: oklch(from white l c h)) {
   [data-site] {
-    --ct-accent: oklch(from var(--color-brand-teal) 0.8 0.075 h);
+    --ct-teal: oklch(from var(--color-brand-teal) l c calc(h - var(--ct-hue-shift)));
+    --ct-accent: oklch(from var(--ct-teal) 0.8 0.075 h);
   }
 }
 
@@ -706,6 +735,8 @@
     counter-reset: reason;
     border-bottom: 1px solid var(--color-line);
   }
+  /* The hairline over each reason draws itself as the reason rises
+     (--drawn, 0 to 1, set by the site's motion; whole without it). */
   [data-site] .ct-reasons li {
     counter-increment: reason;
     display: grid;
@@ -713,7 +744,10 @@
     gap: 1rem;
     margin: 0;
     padding-block: 1.25rem;
-    border-top: 1px solid var(--color-line);
+    background-image: linear-gradient(var(--color-line), var(--color-line));
+    background-position: left top;
+    background-repeat: no-repeat;
+    background-size: calc(var(--drawn, 1) * 100%) 1px;
     color: var(--color-ink);
     font-size: var(--text-body-lg);
     line-height: var(--text-body-lg--line-height);
@@ -764,6 +798,57 @@
     color: var(--color-accent);
   }
 
+  /* Decoration behind a section (StageDecor). The frame is the section's
+     own box, clipped, so nothing reaches over the sections beside it, and
+     faded at its top and bottom, so a pool cut by the edge shows no seam.
+     The layer inside is taller than the frame (--ct-drift-room) and is
+     what drifts. Behind the content: the section is `isolate`. */
+  [data-site] .ct-decor {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    mask-image: linear-gradient(to bottom, transparent, black 18%, black 82%, transparent);
+  }
+  [data-site] .ct-decor > * {
+    position: absolute;
+    inset: calc(var(--ct-drift-room) * -1) 0;
+  }
+  [data-site] .ct-at-right {
+    --at: 82% 40%;
+  }
+  [data-site] .ct-at-left {
+    --at: 14% 45%;
+  }
+  [data-site] .ct-pool {
+    background-image: radial-gradient(
+      var(--ct-pool) circle at var(--at),
+      var(--ct-pool-glow),
+      transparent 70%
+    );
+  }
+  [data-site] .ct-floor {
+    background-image: radial-gradient(circle, var(--ct-floor-dot) 1px, transparent 1.5px);
+    background-size: var(--ct-floor-step) var(--ct-floor-step);
+    mask-image: radial-gradient(var(--ct-floor-reach) circle at var(--at), black, transparent 70%);
+  }
+
+  /* A section's number, and the accent rule that draws beside it. */
+  [data-site] .ct-index {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--color-accent);
+    font-size: var(--text-body-sm);
+    font-variant-numeric: tabular-nums;
+  }
+  [data-site] .ct-index-rule {
+    width: var(--ct-rule);
+    height: 1px;
+    background-color: currentColor;
+  }
+
   /* A course hidden by the Academy's filter. */
   [data-site] [data-filtered-out] {
     display: none;
@@ -797,6 +882,14 @@
     calc(100% - 1.5rem + 0.3125rem) 55%;
   background-size: 0.3125rem 0.3125rem;
   background-repeat: no-repeat;
+}
+
+/* The page being shown, where the menu or the footer lists it. */
+[data-site] [data-menu-link][aria-current='page'] {
+  color: var(--color-accent);
+}
+[data-site] footer a[aria-current='page'] {
+  color: var(--color-ink);
 }
 
 /* The language switch: no divider, the current language filled with cream. */

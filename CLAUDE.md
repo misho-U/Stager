@@ -86,12 +86,15 @@ Do not add a library outside this list without raising it first.
   validates the format before a chained trim runs, so that still rejects
   " me@x.com ". Use `emailInput()` / `urlInput()` from `shared/types/api.ts`.
   Never trim passwords.
-- **The typeface is self-hosted**, declared with `@font-face` in `brandbook.css`
-  (files in `src/shared/brandbook/fonts/`). Do not switch to `next/font/google`:
-  it downloads at build time, so a machine that cannot reach Google silently
-  ships a system fallback — which is worst for Georgian. Do not bring back
-  `next/font/local` either: its per-face "Fallback" family rendered all Latin
-  text in Arial.
+- **The typefaces are self-hosted**, declared with `@font-face` in
+  `brandbook.css` (files in `src/shared/brandbook/fonts/`): Georgian letters
+  in BPG Nino Mtavruli (all capital-style, the client's choice), the rest in
+  Noto Sans Georgian. Do not switch to `next/font/google`: it downloads at
+  build time, so a machine that cannot reach Google silently ships a system
+  fallback — which is worst for Georgian. Do not bring back `next/font/local`
+  either: its per-face "Fallback" family rendered all Latin text in Arial.
+  **The Mtavruli licence is unconfirmed** (`fonts/BPG-NINO-MTAVRULI.txt`);
+  never modify those files.
 - **`pkg/brand/hex.generated.ts` is generated** from `brandbook.css` on install,
   dev and build, for the email and the theme-color meta tag. Never edit it.
   Brand colours must be hex, or the build fails.
@@ -147,7 +150,9 @@ can do in Vercel and Supabase. Read it before planning operations, security
 or test work.
 
 The client chose one design, "Chef's Table" (dark, `site.css`, `[data-site]`
-on every public page). The site is the home page and a privacy policy, with
-an article page to come; About, Team, services and contact live on the home
-page. AGENTS.md § 7 records the decisions and what is still open (the real
-figures, the policy's text, static rendering, the noindex).
+on every public page). The site is the home page, the team, the articles and
+each article, and a privacy policy; About, services and contact live on the
+home page. Every page beside home is a `SubpageShell` (`widgets/site-chrome`),
+and every public page moves through `widgets/site-motion`. AGENTS.md § 7
+records the decisions and what is still open (the real figures, the policy's
+text, the font licence, static rendering, the noindex).

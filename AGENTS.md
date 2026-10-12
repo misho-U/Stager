@@ -329,10 +329,17 @@ Non-negotiable. Each exists because of a specific failure mode.
   `pkg/brand/hex.generated.ts` on install, dev and build (gitignored; import it
   through `src/shared/brandbook/tokens.ts`, or directly from `pkg`). Brand
   colours must therefore be hex — the script fails the build otherwise.
-- **The typeface is self-hosted**, declared with `@font-face` at the bottom of
-  `brandbook.css`: Noto Sans Georgian, variable, one family split into
-  georgian / latin / latin-ext files by `unicode-range` (files in
-  `src/shared/brandbook/fonts/`, SIL OFL 1.1 — see `fonts/OFL.txt`).
+- **The typefaces are self-hosted**, declared with `@font-face` at the bottom
+  of `brandbook.css`. Georgian letters are **BPG Nino Mtavruli** (the client's
+  choice, October 2026): capital-style letters only, two static faces
+  (regular up to weight 549, bold from 550), claiming U+10D0–10F6 and U+10FB
+  alone. Everything else (Latin, digits, punctuation, rarer Georgian) is Noto
+  Sans Georgian, variable, split into georgian / latin / latin-ext files by
+  `unicode-range` (SIL OFL 1.1 — see `fonts/OFL.txt`). One stack:
+  `'BPG Nino Mtavruli', 'Noto Sans Georgian', …`. **The Mtavruli licence is
+  not confirmed** (`fonts/BPG-NINO-MTAVRULI.txt`: the npm packages name CC
+  BY-NC-ND 4.0, the files say "free gift"); the owner clears it before
+  launch, and nobody modifies the files.
   `next/font/google` downloads at build time and degrades to a system font on
   any machine that cannot reach Google — Georgian falls back worst.
   `next/font/local` is gone too: it generated a `local(Arial)` "Fallback"
@@ -429,7 +436,9 @@ and CLAUDE.md win wherever they disagree. The resolved conflicts:
   skill's word limits — layouts must survive the schema maximums in both
   locales. The skill's em-dash ban applies only to strings written in code.
 - **Georgian.** No `uppercase` as a label style: Chromium leaves Mkhedruli
-  unchanged, so a label is capitals on /en and not on /ka. No italic: the faces
+  unchanged, so a label is capitals on /en and not on /ka; and on Georgian it
+  produces Unicode Mtavruli, which BPG Nino Mtavruli does not hold (its
+  letters are Mkhedruli code points drawn as capitals). No italic: the faces
   are upright only, so the browser would fake the slant. No tracking or leading
   below the brandbook's values without checking /ka. A future display face
   needs a matching Georgian design (Noto Serif Georgian is one). Verify every
@@ -459,8 +468,16 @@ and CLAUDE.md win wherever they disagree. The resolved conflicts:
 Approved for the public site in round 3 of the home page designs: GSAP and
 Lenis. The dashboard has none.
 
-- **Markup stays server-rendered; motion is one client leaf per design.** A
-  design marks what moves with data attributes and its leaf animates them.
+- **Markup stays server-rendered; motion is one client leaf,
+  `widgets/site-motion`, around every public page** (`SiteMotion`). A page
+  marks what moves with data attributes and the leaf animates them; an
+  effect whose marks a page lacks does nothing there. The marks: `data-enter`
+  (+ `data-ct-headline`) the hero's arrival, `data-rise` a heading's lines
+  rising, `data-rule` a section number's rule drawing, `data-reveal` /
+  `data-reveal-items` rising into view (a numbered reason's hairline draws
+  with it, `--drawn`), `data-read-along`, `data-journey`, `data-count-to`,
+  `data-drift` the light and stage floor behind a section (`StageDecor`,
+  `widgets/stage-decor`).
   Import GSAP from `@/shared/lib/motion/gsap` (core plugins registered once,
   client-side); a design that needs a heavier plugin (Draggable, Inertia,
   Flip) registers it in its own service, so no other design downloads it. `useMotion` scopes every tween to the design and reverts it on
@@ -547,12 +564,16 @@ Lenis. The dashboard has none.
 The **public site is dark**, by decision: the client chose "Chef's Table" in
 October 2026. It is not a theme and has no switch. `src/shared/brandbook/site.css`
 remaps the colour roles, type sizes, spacing and shape inside `[data-site]`,
-which every public page renders around itself (the home page, the privacy
-policy, the 404, the error page), and sets `color-scheme: dark` on the
+which every public page renders around itself (the home page, the team, the
+articles, an article, the privacy policy, the 404, the error page), and sets `color-scheme: dark` on the
 document. A new public page wraps itself in `[data-site]` too, or it renders
 in the brandbook's light roles, and uses the shared header and footer
-(`widgets/site-header`, `widgets/site-footer`): off the home page, the menu's
-section links are `/{locale}#id`, and a header given no links has no menu. Only the **dashboard** has a theme switch — Light / Dark, beside the
+(`widgets/site-header`, `widgets/site-footer`). A page beside the home page
+is a `SubpageShell` with a `PageHero` (`widgets/site-chrome`): the header,
+footer, motion and one `<main>`, its menu leading home, to the other pages
+and to the form; `loadSiteChrome()` reads what they need, including which
+pages have anything to show (nothing links to an empty page). A header
+given no links has no menu. Only the **dashboard** has a theme switch — Light / Dark, beside the
 wordmark in the sidebar. Until one is picked, the dashboard follows the OS
 (the `system` cookie state).
 
@@ -771,28 +792,39 @@ with no Academy link on them; each project is one card whose photos (the
 cover, then the gallery) scroll inside it, with its summary shown under the
 pointer; projects have no page of their own, so the dashboard's project form
 no longer asks for a write-up, search fields or a video (stored values stay);
-"Why STAGER" is a heading beside numbered lines. A course's "related
-service" left the course form with the Academy link (the column stays).
+"Why STAGER" is numbered lines under the intro, in one section with it. A
+course's "related service" left the course form with the Academy link (the
+column stays). So the night is not flat text: each section has a number and
+an accent rule that draws itself, its heading rises line by line, and pools
+of light and the stage floor (a faint grid of points) sit behind the text
+sections and the page tops, drifting as the page scrolls.
 
-**The site's pages, decided with the owner:** the home page, the privacy
-policy (`/[locale]/privacy`, its text written under Page copy → Privacy
-policy), and later an article page for Insights. Services, contact, About and
-Team live on the home page: the team (`/api/public/team`, dashboard → Team)
-follows the intro, each member's portrait beside their role and bio. Until
-the policy has text, its page says so and nothing links to it; once it has,
-the footer and the contact forms link to it. Page copy offers only the pages
-the site renders (`SITE_PAGE_KEYS`): HOME and PRIVACY. The other six page
-rows stay in the database, unused.
+**The site's pages, decided with the owner:** the home page; the team
+(`/[locale]/team`, every published member from dashboard → Team); the
+articles (`/[locale]/insights`) and each article
+(`/[locale]/insights/<slug>`, a 404 for no published article by that slug);
+and the privacy policy (`/[locale]/privacy`, its text written under Page copy
+→ Privacy policy). Services, contact and About live on the home page, where
+"Who STAGER is" and "Why STAGER" are one section (`#about`, the reasons at
+`#why` inside it; the dashboard still edits them as two). The home page lists
+the latest three articles, each linking to its page, and links to them all.
+The menu and footer link to the team and the articles only once they have
+something to show, and to the policy once it has text. Page copy offers only
+the pages the site renders (`SITE_PAGE_KEYS`: HOME, TEAM, INSIGHTS,
+PRIVACY), each section with only the fields the site shows
+(`sectionFields`); ABOUT, SERVICES, PROJECTS and CONTACT stay in the
+database, unused.
 
 Still open: the real figures (the samples are placeholders, marked); the
-policy's text (the client's lawyer); the article page, when articles are
-published; rendering the home page statically (the per-request CSP nonce
+policy's text (the client's lawyer); the BPG Nino Mtavruli licence; rendering the home page statically (the per-request CSP nonce
 keeps it dynamic, see `docs/AUDIT-HANDOFF.md`); the SEO fields; and the
 noindex, which stays until launch. Keep the data-loading pattern in
 `home-page.service.ts`.
 
-Decided for the design phase: Noto Sans Georgian for both scripts, so headlines
-match across locales, and GSAP + Lenis motion under the rules in § Motion.
+Decided with the client: BPG Nino Mtavruli for Georgian letters and Noto Sans
+Georgian for the rest (October 2026), the site's teal turned 12° toward green
+from the logo's (`--ct-hue-shift`, `site.css`), and GSAP + Lenis motion under
+the rules in § Motion.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

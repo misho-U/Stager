@@ -55,6 +55,9 @@ export type PublicTeamMember = z.infer<typeof publicTeamMemberSchema>;
 
 export const publicTeamMemberListResponseSchema = listResponseSchema(publicTeamMemberSchema);
 
+/** Where the team's page lives, under each locale (`/ka/team`). */
+export const TEAM_PATH = '/team';
+
 export const teamMemberTranslationInputSchema = z.object({
   name: z.string().trim().min(1).max(160),
   position: z.string().trim().max(160).default(''),

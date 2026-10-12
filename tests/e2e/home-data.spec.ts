@@ -361,16 +361,26 @@ test.describe("a project's photos", () => {
   });
 });
 
-test.describe('the team on the home page', () => {
-  test('shows only when the dashboard has published members', async ({ page, request }) => {
+test.describe('the team page', () => {
+  test('lists the published members; the menu links to it only when there are any', async ({
+    page,
+    request,
+  }) => {
     const response = await request.get('/api/public/team?locale=EN');
     expect(response.ok()).toBeTruthy();
     const { items } = (await response.json()) as { items: Array<{ name: string }> };
+
+    // The team has a page of its own now: no block on the home page.
     await page.goto('/en');
+    await expect(page.locator('#team')).toHaveCount(0);
+    await expect(page.locator('footer a[href="/en/team"]')).toHaveCount(items.length > 0 ? 1 : 0);
+
+    await page.goto('/en/team');
+    await expect(page.getByTestId('team-title')).toBeVisible();
     if (items.length === 0) {
-      await expect(page.locator('#team')).toHaveCount(0);
+      await expect(page.getByTestId('team-list')).toHaveCount(0);
     } else {
-      await expect(page.getByTestId('team-list').locator('h3')).toHaveText(
+      await expect(page.getByTestId('team-list').locator('h2')).toHaveText(
         items.map((member) => member.name),
       );
     }
@@ -424,8 +434,8 @@ test.describe('team members added in the dashboard', () => {
     try {
       expect((await revalidate()).ok()).toBeTruthy();
       await page.emulateMedia({ reducedMotion: 'reduce' });
-      await page.goto('/en');
-      const team = page.locator('#team');
+      await page.goto('/en/team');
+      const team = page.getByTestId('team-list');
       const card = team.locator('li', { hasText: 'E2E Published Member' });
       await expect(card).toBeVisible();
       await expect(card).toContainText('Head chef');

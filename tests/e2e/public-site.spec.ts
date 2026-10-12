@@ -117,7 +117,8 @@ test.describe('security headers', () => {
 
 // Emitted font file names carry a hash, and dev and production builds may join
 // the words with "-" or "_".
-const GEORGIAN_FILE = /noto[_-]sans[_-]georgian[_-]georgian/i;
+const MTAVRULI_FILE = /bpg[_-]nino[_-]mtavruli(?![_-]bold)/i;
+const NOTO_GEORGIAN_FILE = /noto[_-]sans[_-]georgian[_-]georgian/i;
 const LATIN_FILE = /noto[_-]sans[_-]georgian[_-]latin(?![_-]ext)/i;
 const LATIN_EXT_FILE = /noto[_-]sans[_-]georgian[_-]latin[_-]ext/i;
 
@@ -140,20 +141,22 @@ test.describe('typography', () => {
     // that, so this asserts the site never reaches for Google at all.
     expect(externalFontRequests).toEqual([]);
 
-    // And that text resolves to the bundled family first, not a system stack.
+    // And that text resolves to the bundled families first, not a system
+    // stack: the Georgian letters' face, then the one for everything else.
     const fontFamily = await page
       .getByTestId('hero-heading')
       .evaluate((node) => getComputedStyle(node).fontFamily);
 
-    expect(fontFamily).toMatch(/^"?Noto Sans Georgian"?,/);
+    expect(fontFamily).toMatch(/^"?BPG Nino Mtavruli"?, "?Noto Sans Georgian"?,/);
   });
 
-  test('Georgian and Latin text both render in the bundled typeface', async ({ page }) => {
+  test('Georgian and Latin text both render in the bundled typefaces', async ({ page }) => {
     // Latin text once rendered in Arial: next/font gave every face a generated
     // "<name> Fallback" family — local(Arial) with no unicode-range — and the
-    // first one in the chain matched every Latin character. The typeface is
-    // now declared once, in brandbook.css, as a single family whose three
-    // files are split by unicode-range, so no fallback sits ahead of it.
+    // first one in the chain matched every Latin character. The typefaces are
+    // now declared in brandbook.css, split by unicode-range: Georgian letters
+    // in BPG Nino Mtavruli, everything else in Noto Sans Georgian, with
+    // nothing ahead of them.
     const fontFiles: string[] = [];
     page.on('request', (request) => {
       const url = request.url();
@@ -165,31 +168,32 @@ test.describe('typography', () => {
     await page.evaluate(() => document.fonts.ready);
 
     const fetched = (subset: RegExp) => fontFiles.some((url) => subset.test(url));
-    expect(fetched(GEORGIAN_FILE), 'Georgian subset was not fetched').toBe(true);
+    expect(fetched(MTAVRULI_FILE), 'the Georgian letters were not fetched').toBe(true);
     expect(fetched(LATIN_FILE), 'Latin subset was not fetched').toBe(true);
 
     // Loaded, not merely requested: false here means the text is on a
     // system fallback.
     const loaded = await page.evaluate(() => ({
       latin: document.fonts.check('16px "Noto Sans Georgian"', 'STAGER'),
-      georgian: document.fonts.check('16px "Noto Sans Georgian"', 'ქართული'),
+      georgian: document.fonts.check('16px "BPG Nino Mtavruli"', 'ქართული'),
     }));
     expect(loaded).toEqual({ latin: true, georgian: true });
 
     const chain = await page
       .getByTestId('wordmark')
       .evaluate((node) => getComputedStyle(node).fontFamily);
-    expect(chain, `something precedes the bundled family in: ${chain}`).toMatch(
-      /^"?Noto Sans Georgian"?,/,
+    expect(chain, `something precedes the bundled families in: ${chain}`).toMatch(
+      /^"?BPG Nino Mtavruli"?, "?Noto Sans Georgian"?,/,
     );
   });
 
   test('the typeface files are split by script', async ({ page }) => {
     // The unicode-range split means a page downloads a file only when it
-    // contains that script. The sign-in page has Georgian and basic Latin but
-    // no extended Latin, so fetching that file there means the split has been
-    // lost and every page is paying for every script. (No page is Latin-only
-    // any more: every language switch shows ქა or ქარ.)
+    // contains that script. The sign-in page has Georgian letters and basic
+    // Latin but no extended Latin and no Georgian beyond the Mtavruli
+    // face's letters, so fetching either of those files there means the
+    // split has been lost and every page is paying for every script. (No
+    // page is Latin-only any more: every language switch shows ქა or ქარ.)
     const fontFiles: string[] = [];
     page.on('request', (request) => {
       if (request.url().endsWith('.woff2')) fontFiles.push(request.url());
@@ -199,8 +203,9 @@ test.describe('typography', () => {
     await expect(page.locator('input[type="password"]')).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
 
-    expect(fontFiles.some((url) => GEORGIAN_FILE.test(url))).toBe(true);
+    expect(fontFiles.some((url) => MTAVRULI_FILE.test(url))).toBe(true);
     expect(fontFiles.some((url) => LATIN_FILE.test(url))).toBe(true);
     expect(fontFiles.filter((url) => LATIN_EXT_FILE.test(url))).toEqual([]);
+    expect(fontFiles.filter((url) => NOTO_GEORGIAN_FILE.test(url))).toEqual([]);
   });
 });

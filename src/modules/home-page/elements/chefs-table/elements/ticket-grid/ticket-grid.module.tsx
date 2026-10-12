@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 
-import { CT_MOTION } from '@/modules/home-page/elements/chefs-table/chefs-table.constants';
+import { SITE_MOTION } from '@/widgets/site-motion/site-motion.constants';
 import { useFlipFilter } from '@/shared/lib/motion/use-flip-filter';
 
 type Tab = { id: string; label: string; count: number };
@@ -22,7 +22,7 @@ type TicketGridProps = {
 export function TicketGrid({ tabs, filterLabel, tickets }: TicketGridProps) {
   const { filter, choose, list, shows } = useFlipFilter<HTMLUListElement>({
     itemSelector: '[data-ticket]',
-    ...CT_MOTION.flip,
+    ...SITE_MOTION.flip,
   });
 
   return (

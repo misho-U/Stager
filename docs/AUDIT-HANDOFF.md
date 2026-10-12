@@ -194,6 +194,18 @@ Before launch:
 9. Logo files (favicon, share image), and the privacy policy's text: the page
    exists (`/ka/privacy`, `/en/privacy`); write it under Dashboard → Page copy
    → Privacy policy. Until then nothing links to it.
+10. **The BPG Nino Mtavruli licence.** The site sets Georgian in it at the
+    client's request. The files say "BPG-InfoTech free gift"; the npm
+    packages they came from name CC BY-NC-ND 4.0, which forbids commercial
+    use. Confirm the terms with BPG InfoTech (or wherever the client licensed
+    the font) before launch; `src/shared/brandbook/fonts/BPG-NINO-MTAVRULI.txt`
+    records the source. Swapping it back is one block in `brandbook.css`.
+11. **Page copy → Team, Georgian**: in October 2026 its heading read "Lika
+    Gulua", its line "Founder" and its text "Short description" (a team
+    member typed into the page's copy in September). The Team page shows
+    that heading as its title on `/ka/team`: set it to "გუნდი" (or the
+    client's own words) and clear the line. Members are added under
+    Dashboard → Team.
 
 ## Where the rules live
 
