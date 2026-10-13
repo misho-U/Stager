@@ -252,6 +252,34 @@ test.describe('content through the dashboard API', () => {
     expect(JSON.stringify(await site.json())).not.toContain(run);
   });
 
+  test('Page copy offers the pages the site shows, each with the fields it shows', async ({
+    page,
+  }) => {
+    const listed = (await (await page.request.get('/api/admin/pages')).json()) as {
+      items: Array<{ key: string }>;
+    };
+    expect(listed.items.map((item) => item.key)).toEqual(['HOME', 'TEAM', 'INSIGHTS', 'PRIVACY']);
+
+    await page.goto('/admin/pages');
+    await expect(page.getByRole('link', { name: adminEn.pages.companyStatsLink })).toBeVisible();
+    await expect(page.locator('main a[href="/admin/pages/ABOUT"]')).toHaveCount(0);
+
+    await page.goto('/admin/pages/PRIVACY');
+    await expect(page.getByText(adminEn.pages.sections.policy)).toBeVisible();
+    await expect(page.getByLabel(adminEn.fields.body).first()).toBeVisible();
+    // Nothing the policy page would never show.
+    await expect(page.getByText(adminEn.pageEditor.subheading)).toHaveCount(0);
+    await expect(page.getByText(adminEn.pageEditor.buttonLabel)).toHaveCount(0);
+    await expect(page.getByText(adminEn.pageEditor.sectionImage)).toHaveCount(0);
+
+    // The Team page shows a heading and the line under it, nothing more.
+    await page.goto('/admin/pages/TEAM');
+    await expect(page.getByLabel(adminEn.pageEditor.subheading).first()).toBeVisible();
+    await expect(page.getByLabel(adminEn.fields.body)).toHaveCount(0);
+    await expect(page.getByText(adminEn.pageEditor.buttonLabel)).toHaveCount(0);
+    await expect(page.getByText(adminEn.pageEditor.sectionImage)).toHaveCount(0);
+  });
+
   test('only an owner changes the settings', async ({ page }) => {
     const prisma = testPrisma();
     const admin = await prisma.adminUser.findUniqueOrThrow({ where: { email: ADMIN_EMAIL! } });

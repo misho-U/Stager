@@ -10,13 +10,12 @@ import type { PublicPage } from '@/entity/page/model/page.model';
 import type { PublicProjectListItem } from '@/entity/project/model/project.model';
 import type { PublicServiceListItem } from '@/entity/service/model/service.model';
 import type { PublicStat } from '@/entity/stat/model/stat.model';
-import type { PublicLayoutData } from '@/entity/site-setting/model/site-setting.model';
 import type { PublicVideo } from '@/entity/video/model/video.model';
 import type { ListResponse } from '@/shared/types/api';
 import type { DbLocale } from '@/shared/types/enums';
-import { collectionTag, detailTag, LAYOUT_TAG, PUBLIC_REVALIDATE_SECONDS } from '@pkg/cache/tags';
+import { collectionTag, detailTag, PUBLIC_REVALIDATE_SECONDS } from '@pkg/cache/tags';
 import { serverFetch } from '@pkg/http/fetcher';
-import { logger, serialiseError } from '@pkg/logger';
+import { loadSiteChrome, readPublic as read } from '@/widgets/site-chrome/site-chrome.service';
 
 /**
  * Server-side data loading for the home page.
@@ -32,8 +31,6 @@ import { logger, serialiseError } from '@pkg/logger';
  * looked exactly like a working page and stayed hidden for days. Degrading
  * quietly for the visitor is right; degrading quietly for the operator is not.
  */
-
-type ReadResult<T> = { data: T; failed: boolean };
 
 /**
  * A project list as it may come out of the data cache: one cached before
@@ -51,25 +48,11 @@ function withGalleries(list: CachedProjectList): ListResponse<PublicProjectListI
   };
 }
 
-async function read<T>(label: string, request: Promise<T>, fallback: T): Promise<ReadResult<T>> {
-  try {
-    return { data: await request, failed: false };
-  } catch (error) {
-    logger.error('public.read_failed', { read: label, ...serialiseError(error) });
-    return { data: fallback, failed: true };
-  }
-}
-
 export async function loadHomePageData(locale: DbLocale) {
-  const [layout, page, stats, projects, services, insights, courses, videos] = await Promise.all([
-    read<PublicLayoutData | null>(
-      'layout',
-      serverFetch<PublicLayoutData>(`/api/public/layout?locale=${locale}`, {
-        tags: [LAYOUT_TAG],
-        revalidate: PUBLIC_REVALIDATE_SECONDS,
-      }),
-      null,
-    ),
+  const [chrome, page, stats, projects, services, insights, courses, videos] = await Promise.all([
+    // The site's settings, and which pages beside this one have anything
+    // to show (the menu and footer link only to those).
+    loadSiteChrome(locale),
 
     read<PublicPage | null>(
       'page:HOME',
@@ -148,7 +131,7 @@ export async function loadHomePageData(locale: DbLocale) {
   ]);
 
   return {
-    layout: layout.data,
+    chrome,
     page: page.data,
     stats: orSamples(stats, () => sampleStats(locale)),
     projects: withGalleries(projects.data),
@@ -159,7 +142,7 @@ export async function loadHomePageData(locale: DbLocale) {
     /** True when any read failed, so the page can say so instead of
      *  rendering placeholder copy that looks like real content. */
     readFailed:
-      layout.failed ||
+      chrome.failed ||
       page.failed ||
       stats.failed ||
       projects.failed ||

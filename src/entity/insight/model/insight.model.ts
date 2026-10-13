@@ -67,6 +67,14 @@ export type PublicInsightDetail = z.infer<typeof publicInsightDetailSchema>;
 
 export const publicInsightListResponseSchema = listResponseSchema(publicInsightListItemSchema);
 
+/** Where the articles live, under each locale (`/ka/insights`). */
+export const INSIGHTS_PATH = '/insights';
+
+/** An article's own page, under each locale (`/ka/insights/<slug>`). */
+export function insightPath(slug: string): string {
+  return `${INSIGHTS_PATH}/${encodeURIComponent(slug)}`;
+}
+
 export const insightTranslationInputSchema = seoInputSchema.extend({
   title: z.string().trim().min(1).max(200),
   excerpt: z.string().trim().max(600).default(''),

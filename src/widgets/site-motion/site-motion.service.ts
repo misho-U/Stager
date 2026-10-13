@@ -2,11 +2,11 @@
 
 import type { RefObject } from 'react';
 
-import { CT_MOTION as M } from '@/modules/home-page/elements/chefs-table/chefs-table.constants';
 import { gsap, ScrollTrigger } from '@/shared/lib/motion/gsap';
 import { magnetic } from '@/shared/lib/motion/pointer';
 import { cappedStagger, splitReveal } from '@/shared/lib/motion/split';
 import { useMotion } from '@/shared/lib/motion/use-motion';
+import { SITE_MOTION as M } from '@/widgets/site-motion/site-motion.constants';
 import { useSmoothScroll } from '@/widgets/smooth-scroll/smooth-scroll.service';
 
 type Cleanup = () => void;
@@ -14,9 +14,10 @@ type Cleanup = () => void;
 /**
  * The site's motion. Every effect below runs only with motion allowed, and
  * none hides content for good: without them the page is the same content,
- * one section after another.
+ * one section after another. Each looks for its own marks in the page, so a
+ * page without them (the privacy policy has no journey) skips it.
  */
-export function useChefsTableMotion(scope: RefObject<HTMLElement | null>) {
+export function useSiteMotion(scope: RefObject<HTMLElement | null>) {
   useSmoothScroll({ lerp: M.lerp });
 
   useMotion(scope, ({ motion, entrance, finePointer }, root) => {
@@ -28,6 +29,9 @@ export function useChefsTableMotion(scope: RefObject<HTMLElement | null>) {
     cleanups.push(countUp(root, entrance));
     readAlong(root);
     cleanups.push(drawJourney(root));
+    riseHeadings(root);
+    drawRules(root);
+    drift(root);
     reveal(root);
     openIris(root);
     riseFooter(root);
@@ -199,13 +203,84 @@ function drawJourney(root: HTMLElement): Cleanup {
   };
 }
 
-/** Sections and cards rise into view, once; so do the paragraphs and list
- *  items of text written in the dashboard ([data-reveal-items]). */
+/**
+ * A section's heading rises line by line out of its masks as it comes into
+ * view, once. The heading keeps its words as its accessible name (see
+ * splitReveal); one holding a link is left whole.
+ */
+function riseHeadings(root: HTMLElement) {
+  for (const heading of root.querySelectorAll<HTMLElement>('[data-rise]')) {
+    splitReveal(heading, {
+      type: 'lines',
+      mask: 'lines',
+      animate: (split) =>
+        gsap.from(split.lines, {
+          yPercent: 105,
+          duration: M.rise.duration,
+          ease: M.rise.ease,
+          stagger: cappedStagger(M.rise.stagger),
+          scrollTrigger: { trigger: heading, start: 'top 90%', once: true },
+        }),
+    });
+  }
+}
+
+/**
+ * A section's rule, the accent line beside its number ([data-rule]), draws
+ * itself left to right as it comes into view, once. Decoration only: the
+ * heading beside it never waits for it.
+ */
+function drawRules(root: HTMLElement) {
+  for (const rule of root.querySelectorAll<HTMLElement>('[data-rule]')) {
+    gsap.fromTo(
+      rule,
+      { scaleX: 0 },
+      {
+        scaleX: 1,
+        transformOrigin: 'left center',
+        duration: M.rule.duration,
+        ease: M.rule.ease,
+        scrollTrigger: { trigger: rule, start: 'top 92%', once: true },
+      },
+    );
+  }
+}
+
+/**
+ * The light and the stage floor behind a section ([data-drift], see
+ * StageDecor) drift slower than the page as it passes, so the night has
+ * depth. They take no pointer events and hold no content.
+ */
+function drift(root: HTMLElement) {
+  for (const layer of root.querySelectorAll<HTMLElement>('[data-drift]')) {
+    gsap.fromTo(
+      layer,
+      { yPercent: -M.drift.yPercent },
+      {
+        yPercent: M.drift.yPercent,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: layer.parentElement ?? layer,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: true,
+        },
+      },
+    );
+  }
+}
+
+/**
+ * Sections and cards rise into view, once; so do the paragraphs and list
+ * items of text written in the dashboard ([data-reveal-items]). A numbered
+ * reason's hairline draws as it rises (--drawn, read by .ct-reasons in
+ * site.css; one tween, so nothing can cut the line short half-way).
+ */
 function reveal(root: HTMLElement) {
   const items = gsap.utils.toArray<HTMLElement>(
     root.querySelectorAll('[data-reveal], [data-reveal-items] :is(p, li)'),
   );
-  gsap.set(items, { opacity: 0, y: M.reveal.y });
+  gsap.set(items, { opacity: 0, y: M.reveal.y, '--drawn': 0 });
   ScrollTrigger.batch(items, {
     start: 'top 88%',
     once: true,
@@ -213,6 +288,7 @@ function reveal(root: HTMLElement) {
       gsap.to(batch, {
         opacity: 1,
         y: 0,
+        '--drawn': 1,
         duration: M.reveal.duration,
         ease: M.reveal.ease,
         stagger: M.reveal.stagger,

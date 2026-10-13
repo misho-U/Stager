@@ -50,6 +50,7 @@ enum PageKey {
   TEAM
   INSIGHTS
   CONTACT
+  PRIVACY
 }
 
 enum InquiryInterest {

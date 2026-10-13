@@ -29,6 +29,7 @@ export const pageKeySchema = z.enum([
   'TEAM',
   'INSIGHTS',
   'CONTACT',
+  'PRIVACY',
 ]);
 export type PageKey = z.infer<typeof pageKeySchema>;
 

@@ -6,9 +6,9 @@ import { routing } from '@pkg/i18n/routing';
 /**
  * Public site shell: validates the locale and mounts the i18n provider.
  *
- * Header, navigation and footer belong to each page's design (the home page
- * renders its own), so a page supplies its own <header>, <main> and <footer>
- * landmarks.
+ * Each page renders its own landmarks: the shared header and footer
+ * (widgets/site-header, widgets/site-footer) around its one <main>, inside
+ * its own [data-site] wrapper, since the home page wraps them in its motion.
  */
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));

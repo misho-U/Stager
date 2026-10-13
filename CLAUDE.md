@@ -54,6 +54,12 @@ Do not add a library outside this list without raising it first.
   routing, CSP and session refresh with it.
 - `revalidateTag(tag, { expire: 0 })` — anything else serves stale content right
   after an admin saves.
+- **A new page needs a data migration**: the dashboard cannot create pages or
+  sections, and the seed never runs in production. A new `PageKey` value goes
+  in a migration of its own (AGENTS.md § Version traps). Previews run before
+  that migration, against the live database: a lookup by the new key must
+  read "no page", not fail (`byKey`, `isUnknownEnumValue`), or every preview
+  page says content failed to load.
 - **A field added to a public response can be missing from a cached copy**
   after a deploy: the data cache outlives the code. Fill it in where it is
   read (AGENTS.md § Caching); a projects list without `gallery` crashed the
@@ -83,12 +89,19 @@ Do not add a library outside this list without raising it first.
   validates the format before a chained trim runs, so that still rejects
   " me@x.com ". Use `emailInput()` / `urlInput()` from `shared/types/api.ts`.
   Never trim passwords.
-- **The typeface is self-hosted**, declared with `@font-face` in `brandbook.css`
-  (files in `src/shared/brandbook/fonts/`). Do not switch to `next/font/google`:
-  it downloads at build time, so a machine that cannot reach Google silently
-  ships a system fallback — which is worst for Georgian. Do not bring back
-  `next/font/local` either: its per-face "Fallback" family rendered all Latin
-  text in Arial.
+- **The typefaces are self-hosted**, declared with `@font-face` in
+  `brandbook.css` (files in `src/shared/brandbook/fonts/`): Georgian letters
+  in BPG Nino Mtavruli (all capital-style, the client's choice), the rest in
+  Noto Sans Georgian. Do not switch to `next/font/google`: it downloads at
+  build time, so a machine that cannot reach Google silently ships a system
+  fallback — which is worst for Georgian. Do not bring back `next/font/local`
+  either: its per-face "Fallback" family rendered all Latin text in Arial.
+  **The Mtavruli licence is unconfirmed** (`fonts/BPG-NINO-MTAVRULI.txt`);
+  never modify those files. BPG sits its letters above the baseline, so on
+  the site's Georgian pages Latin is Noto raised to match (`Stager Latin`,
+  `--font-sans-ka`), or a Latin word in a Georgian line looks a step lower.
+  Never swap the English letters for another design: the client likes them
+  as they are.
 - **`pkg/brand/hex.generated.ts` is generated** from `brandbook.css` on install,
   dev and build, for the email and the theme-color meta tag. Never edit it.
   Brand colours must be hex, or the build fails.
@@ -144,5 +157,9 @@ can do in Vercel and Supabase. Read it before planning operations, security
 or test work.
 
 The client chose one design, "Chef's Table" (dark, `site.css`, `[data-site]`
-on every public page). AGENTS.md § 7 records what the design review changed
-and what is still open (the real figures, static rendering, the noindex).
+on every public page). The site is the home page, the team, the articles and
+each article, and a privacy policy; About, services and contact live on the
+home page. Every page beside home is a `SubpageShell` (`widgets/site-chrome`),
+and every public page moves through `widgets/site-motion`. AGENTS.md § 7
+records the decisions and what is still open (the real figures, the policy's
+text, the font licence, static rendering, the noindex).

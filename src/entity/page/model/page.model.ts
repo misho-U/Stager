@@ -8,7 +8,8 @@ import {
   seoFieldsSchema,
   seoInputSchema,
 } from '@/shared/types/api';
-import { pageKeySchema } from '@/shared/types/enums';
+import { isBlankHtml } from '@/shared/lib/content';
+import { pageKeySchema, type PageKey } from '@/shared/types/enums';
 
 /**
  * Editable page copy.
@@ -151,4 +152,76 @@ export function homeSections(page: PublicPage | null): HomeSections {
     insights: find(HOME_SECTION_KEYS.insights),
     cta: find(HOME_SECTION_KEYS.cta),
   };
+}
+
+// --- The pages the site renders ---
+
+/**
+ * The pages with copy the site actually shows, and so the only ones the
+ * dashboard offers under Page copy. The others (ABOUT, SERVICES, PROJECTS,
+ * CONTACT) are kept in the database, unused: their sections live on the
+ * home page.
+ */
+export const SITE_PAGE_KEYS = [
+  'HOME',
+  'TEAM',
+  'INSIGHTS',
+  'PRIVACY',
+] as const satisfies readonly PageKey[];
+
+export function isSitePage(key: PageKey): boolean {
+  return (SITE_PAGE_KEYS as readonly PageKey[]).includes(key);
+}
+
+/** Where the privacy policy lives, under each locale (`/ka/privacy`). */
+export const PRIVACY_PATH = '/privacy';
+
+/** The privacy policy's one section, as the migration and the seed create it. */
+export const PRIVACY_SECTION_KEY = 'policy';
+
+/**
+ * The one section of the Team and Insights pages, as the seed created it: the
+ * page's heading and the line under it. Their lists come from the dashboard's
+ * Team and Insights screens.
+ */
+export const PAGE_INTRO_SECTION_KEY = 'intro';
+
+/** Which of a section's fields the site shows, so the dashboard offers only those. */
+export type SectionFields = { subheading: boolean; body: boolean; button: boolean; image: boolean };
+
+const ALL_FIELDS: SectionFields = { subheading: true, body: true, button: true, image: true };
+
+/**
+ * The fields a section's editor offers. A field the site never shows is left
+ * out (its stored value is kept on save): the privacy policy is a heading and
+ * a long text, the Team and Insights pages a heading and the line under it.
+ */
+export function sectionFields(pageKey: PageKey, sectionKey: string): SectionFields {
+  if (pageKey === 'PRIVACY' && sectionKey === PRIVACY_SECTION_KEY) {
+    return { subheading: false, body: true, button: false, image: false };
+  }
+  if ((pageKey === 'TEAM' || pageKey === 'INSIGHTS') && sectionKey === PAGE_INTRO_SECTION_KEY) {
+    return { subheading: true, body: false, button: false, image: false };
+  }
+  return ALL_FIELDS;
+}
+
+/**
+ * The privacy policy's text, or null while the dashboard holds none: an
+ * empty policy is never linked to, from the footer or the contact form.
+ */
+export function privacyPolicy(page: PublicPage | null): { heading: string; body: string } | null {
+  const section = page?.sections.find((item) => item.key === PRIVACY_SECTION_KEY);
+  if (!section || isBlankHtml(section.body)) return null;
+  return { heading: section.heading, body: section.body };
+}
+
+/**
+ * A list page's heading and the line under it (Team, Insights), as written
+ * in the dashboard; empty strings where it holds none, for the page's own
+ * name to stand in.
+ */
+export function pageIntro(page: PublicPage | null): { heading: string; lead: string } {
+  const section = page?.sections.find((item) => item.key === PAGE_INTRO_SECTION_KEY);
+  return { heading: section?.heading ?? '', lead: section?.subheading ?? '' };
 }

@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { Controller } from 'react-hook-form';
 
+import { sectionFields } from '@/entity/page/model/page.model';
 import { useAdminPageEditor } from '@/modules/admin-page-editor/admin-page-editor.service';
 import { Button, ButtonLink } from '@/shared/components/button';
 import {
@@ -94,6 +95,10 @@ export function AdminPageEditorModule({ pageKey }: { pageKey: PageKey }) {
 
         {sections.map((section, index) => {
           const sectionErrors = errors.sections?.[index]?.translations;
+          // Only the fields the site shows for this section (a policy is a
+          // heading and a long text); the others' stored values are kept.
+          const fields = sectionFields(pageKey, section.key);
+          const bodyOnly = fields.body && !fields.subheading;
 
           return (
             <Panel
@@ -119,48 +124,56 @@ export function AdminPageEditorModule({ pageKey }: { pageKey: PageKey }) {
                         error={sectionErrors?.[locale]?.heading?.message}
                         {...form.register(`sections.${index}.translations.${locale}.heading`)}
                       />
-                      <TextAreaField
-                        label={t('pageEditor.subheading')}
-                        rows={2}
-                        error={sectionErrors?.[locale]?.subheading?.message}
-                        {...form.register(`sections.${index}.translations.${locale}.subheading`)}
-                      />
-                      <TextAreaField
-                        label={t('fields.body')}
-                        rows={6}
-                        hint={t('fields.bodyHint')}
-                        error={sectionErrors?.[locale]?.body?.message}
-                        {...form.register(`sections.${index}.translations.${locale}.body`)}
-                      />
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <TextField
-                          label={t('pageEditor.buttonLabel')}
-                          error={sectionErrors?.[locale]?.ctaLabel?.message}
-                          {...form.register(`sections.${index}.translations.${locale}.ctaLabel`)}
+                      {fields.subheading ? (
+                        <TextAreaField
+                          label={t('pageEditor.subheading')}
+                          rows={2}
+                          error={sectionErrors?.[locale]?.subheading?.message}
+                          {...form.register(`sections.${index}.translations.${locale}.subheading`)}
                         />
-                        <TextField
-                          label={t('pageEditor.buttonLink.label')}
-                          placeholder={t('pageEditor.buttonLink.placeholder')}
-                          hint={t('pageEditor.buttonLink.hint')}
-                          error={sectionErrors?.[locale]?.ctaHref?.message}
-                          {...form.register(`sections.${index}.translations.${locale}.ctaHref`)}
+                      ) : null}
+                      {fields.body ? (
+                        <TextAreaField
+                          label={t('fields.body')}
+                          rows={bodyOnly ? 24 : 6}
+                          hint={t('fields.bodyHint')}
+                          error={sectionErrors?.[locale]?.body?.message}
+                          {...form.register(`sections.${index}.translations.${locale}.body`)}
                         />
-                      </div>
+                      ) : null}
+                      {fields.button ? (
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <TextField
+                            label={t('pageEditor.buttonLabel')}
+                            error={sectionErrors?.[locale]?.ctaLabel?.message}
+                            {...form.register(`sections.${index}.translations.${locale}.ctaLabel`)}
+                          />
+                          <TextField
+                            label={t('pageEditor.buttonLink.label')}
+                            placeholder={t('pageEditor.buttonLink.placeholder')}
+                            hint={t('pageEditor.buttonLink.hint')}
+                            error={sectionErrors?.[locale]?.ctaHref?.message}
+                            {...form.register(`sections.${index}.translations.${locale}.ctaHref`)}
+                          />
+                        </div>
+                      ) : null}
                     </>
                   )}
                 </TranslatedFields>
 
-                <Controller
-                  control={form.control}
-                  name={`sections.${index}.mediaId`}
-                  render={({ field }) => (
-                    <MediaPicker
-                      label={t('pageEditor.sectionImage')}
-                      value={field.value ?? null}
-                      onChange={field.onChange}
-                    />
-                  )}
-                />
+                {fields.image ? (
+                  <Controller
+                    control={form.control}
+                    name={`sections.${index}.mediaId`}
+                    render={({ field }) => (
+                      <MediaPicker
+                        label={t('pageEditor.sectionImage')}
+                        value={field.value ?? null}
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
+                ) : null}
               </div>
             </Panel>
           );

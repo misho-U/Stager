@@ -45,7 +45,14 @@ export function RegisterButton({ course, className, children }: RegisterButtonPr
  * on a wide screen and rises from the bottom on a phone (CSS only, so reduced
  * motion makes it appear at once).
  */
-export function RegistrationDialog({ locale }: { locale: DbLocale }) {
+export function RegistrationDialog({
+  locale,
+  privacyHref = null,
+}: {
+  locale: DbLocale;
+  /** The privacy policy, once it has text (see InquiryForm). */
+  privacyHref?: string | null;
+}) {
   const t = useTranslations('academy');
   const { course, dialog, onClose, requestClose } = useRegistrationDialog();
 
@@ -90,6 +97,7 @@ export function RegistrationDialog({ locale }: { locale: DbLocale }) {
           <InquiryForm
             key={course.id}
             locale={locale}
+            privacyHref={privacyHref}
             submitLabel={course.full ? t('waitlist') : t('register')}
             defaults={{
               interest: 'TRAINING',

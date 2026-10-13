@@ -4,8 +4,14 @@ import {
   toTranslationMap,
   translationUpsert,
 } from '@/app/api/_lib/serializers';
-import type { AdminPage, PageUpdateInput, PublicPage } from '@/entity/page/model/page.model';
+import {
+  isSitePage,
+  type AdminPage,
+  type PageUpdateInput,
+  type PublicPage,
+} from '@/entity/page/model/page.model';
 import type { DbLocale, PageKey } from '@/shared/types/enums';
+import { isUnknownEnumValue } from '@pkg/db/errors';
 import { prisma } from '@pkg/db/prisma';
 import { sanitizeRichText } from '@pkg/security/sanitize';
 
@@ -72,13 +78,35 @@ function toAdminPage(row: AdminRow): AdminPage {
   };
 }
 
+/**
+ * The pages the dashboard offers: those the site renders. The rest stay in
+ * the database, unused (see SITE_PAGE_KEYS).
+ */
+/**
+ * A lookup by page key that treats a key the database's enum does not hold
+ * yet as no page (see isUnknownEnumValue): a preview of a new page, running
+ * against the live database before its migration, finds nothing rather than
+ * failing every page that asks.
+ */
+async function byKey<T>(lookup: () => Promise<T | null>): Promise<T | null> {
+  try {
+    return await lookup();
+  } catch (error) {
+    if (isUnknownEnumValue(error)) return null;
+    throw error;
+  }
+}
+
 export async function listAdminPages() {
+  // Filtered here, not in the query: a key in the filter that the database
+  // does not hold yet would fail the whole list.
   const rows = await prisma.page.findMany({ include: adminInclude, orderBy: { key: 'asc' } });
-  return { items: rows.map(toAdminPage), total: rows.length };
+  const shown = rows.filter((row) => isSitePage(row.key));
+  return { items: shown.map(toAdminPage), total: shown.length };
 }
 
 export async function getAdminPage(key: PageKey) {
-  const row = await prisma.page.findUnique({ where: { key }, include: adminInclude });
+  const row = await byKey(() => prisma.page.findUnique({ where: { key }, include: adminInclude }));
   return row ? toAdminPage(row) : null;
 }
 
@@ -93,10 +121,12 @@ export async function updateAdminPage(
   key: PageKey,
   input: PageUpdateInput,
 ): Promise<AdminPage | null> {
-  const page = await prisma.page.findUnique({
-    where: { key },
-    select: { id: true, sections: { select: { id: true } } },
-  });
+  const page = await byKey(() =>
+    prisma.page.findUnique({
+      where: { key },
+      select: { id: true, sections: { select: { id: true } } },
+    }),
+  );
 
   if (!page) return null;
 
@@ -166,17 +196,19 @@ export async function updateAdminPage(
 // --- Public ---
 
 export async function getPublicPage(key: PageKey, locale: DbLocale): Promise<PublicPage | null> {
-  const row = await prisma.page.findUnique({
-    where: { key },
-    include: {
-      translations: { where: { locale }, include: { ogMedia: mediaInclude } },
-      sections: {
-        where: { isVisible: true },
-        orderBy: { order: 'asc' },
-        include: { media: mediaInclude, translations: { where: { locale } } },
+  const row = await byKey(() =>
+    prisma.page.findUnique({
+      where: { key },
+      include: {
+        translations: { where: { locale }, include: { ogMedia: mediaInclude } },
+        sections: {
+          where: { isVisible: true },
+          orderBy: { order: 'asc' },
+          include: { media: mediaInclude, translations: { where: { locale } } },
+        },
       },
-    },
-  });
+    }),
+  );
 
   if (!row) return null;
 

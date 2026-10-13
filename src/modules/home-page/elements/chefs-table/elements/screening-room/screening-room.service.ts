@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { create } from 'zustand';
 
-import { CT_MOTION } from '@/modules/home-page/elements/chefs-table/chefs-table.constants';
+import { SITE_MOTION } from '@/widgets/site-motion/site-motion.constants';
 import { gsap } from '@/shared/lib/motion/gsap';
 import { useReducedMotion } from '@/shared/lib/motion/use-reduced-motion';
 import { getSmoothScroll } from '@/widgets/smooth-scroll/smooth-scroll.service';
@@ -32,10 +32,7 @@ export function openFrom(id: string, from: Element | null) {
   const box = from?.getBoundingClientRect();
   useScreeningStore
     .getState()
-    .open(
-      id,
-      box ? { left: box.left, top: box.top, width: box.width, height: box.height } : null,
-    );
+    .open(id, box ? { left: box.left, top: box.top, width: box.width, height: box.height } : null);
 }
 
 /**
@@ -65,7 +62,7 @@ export function useScreeningPlayer() {
     }
     if (!box || !origin || instant) return;
     const end = box.getBoundingClientRect();
-    const { duration, ease } = CT_MOTION.player;
+    const { duration, ease } = SITE_MOTION.player;
     const tween = gsap.from(box, {
       x: origin.left - end.left,
       y: origin.top - end.top,

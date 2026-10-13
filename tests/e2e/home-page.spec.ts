@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 
+import { contrastFindings } from './contrast';
 import {
   DB_WRITES_ALLOWED,
   DB_WRITES_SKIP_REASON,
@@ -17,168 +18,6 @@ import {
  */
 
 const LOCALES = ['ka', 'en'] as const;
-
-type Finding = {
-  kind: string;
-  element: string;
-  ratio: number;
-  minimum: number;
-};
-
-/**
- * Walks the rendered page and returns every pair below its minimum.
- *
- * Colours are resolved through a 1px canvas, so any CSS colour syntax works
- * (the brandbook mixes in oklab). A background is the element's own fill,
- * composited over its ancestors' until an opaque one is reached.
- */
-async function contrastFindings(page: Page): Promise<Finding[]> {
-  return page.evaluate(() => {
-    type Rgba = [number, number, number, number];
-
-    const canvas = document.createElement('canvas');
-    canvas.width = 1;
-    canvas.height = 1;
-    const context = canvas.getContext('2d', { willReadFrequently: true });
-    if (!context) throw new Error('No 2D canvas context');
-    const probe = document.createElement('div');
-    probe.style.display = 'none';
-    document.body.append(probe);
-
-    const parse = (css: string): Rgba => {
-      probe.style.color = '';
-      probe.style.color = css;
-      context.clearRect(0, 0, 1, 1);
-      context.fillStyle = getComputedStyle(probe).color;
-      context.fillRect(0, 0, 1, 1);
-      const [r = 0, g = 0, b = 0, a = 0] = context.getImageData(0, 0, 1, 1).data;
-      return [r, g, b, a / 255];
-    };
-
-    const over = (top: Rgba, bottom: Rgba): Rgba => {
-      const alpha = top[3] + bottom[3] * (1 - top[3]);
-      if (alpha === 0) return [0, 0, 0, 0];
-      const channel = (i: 0 | 1 | 2) =>
-        (top[i] * top[3] + bottom[i] * bottom[3] * (1 - top[3])) / alpha;
-      return [channel(0), channel(1), channel(2), alpha];
-    };
-
-    const backgroundOf = (element: Element | null): Rgba => {
-      const layers: Rgba[] = [];
-      for (let node = element; node; node = node.parentElement) {
-        const fill = parse(getComputedStyle(node).backgroundColor);
-        if (fill[3] > 0) layers.push(fill);
-        if (fill[3] >= 1) break;
-      }
-      return layers
-        .reverse()
-        .reduce<Rgba>((below, layer) => over(layer, below), [255, 255, 255, 1]);
-    };
-
-    const luminance = ([r, g, b]: Rgba) => {
-      const linear = (c: number) => {
-        const v = c / 255;
-        return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-      };
-      return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
-    };
-
-    const ratio = (a: Rgba, b: Rgba) => {
-      const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
-      return (light + 0.05) / (dark + 0.05);
-    };
-
-    const visible = (element: Element) => {
-      const rect = element.getBoundingClientRect();
-      if (rect.width <= 1 || rect.height <= 1) return false; // includes sr-only
-      const style = getComputedStyle(element);
-      return style.visibility !== 'hidden' && Number(style.opacity) > 0;
-    };
-
-    const describe = (element: Element) => {
-      const id = element.id ? `#${element.id}` : '';
-      const text = (element.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 40);
-      return `${element.tagName.toLowerCase()}${id} "${text}"`;
-    };
-
-    const findings: Array<{ kind: string; element: string; ratio: number; minimum: number }> = [];
-    const check = (kind: string, element: Element, a: Rgba, b: Rgba, minimum: number) => {
-      const value = ratio(over(a, b), b);
-      if (value < minimum) {
-        findings.push({
-          kind,
-          element: describe(element),
-          ratio: Number(value.toFixed(2)),
-          minimum,
-        });
-      }
-    };
-
-    const scopes = [document.querySelector('[data-site]')].filter(
-      (scope): scope is Element => scope !== null,
-    );
-
-    for (const scope of scopes) {
-      const elements = [scope, ...scope.querySelectorAll('*')];
-
-      for (const element of elements) {
-        // Skipped: the form's honeypot (screen-reader-only and never shown),
-        // disabled controls, and pure decoration (`data-decorative`: a
-        // drawing's grid and zone letters, a ring of words repeating a
-        // button's label, a cursor), all of which WCAG exempts.
-        if (element.closest('.sr-only, [disabled], [data-decorative]') || !visible(element)) {
-          continue;
-        }
-        const style = getComputedStyle(element);
-
-        // Text: every element that directly holds visible characters, and
-        // every form control (what a visitor types takes its colour).
-        const holdsText = [...element.childNodes].some(
-          (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
-        );
-        const isControl = element.matches('input:not([type="hidden"]), select, textarea');
-        if (holdsText || isControl) {
-          check('text', element, parse(style.color), backgroundOf(element), 4.5);
-        }
-
-        // Icons carry meaning here (services, contact lines, the camera).
-        if (element.matches('svg')) {
-          check('icon', element, parse(style.color), backgroundOf(element.parentElement), 3);
-        }
-
-        // Form controls: the border that shows where to type, and the
-        // primary-coloured border that marks focus.
-        if (isControl) {
-          const outside = backgroundOf(element.parentElement);
-          check('control border', element, parse(style.borderTopColor), outside, 3);
-          check(
-            'control focus',
-            element,
-            parse(style.getPropertyValue('--color-primary')),
-            outside,
-            3,
-          );
-        }
-
-        // Links and buttons: a fill or outline that identifies them, and the
-        // focus ring drawn around them.
-        if (element.matches('a, button, [tabindex="0"]')) {
-          const outside = backgroundOf(element.parentElement);
-          const fill = parse(style.backgroundColor);
-          if (fill[3] > 0) {
-            check('button fill', element, fill, outside, 3);
-          } else if (parseFloat(style.borderTopWidth) > 0 && style.borderTopStyle !== 'none') {
-            check('button outline', element, parse(style.borderTopColor), outside, 3);
-          }
-          check('focus ring', element, parse(style.getPropertyValue('--color-focus')), outside, 3);
-        }
-      }
-    }
-
-    probe.remove();
-    return findings;
-  });
-}
 
 /** Whether the dashboard holds entries of its own there, in which case no samples show. */
 async function dashboardHas(request: APIRequestContext, list: 'courses' | 'videos') {
@@ -344,7 +183,8 @@ test.describe('split text and screen readers', () => {
     test.skip(testInfo.project.name !== 'chromium', 'Writes the intro; one browser is enough.');
   });
 
-  const SPLIT_TEXT = '[data-ct-headline], [data-read-along]';
+  // The hero's headline, the intro, and every section heading rising into view.
+  const SPLIT_TEXT = '[data-ct-headline], [data-read-along], [data-rise]';
   const INTRO_TEXT = '[data-read-along]';
   const INTRO =
     '<p>STAGER builds better food businesses.</p><p>We work in the kitchen, not only in the office.</p>';
@@ -402,8 +242,8 @@ test.describe('split text and screen readers', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/en');
     const whole = await readOut();
-    // The headline and the intro, at least.
-    expect(whole.length).toBeGreaterThanOrEqual(2);
+    // The headline, the intro and a section heading, at least.
+    expect(whole.length).toBeGreaterThanOrEqual(3);
 
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.goto('/en');
@@ -470,56 +310,58 @@ test('the headings never skip a level', async ({ page }) => {
  * scroll to the bottom and back, nothing a visitor needs may be left hidden.
  * The motion starts things invisible and relies on its script to show them.
  */
-test('with motion on, the page settles fully visible', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'chromium', 'one browser is enough for motion');
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.goto('/en');
-  await expect(page.locator('[data-site]')).toBeVisible();
-  await page.waitForTimeout(4500);
+for (const path of ['/en', '/en/team', '/en/insights']) {
+  test(`with motion on, ${path} settles fully visible`, async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium', 'one browser is enough for motion');
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto(path);
+    await expect(page.locator('[data-site]')).toBeVisible();
+    await page.waitForTimeout(path === '/en' ? 4500 : 2000);
 
-  // Scroll through like a visitor, so every scroll-driven entrance fires,
-  // then back to the top, where the first scene is shown in full again.
-  const height = await page.evaluate(() => document.documentElement.scrollHeight);
-  for (const step of [500, -500]) {
-    for (let y = 0; y <= height; y += 500) {
-      await page.mouse.wheel(0, step);
-      await page.waitForTimeout(100);
-    }
-    await page.waitForTimeout(1500);
-  }
-
-  const hidden = await page.evaluate(() => {
-    const shown = (element: Element) => {
-      for (let node: Element | null = element; node; node = node.parentElement) {
-        const style = getComputedStyle(node);
-        if (style.display === 'none' || style.visibility === 'hidden') return false;
-        if (Number(style.opacity) < 0.99) return false;
+    // Scroll through like a visitor, so every scroll-driven entrance fires,
+    // then back to the top, where the first scene is shown in full again.
+    const height = await page.evaluate(() => document.documentElement.scrollHeight);
+    for (const step of [500, -500]) {
+      for (let y = 0; y <= height; y += 500) {
+        await page.mouse.wheel(0, step);
+        await page.waitForTimeout(100);
       }
-      return true;
-    };
-    return [
-      ...document.querySelectorAll(
-        '[data-site] h1, [data-site] h2, [data-site] h3, [data-testid="inquiry-form"]',
-      ),
-    ]
-      .filter((element) => !element.closest('dialog, [role="dialog"]'))
-      .filter((element) => !shown(element))
-      .map((element) => (element.textContent ?? '').trim().slice(0, 40));
-  });
-  expect(hidden).toEqual([]);
+      await page.waitForTimeout(1500);
+    }
 
-  // Every figure has counted all the way up to its own number.
-  const figures = await page.evaluate(() =>
-    [...document.querySelectorAll<HTMLElement>('[data-count-to]')].map((figure) => {
-      const to = Number(figure.dataset.countTo);
-      const expected = figure.hasAttribute('data-grouped')
-        ? to.toLocaleString('en-US')
-        : String(to);
-      return { shown: figure.textContent, expected };
-    }),
-  );
-  for (const { shown, expected } of figures) expect(shown).toBe(expected);
-});
+    const hidden = await page.evaluate(() => {
+      const shown = (element: Element) => {
+        for (let node: Element | null = element; node; node = node.parentElement) {
+          const style = getComputedStyle(node);
+          if (style.display === 'none' || style.visibility === 'hidden') return false;
+          if (Number(style.opacity) < 0.99) return false;
+        }
+        return true;
+      };
+      return [
+        ...document.querySelectorAll(
+          '[data-site] h1, [data-site] h2, [data-site] h3, [data-testid="inquiry-form"]',
+        ),
+      ]
+        .filter((element) => !element.closest('dialog, [role="dialog"]'))
+        .filter((element) => !shown(element))
+        .map((element) => (element.textContent ?? '').trim().slice(0, 40));
+    });
+    expect(hidden).toEqual([]);
+
+    // Every figure has counted all the way up to its own number.
+    const figures = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>('[data-count-to]')].map((figure) => {
+        const to = Number(figure.dataset.countTo);
+        const expected = figure.hasAttribute('data-grouped')
+          ? to.toLocaleString('en-US')
+          : String(to);
+        return { shown: figure.textContent, expected };
+      }),
+    );
+    for (const { shown, expected } of figures) expect(shown).toBe(expected);
+  });
+}
 
 /**
  * The Academy and the videos: entries the dashboard cannot hold yet are
@@ -636,6 +478,38 @@ test.describe('the tickets, the screening room and the menu', () => {
     await academy.click();
     await expect(menu).toBeHidden();
     await expect(page.locator('#academy-title')).toBeInViewport();
+  });
+
+  test('the menu is a panel under its button, and a click outside closes it', async ({ page }) => {
+    await openHome(page, 'en');
+    const button = page.locator('[data-ct-header] button[aria-haspopup="dialog"]');
+    await button.click();
+    const menu = page.locator('dialog[open]');
+    await expect(menu).toBeVisible();
+
+    // Compact, not the whole screen: under the button, its right edge level
+    // with the button's, narrower than the page on a wide screen.
+    const [panel, trigger, viewport] = await Promise.all([
+      menu.boundingBox(),
+      button.boundingBox(),
+      page.viewportSize(),
+    ]);
+    expect(panel && trigger && viewport).toBeTruthy();
+    expect(panel!.y).toBeGreaterThanOrEqual(trigger!.y + trigger!.height);
+    expect(Math.abs(panel!.x + panel!.width - (trigger!.x + trigger!.width))).toBeLessThan(2);
+    expect(panel!.height).toBeLessThan(viewport!.height);
+    if (viewport!.width >= 768) expect(panel!.width).toBeLessThan(viewport!.width / 2);
+
+    // A click beside it closes it, and the keyboard is back on the button.
+    await page.mouse.click(10, viewport!.height - 10);
+    await expect(menu).toBeHidden();
+    await expect(button).toBeFocused();
+
+    // So does Escape.
+    await button.click();
+    await expect(page.locator('dialog[open]')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('dialog[open]')).toHaveCount(0);
   });
 });
 

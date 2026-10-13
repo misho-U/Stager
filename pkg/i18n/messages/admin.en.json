@@ -155,7 +155,7 @@
       },
       "editPages": {
         "label": "Edit page copy",
-        "description": "Change the words on Home, About and the rest without a deploy."
+        "description": "Change the words on the home page, the Team and Insights pages and the privacy policy, without a deploy."
       },
       "companyStats": {
         "label": "Company in figures",
@@ -196,7 +196,7 @@
     "bothLanguages": "Both languages are required.",
     "title": "Title",
     "body": "Body",
-    "bodyHint": "Basic HTML is allowed; scripts are stripped on save.",
+    "bodyHint": "Plain text works: a blank line starts a new paragraph. Basic HTML is allowed too; scripts are stripped on save.",
     "slug": {
       "label": "Slug",
       "hint": "The end of the page's web address, e.g. the kitchen-renovation in stager.ge/ka/projects/kitchen-renovation. Lowercase Latin letters, numbers and hyphens. Changing it later breaks links people already have.",
@@ -510,18 +510,20 @@
       "PROJECTS": "Projects",
       "TEAM": "Team",
       "INSIGHTS": "Insights",
-      "CONTACT": "Contact"
+      "CONTACT": "Contact",
+      "PRIVACY": "Privacy policy"
     },
     "sections": {
       "hero": "Top banner",
       "intro": "Introduction",
       "what-we-do": "What we do",
       "selected-projects": "Selected projects",
-      "why-stager": "Why STAGER",
+      "why-stager": "Why STAGER (shown under the introduction)",
       "insights": "Latest articles",
       "cta": "Closing call to action",
       "story": "Our story",
-      "approach": "Our approach"
+      "approach": "Our approach",
+      "policy": "Policy text"
     }
   },
   "pageEditor": {

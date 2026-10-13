@@ -226,7 +226,7 @@ async function seedServices() {
 // ---------------------------------------------------------------------------
 
 const PAGES: Array<{
-  key: 'HOME' | 'ABOUT' | 'SERVICES' | 'PROJECTS' | 'TEAM' | 'INSIGHTS' | 'CONTACT';
+  key: 'HOME' | 'ABOUT' | 'SERVICES' | 'PROJECTS' | 'TEAM' | 'INSIGHTS' | 'CONTACT' | 'PRIVACY';
   title: Bilingual<string>;
   sections: Array<{
     key: string;
@@ -356,6 +356,22 @@ const PAGES: Array<{
         copy: {
           KA: { heading: 'დაიწყე პროექტი', subheading: 'მოგვწერეთ და დაგიკავშირდებით.' },
           EN: { heading: 'Start a Project', subheading: 'Tell us what you need and we will reply.' },
+        },
+      },
+    ],
+  },
+  // As the migration 20261011230743_privacy_page creates it, which is how the
+  // live database gets it. Its text stays empty: the client's own policy.
+  {
+    key: 'PRIVACY',
+    title: { KA: 'კონფიდენციალურობის პოლიტიკა', EN: 'Privacy policy' },
+    sections: [
+      {
+        key: 'policy',
+        order: 1,
+        copy: {
+          KA: { heading: 'კონფიდენციალურობის პოლიტიკა' },
+          EN: { heading: 'Privacy policy' },
         },
       },
     ],

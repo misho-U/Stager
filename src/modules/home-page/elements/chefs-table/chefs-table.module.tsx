@@ -17,15 +17,12 @@ import {
   type PublicCourse,
 } from '@/entity/course/model/course.model';
 import type { MediaSummary } from '@/entity/media/model/media.model';
-import type { PublicInsightListItem } from '@/entity/insight/model/insight.model';
+import { INSIGHTS_PATH, type PublicInsightListItem } from '@/entity/insight/model/insight.model';
 import { homeSections, type PublicPage } from '@/entity/page/model/page.model';
 import type { PublicProjectListItem } from '@/entity/project/model/project.model';
 import type { PublicServiceListItem } from '@/entity/service/model/service.model';
 import type { PublicStat } from '@/entity/stat/model/stat.model';
-import type { PublicLayoutData } from '@/entity/site-setting/model/site-setting.model';
 import type { PublicVideo } from '@/entity/video/model/video.model';
-import { ChefsTableMotion } from '@/modules/home-page/elements/chefs-table/elements/chefs-table-motion/chefs-table-motion.module';
-import { CtHeader } from '@/modules/home-page/elements/chefs-table/elements/ct-header/ct-header.module';
 import { ProjectPhotos } from '@/modules/home-page/elements/chefs-table/elements/project-photos/project-photos.module';
 import {
   PlayButton,
@@ -49,6 +46,7 @@ import { isBlankHtml, joinMeta, plainTextLength } from '@/shared/lib/content';
 import { youtubeId } from '@/shared/lib/youtube';
 import type { ListResponse } from '@/shared/types/api';
 import type { DbLocale, VideoKind } from '@/shared/types/enums';
+import { toAppLocale } from '@pkg/i18n/routing';
 import {
   RegisterButton,
   RegistrationDialog,
@@ -56,7 +54,13 @@ import {
 import type { RegistrationCourse } from '@/widgets/course-registration/course-registration.service';
 import { INQUIRY_ANCHOR } from '@/widgets/inquiry-form/inquiry-form.constants';
 import { InquiryForm } from '@/widgets/inquiry-form/inquiry-form.module';
+import { InsightRows } from '@/widgets/insight-list/insight-list.module';
 import { LanguageSwitcher } from '@/widgets/language-switcher/language-switcher.module';
+import type { SiteChrome } from '@/widgets/site-chrome/site-chrome.service';
+import { SiteFooter } from '@/widgets/site-footer/site-footer.module';
+import { SiteHeader } from '@/widgets/site-header/site-header.module';
+import { SiteMotion } from '@/widgets/site-motion/site-motion.module';
+import { SectionIndex, StageDecor } from '@/widgets/stage-decor/stage-decor.module';
 import {
   VideoCaption,
   VideoPoster,
@@ -66,7 +70,8 @@ import {
 type ChefsTableProps = {
   locale: DbLocale;
   content: {
-    layout: PublicLayoutData | null;
+    /** The site's settings, and the pages beside this one worth a link. */
+    chrome: SiteChrome;
     page: PublicPage | null;
     stats: { items: PublicStat[]; sample: boolean };
     projects: ListResponse<PublicProjectListItem>;
@@ -103,15 +108,21 @@ const KIND_ICONS: Record<VideoKind, typeof VideoCameraIcon> = {
   MASTERCLASS: ChefHatIcon,
 };
 
-/** A section's heading, its line of description, and its actions at the right end. */
+/**
+ * A section's number and rule, its heading (rising line by line as it comes
+ * into view), its line of description, and its actions at the right end.
+ */
 function SectionHeader({
   id,
+  index,
   title,
   description,
   badge,
   action,
 }: {
   id: string;
+  /** The section's place among those shown, from 1. */
+  index: number;
   title: string;
   description?: string | null;
   badge?: ReactNode;
@@ -120,15 +131,20 @@ function SectionHeader({
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
       <div className="flex max-w-3xl flex-col gap-4">
+        <SectionIndex index={index} />
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <h2 id={id} className={H2}>
+          <h2 id={id} data-rise className={H2}>
             {title}
           </h2>
           {badge}
         </div>
-        {description ? <p className={DESCRIPTION}>{description}</p> : null}
+        {description ? (
+          <p data-reveal className={DESCRIPTION}>
+            {description}
+          </p>
+        ) : null}
       </div>
-      {action}
+      {action ? <div data-reveal>{action}</div> : null}
     </div>
   );
 }
@@ -169,7 +185,8 @@ function CoursePlaceIcon({ course }: { course: PublicCourse }) {
 export async function ChefsTable({ locale, content }: ChefsTableProps) {
   const t = await getTranslations();
   const format = await getFormatter();
-  const { layout, page, stats, projects, services, insights, courses, videos } = content;
+  const { chrome, page, stats, projects, services, insights, courses, videos } = content;
+  const { layout } = chrome;
   const section = homeSections(page);
 
   // With the page loaded, a missing section was hidden in the dashboard. If
@@ -179,26 +196,44 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
   const showServices = services.items.length > 0 && (section.services !== undefined || pageFailed);
   const showProjects = section.projects !== undefined || pageFailed;
   const showInsights = insights.items.length > 0 && (section.insights !== undefined || pageFailed);
+  // Who STAGER is and why to choose it: one section, the intro and the
+  // reasons together (the client's call), shown if either has copy.
+  const showAbout = section.intro !== undefined || section.why !== undefined;
   const showAcademy = courses.items.length > 0;
   const showVideos = videos.items.length > 0;
 
   const ctaLabel = section.hero?.ctaLabel || t('nav.startProject');
   const toInquiry = `#${INQUIRY_ANCHOR}`;
   const siteName = layout?.siteName || 'STAGER';
+  const privacyHref = chrome.privacyHref;
   const servicesTitle = section.services?.heading || t('nav.services');
   const projectsTitle = section.projects?.heading || t('nav.projects');
   const insightsTitle = section.insights?.heading || t('nav.insights');
   const whyTitle = section.why?.heading || t('home.why');
   const youtubeChannel = layout?.socialLinks.find((link) => link.platform === 'YOUTUBE') ?? null;
 
+  // This page's sections, then the pages beside it (each once it has
+  // something to show), then the form.
   const links = [
     showServices ? { href: '#services', label: t('nav.services') } : null,
     showProjects ? { href: '#projects', label: t('nav.projects') } : null,
     showAcademy ? { href: '#academy', label: t('nav.academy') } : null,
     showVideos ? { href: '#videos', label: t('nav.videos') } : null,
-    showInsights ? { href: '#insights', label: t('nav.insights') } : null,
+    chrome.teamHref ? { href: chrome.teamHref, label: t('nav.team') } : null,
+    chrome.insightsHref ? { href: chrome.insightsHref, label: t('nav.insights') } : null,
     { href: toInquiry, label: ctaLabel },
   ].filter((link) => link !== null);
+
+  // Each section's number, in the order they are shown.
+  const numbered = [
+    showAbout ? 'about' : null,
+    showServices ? 'services' : null,
+    showProjects ? 'projects' : null,
+    showAcademy ? 'academy' : null,
+    showVideos ? 'videos' : null,
+    showInsights ? 'insights' : null,
+  ].filter((id) => id !== null);
+  const indexOf = (id: string) => numbered.indexOf(id) + 1;
 
   // --- How dates, prices and seats read in this language ---
   const date = (
@@ -244,8 +279,8 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
   ];
 
   return (
-    <ChefsTableMotion>
-      <CtHeader
+    <SiteMotion>
+      <SiteHeader
         links={links}
         cta={{ href: toInquiry, label: ctaLabel }}
         brand={
@@ -263,12 +298,10 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
           nextCourse ? (
             <a
               href="#academy"
-              className="bg-surface-raised hover:bg-surface-muted flex flex-col gap-2 rounded-lg p-6 transition-colors"
+              className="bg-surface-muted hover:bg-surface-raised border-line flex flex-col gap-1 rounded-lg border p-4 transition-colors"
             >
               <span className="text-body-sm text-accent font-medium">{t('academy.next')}</span>
-              <span className="text-title font-heading stretch-heading text-balance">
-                {nextCourse.title}
-              </span>
+              <span className="text-body font-heading text-balance">{nextCourse.title}</span>
               <span className="text-body-sm text-ink-muted">
                 {nextCourse.startsAt
                   ? t('academy.starts', { date: longDate(nextCourse.startsAt) })
@@ -285,8 +318,9 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
         <section id="top" data-ct-hero aria-labelledby="hero-heading" className="relative">
           <div
             data-ct-light
-            className="ct-light ct-light-fade px-gutter relative flex min-h-(--ct-hero-h) flex-col justify-end pt-32 pb-16 lg:pb-24"
+            className="ct-light ct-light-fade px-gutter relative isolate flex min-h-(--ct-hero-h) flex-col justify-end pt-32 pb-16 lg:pb-24"
           >
+            <StageDecor floor="right" />
             <div data-hero-copy className="max-w-page mx-auto flex w-full flex-col gap-7">
               <h1
                 id="hero-heading"
@@ -324,43 +358,85 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
           />
         ) : null}
 
-        {/* --- Who STAGER is, lighting up as it is read --- */}
-        {section.intro ? (
-          <section id="about" aria-labelledby="about-title" className="px-gutter py-section">
-            <div className="max-w-page mx-auto grid gap-8 lg:grid-cols-12 lg:gap-10">
-              <h2
-                id="about-title"
-                className="text-title font-heading stretch-heading text-ink-muted lg:col-span-3 lg:pt-2"
-              >
-                {section.intro.heading || t('nav.about')}
-              </h2>
-              <div className="flex flex-col gap-8 lg:col-span-9">
-                {isBlankHtml(section.intro.body) ? (
-                  <PendingSlot
-                    label={t('preview.pendingIntro')}
-                    hint={t('preview.pendingHint')}
-                    className="max-w-xl"
-                  />
-                ) : (
-                  <div data-read-along>
-                    <RichText
-                      html={section.intro.body}
-                      className={cn(
-                        'text-pretty',
-                        introIsStatement ? 'ct-statement' : 'text-title-lg',
-                      )}
-                    />
+        {/* --- Who STAGER is and why to choose it, one section: the heading
+            held at the left on a wide screen while the intro lights up as it
+            is read, then the reasons, one to a line, numbered --- */}
+        {showAbout ? (
+          <section
+            id="about"
+            aria-labelledby="about-title"
+            className="px-gutter py-section relative isolate"
+          >
+            <StageDecor light="left" floor="right" />
+            <div className="max-w-page mx-auto grid gap-10 lg:grid-cols-12 lg:gap-10">
+              <div className="flex flex-col gap-4 self-start lg:sticky lg:top-32 lg:col-span-4">
+                <SectionIndex index={indexOf('about')} />
+                <h2 id="about-title" data-rise className={H2}>
+                  {section.intro ? section.intro.heading || t('nav.about') : whyTitle}
+                </h2>
+              </div>
+              <div className="flex flex-col gap-16 lg:col-span-8 xl:col-span-7 xl:col-start-6">
+                {section.intro ? (
+                  <div className="flex flex-col gap-8">
+                    {isBlankHtml(section.intro.body) ? (
+                      <PendingSlot
+                        label={t('preview.pendingIntro')}
+                        hint={t('preview.pendingHint')}
+                        className="max-w-xl"
+                      />
+                    ) : (
+                      <div data-read-along>
+                        <RichText
+                          html={section.intro.body}
+                          className={cn(
+                            'text-pretty',
+                            introIsStatement ? 'ct-statement' : 'text-title-lg',
+                          )}
+                        />
+                      </div>
+                    )}
+                    {section.intro.media ? (
+                      <div data-reveal>
+                        <MediaFrame
+                          media={section.intro.media}
+                          ratio="16/9"
+                          sizes="(min-width: 1024px) 60vw, 100vw"
+                          missingLabel={t('preview.photoSection')}
+                          className="rounded-lg"
+                        />
+                      </div>
+                    ) : null}
                   </div>
-                )}
-                {section.intro.media ? (
-                  <div data-reveal>
-                    <MediaFrame
-                      media={section.intro.media}
-                      ratio="16/9"
-                      sizes="(min-width: 1024px) 66vw, 100vw"
-                      missingLabel={t('preview.photoSection')}
-                      className="rounded-lg"
-                    />
+                ) : null}
+
+                {section.why ? (
+                  <div id="why" className="flex flex-col gap-6">
+                    {/* Under the intro, the reasons have a heading of their
+                        own; alone, the section's heading is theirs. */}
+                    {section.intro ? (
+                      <h3
+                        data-rise
+                        className="text-title font-heading stretch-heading text-balance"
+                      >
+                        {whyTitle}
+                      </h3>
+                    ) : null}
+                    {section.why.subheading ? (
+                      <p data-reveal className="text-body-lg text-ink-muted text-pretty">
+                        {section.why.subheading}
+                      </p>
+                    ) : null}
+                    {isBlankHtml(section.why.body) ? (
+                      <PendingSlot
+                        label={t('preview.pendingWhy')}
+                        hint={t('preview.pendingHint')}
+                        className="max-w-xl"
+                      />
+                    ) : (
+                      <div data-reveal-items>
+                        <RichText html={section.why.body} className="ct-reasons" />
+                      </div>
+                    )}
                   </div>
                 ) : null}
               </div>
@@ -371,15 +447,19 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
         {/* --- Services: the journey from an idea to a working business, one
             stage after another along a line the page draws as it is read --- */}
         {showServices ? (
-          <section id="services" aria-labelledby="services-title" className="px-gutter py-section">
+          <section
+            id="services"
+            aria-labelledby="services-title"
+            className="px-gutter py-section relative isolate"
+          >
+            <StageDecor light="right" />
             <div className="max-w-page mx-auto flex flex-col gap-12 lg:gap-16">
-              <div data-reveal>
-                <SectionHeader
-                  id="services-title"
-                  title={servicesTitle}
-                  description={section.services?.subheading}
-                />
-              </div>
+              <SectionHeader
+                id="services-title"
+                index={indexOf('services')}
+                title={servicesTitle}
+                description={section.services?.subheading}
+              />
               <ol
                 data-journey
                 data-row={services.items.length <= JOURNEY_ROW_MAX ? '' : undefined}
@@ -420,13 +500,12 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
         {showProjects ? (
           <section id="projects" aria-labelledby="projects-title" className="px-gutter py-section">
             <div className="max-w-page mx-auto flex flex-col gap-12">
-              <div data-reveal>
-                <SectionHeader
-                  id="projects-title"
-                  title={projectsTitle}
-                  description={section.projects?.subheading}
-                />
-              </div>
+              <SectionHeader
+                id="projects-title"
+                index={indexOf('projects')}
+                title={projectsTitle}
+                description={section.projects?.subheading}
+              />
               {projects.items.length === 0 ? (
                 <p className="text-body-lg text-ink-muted">{t('home.noProjects')}</p>
               ) : (
@@ -517,14 +596,13 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
             className="ct-light ct-light-top px-gutter py-section relative"
           >
             <div className="max-w-page mx-auto flex flex-col gap-10">
-              <div data-reveal>
-                <SectionHeader
-                  id="academy-title"
-                  title={t('academy.title')}
-                  description={t('academy.intro')}
-                  badge={courses.sample ? sampleBadge : null}
-                />
-              </div>
+              <SectionHeader
+                id="academy-title"
+                index={indexOf('academy')}
+                title={t('academy.title')}
+                description={t('academy.intro')}
+                badge={courses.sample ? sampleBadge : null}
+              />
               <div data-reveal>
                 <TicketGrid
                   tabs={tabs}
@@ -617,27 +695,26 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
         {showVideos && newest ? (
           <section id="videos" aria-labelledby="videos-title" className="px-gutter py-section">
             <div className="max-w-page mx-auto flex flex-col gap-12">
-              <div data-reveal>
-                <SectionHeader
-                  id="videos-title"
-                  title={t('videos.title')}
-                  description={t('videos.intro')}
-                  badge={videos.sample ? sampleBadge : null}
-                  action={
-                    youtubeChannel ? (
-                      <a
-                        href={youtubeChannel.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={BUTTON_OUTLINE}
-                      >
-                        {t('videos.allOnYouTube')}
-                        <ArrowUpRightIcon aria-hidden />
-                      </a>
-                    ) : null
-                  }
-                />
-              </div>
+              <SectionHeader
+                id="videos-title"
+                index={indexOf('videos')}
+                title={t('videos.title')}
+                description={t('videos.intro')}
+                badge={videos.sample ? sampleBadge : null}
+                action={
+                  youtubeChannel ? (
+                    <a
+                      href={youtubeChannel.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={BUTTON_OUTLINE}
+                    >
+                      {t('videos.allOnYouTube')}
+                      <ArrowUpRightIcon aria-hidden />
+                    </a>
+                  ) : null
+                }
+              />
 
               {/* The newest, large: its title on the frame on a phone, where
                   room is short, and beside it, from the frame's top, on a
@@ -737,79 +814,36 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
           </section>
         ) : null}
 
-        {/* --- Why STAGER: the heading on the left, the reasons on the right,
-            one to a line, numbered --- */}
-        {section.why ? (
-          <section id="why" aria-labelledby="why-title" className="px-gutter py-section">
-            <div className="max-w-page mx-auto grid gap-10 lg:grid-cols-12 lg:gap-10">
-              <div data-reveal className="flex flex-col gap-4 lg:col-span-4">
-                <h2 id="why-title" className={H2}>
-                  {whyTitle}
-                </h2>
-                {section.why.subheading ? (
-                  <p className="text-body-lg text-ink-muted text-pretty">
-                    {section.why.subheading}
-                  </p>
-                ) : null}
-              </div>
-              <div className="lg:col-span-8 lg:col-start-5 xl:col-span-7 xl:col-start-6">
-                {isBlankHtml(section.why.body) ? (
-                  <PendingSlot
-                    label={t('preview.pendingWhy')}
-                    hint={t('preview.pendingHint')}
-                    className="max-w-xl"
-                  />
-                ) : (
-                  <div data-reveal-items>
-                    <RichText html={section.why.body} className="ct-reasons" />
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
-        ) : null}
-
-        {/* --- Insights --- */}
+        {/* --- Insights: the latest few, each opening its own page --- */}
         {showInsights ? (
-          <section id="insights" aria-labelledby="insights-title" className="px-gutter py-section">
+          <section
+            id="insights"
+            aria-labelledby="insights-title"
+            className="px-gutter py-section relative isolate"
+          >
+            <StageDecor light="left" />
             <div className="max-w-page mx-auto flex flex-col gap-12">
-              <div data-reveal>
-                <SectionHeader
-                  id="insights-title"
-                  title={insightsTitle}
-                  description={section.insights?.subheading}
-                />
-              </div>
-              <ul className="border-line border-t">
-                {insights.items.map((insight) => (
-                  <li
-                    key={insight.id}
-                    data-reveal
-                    className="ct-spot border-line group grid gap-3 border-b py-8 lg:grid-cols-12 lg:items-center lg:gap-10"
+              <SectionHeader
+                id="insights-title"
+                index={indexOf('insights')}
+                title={insightsTitle}
+                description={section.insights?.subheading}
+                action={
+                  <a
+                    href={`/${toAppLocale(locale)}${INSIGHTS_PATH}`}
+                    data-testid="all-insights"
+                    className={BUTTON_OUTLINE}
                   >
-                    <p className="text-body-sm text-ink-muted lg:col-span-3">
-                      {joinMeta([
-                        insight.category?.name,
-                        insight.publishedAt ? longDate(insight.publishedAt) : null,
-                      ])}
-                    </p>
-                    <div className="flex flex-col gap-2 lg:col-span-8">
-                      <h3 className="text-title font-heading stretch-heading text-balance">
-                        {insight.title}
-                      </h3>
-                      {insight.excerpt ? (
-                        <p className="text-body text-ink-muted max-w-3xl text-pretty">
-                          {insight.excerpt}
-                        </p>
-                      ) : null}
-                    </div>
-                    <ArrowRightIcon
-                      aria-hidden
-                      className="text-accent ease-brand text-title hidden transition-transform duration-300 group-hover:translate-x-2 lg:col-span-1 lg:block lg:justify-self-end"
-                    />
-                  </li>
-                ))}
-              </ul>
+                    {t('insights.all')}
+                    <ArrowRightIcon aria-hidden />
+                  </a>
+                }
+              />
+              <InsightRows
+                items={insights.items}
+                base={`/${toAppLocale(locale)}`}
+                headingLevel="h3"
+              />
             </div>
           </section>
         ) : null}
@@ -844,63 +878,26 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
             </div>
             <div className="lg:col-span-7">
               <div className="bg-surface-raised rounded-lg p-6 sm:p-10">
-                <InquiryForm locale={locale} submitLabel={ctaLabel} layout="two-column" />
+                <InquiryForm
+                  locale={locale}
+                  submitLabel={ctaLabel}
+                  layout="two-column"
+                  privacyHref={privacyHref}
+                />
               </div>
             </div>
           </div>
         </section>
       </main>
 
-      <footer className="px-gutter pt-section pb-6">
-        <div className="max-w-page @container mx-auto flex flex-col gap-12 overflow-hidden">
-          <div className="grid gap-10 md:grid-cols-12">
-            <div className="flex flex-col gap-3 md:col-span-5">
-              <Wordmark testId="footer-wordmark" className="text-title-sm" />
-              {layout?.tagline ? (
-                <p className="text-body text-ink-muted max-w-sm text-pretty">{layout.tagline}</p>
-              ) : null}
-            </div>
-            <nav aria-label={t('home.sections')} className="md:col-span-4">
-              <ul className="grid grid-cols-2 gap-x-6">
-                {links.map((link) => (
-                  <li key={link.href}>
-                    <a
-                      href={link.href}
-                      className="text-body text-ink-muted hover:text-ink inline-flex min-h-11 items-center transition-colors"
-                    >
-                      {link.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-            <div className="flex flex-col gap-4 md:col-span-3">
-              <ContactDetails
-                email={layout?.contactEmail ?? null}
-                phone={layout?.phone ?? null}
-                address={null}
-              />
-              <SocialLinks links={layout?.socialLinks ?? []} />
-            </div>
-          </div>
-          <p
-            aria-hidden
-            data-decorative
-            data-ct-footer-mark
-            className="ct-footer-mark font-hero stretch-hero text-center whitespace-nowrap select-none"
-          >
-            STAGER
-          </p>
-          <div className="border-line text-body-sm text-ink-muted flex flex-col gap-1 border-t pt-5 sm:flex-row sm:justify-between">
-            <p>
-              © {new Date().getFullYear()} {siteName}
-            </p>
-            <p>{t('home.rights')}</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter
+        layout={layout}
+        links={links}
+        privacy={privacyHref ? { href: privacyHref, label: t('privacy.title') } : null}
+        labels={{ sections: t('home.sections'), rights: t('home.rights') }}
+      />
 
-      <RegistrationDialog locale={locale} />
+      <RegistrationDialog locale={locale} privacyHref={privacyHref} />
       <ScreeningPlayer
         videos={videos.items.map((video) => ({
           id: video.id,
@@ -911,6 +908,6 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
         }))}
         labels={{ close: t('videos.close'), unavailable: t('videos.unavailable') }}
       />
-    </ChefsTableMotion>
+    </SiteMotion>
   );
 }

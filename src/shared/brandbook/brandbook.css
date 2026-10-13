@@ -9,7 +9,8 @@
      - Brand palette           --color-brand-*   (hex only: the email needs hex)
      - Which colour does what  --color-surface, --color-ink, --color-line, …
      - Status colours          --color-success, --color-warning, --color-danger
-     - Typeface                --font-sans, --font-display
+     - Typeface                --font-sans, --font-display, --font-sans-ka,
+                               --font-brand
      - Type scale              --text-*
      - Letter-spacing          --tracking-*
      - Spacing, radii, shadow  --spacing-*, --radius-*, --shadow-*
@@ -103,13 +104,27 @@
   --color-danger-on-dark: #f3b4b0; /* the same red, readable on a dark ground */
 
   /* --- Typeface ---
-     Noto Sans Georgian covers Georgian and Latin in one design, so headlines
-     keep the same voice in both languages instead of diverging at the locale
-     switch. The files are declared at the bottom of this file. The display
-     slot is separate so a headline face can differ later without touching
-     body text. */
-  --font-sans: 'Noto Sans Georgian', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Noto Sans Georgian', ui-sans-serif, system-ui, sans-serif;
+     Georgian letters are BPG Nino Mtavruli, the client's choice (October
+     2026): capital-style letters only, so every Georgian word reads in
+     capitals. Everything else (Latin, digits, punctuation) is Noto Sans
+     Georgian. The two are one stack, not one family: the Mtavruli faces
+     claim the Georgian letters alone (their unicode-range), so a Latin
+     character never reaches them and falls to Noto. The files are declared
+     at the bottom of this file. The display slot is separate so a headline
+     face can differ later without touching body text. */
+  --font-sans: 'BPG Nino Mtavruli', 'Noto Sans Georgian', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'BPG Nino Mtavruli', 'Noto Sans Georgian', ui-sans-serif, system-ui, sans-serif;
+  /* Georgian pages of the site (site.css, [data-site]:lang(ka)): Latin and
+     digits are Noto's own letters, raised to the line BPG Nino Mtavruli
+     draws its Georgian on ('Stager Latin', below). BPG sets its letters 5%
+     of the size above the baseline, so with Noto as it is "რატომ STAGER"
+     read as two lines out of step. The letters are Noto's either way: the
+     English pages keep Noto untouched. */
+  --font-sans-ka:
+    'BPG Nino Mtavruli', 'Stager Latin', 'Noto Sans Georgian', ui-sans-serif, system-ui, sans-serif;
+  /* The STAGER wordmark: one face in both languages, whatever the page's
+     text is set in. */
+  --font-brand: 'Noto Sans Georgian', ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
 
   /* How heavy the two headline levels are: the hero headline, and section
@@ -501,19 +516,27 @@
 /* ---------------------------------------------------------------------------
    Typeface files — edit only when swapping the typeface
    ---------------------------------------------------------------------------
+   BPG Nino Mtavruli (BPG InfoTech), self-hosted, for the Georgian letters:
+   two static faces, regular and bold (fonts/BPG-NINO-MTAVRULI.txt says where
+   they come from and what their licence is). Each claims a range of weights,
+   so a weight between them picks a face instead of a faked bold: up to 549
+   is regular (text, and the site's Georgian headings at 500), from 550 bold
+   (strong, semibold). Their unicode-range is exactly the letters the files
+   hold (U+10D0-10F6 and the paragraph mark U+10FB); a rarer Georgian
+   character falls through to Noto's Georgian file below.
+
    Noto Sans Georgian, self-hosted (SIL Open Font License 1.1, see
-   fonts/OFL.txt). Variable in weight (100-900) and width (62.5%-100%), so
-   one file per script covers every weight and every width.
+   fonts/OFL.txt), for everything else. Variable in weight (100-900) and
+   width (62.5%-100%), so one file per script covers every weight and width.
 
-   The files are split by script exactly as Google serves them, each with its
-   own unicode-range, so the browser downloads a file only when the page
-   contains characters from it. The dashboard, which has no Georgian text,
-   never loads the Georgian file; no page loads latin-ext until an accented
-   name appears. (Both public locales do load Georgian: the language
-   switcher's "ქარ" label is Georgian on every page.)
+   The files are split by script, each with its own unicode-range, so the
+   browser downloads a file only when the page contains characters from it:
+   no page loads latin-ext until an accented name appears. (Both public
+   locales load the Mtavruli regular: the language switcher's "ქარ" label is
+   Georgian on every page.)
 
-   All three faces share ONE family name, so there is nothing for a stray
-   fallback to slot in between. (next/font generated a "<name> Fallback" per
+   Nothing sits between the two families or ahead of them: no generated
+   fallback, no local() font. (next/font generated a "<name> Fallback" per
    face — local(Arial) with no unicode-range — which is how Latin text once
    rendered in Arial.)
 
@@ -524,7 +547,57 @@
    fallback is the worst of all.
 --------------------------------------------------------------------------- */
 
-/* Georgian — the primary locale. */
+/* Georgian letters — the primary locale. */
+@font-face {
+  font-family: 'BPG Nino Mtavruli';
+  font-style: normal;
+  font-weight: 100 549;
+  font-display: swap;
+  src: url('./fonts/bpg-nino-mtavruli.woff2') format('woff2');
+  unicode-range: U+10D0-10F6, U+10FB;
+}
+
+@font-face {
+  font-family: 'BPG Nino Mtavruli';
+  font-style: normal;
+  font-weight: 550 900;
+  font-display: swap;
+  src: url('./fonts/bpg-nino-mtavruli-bold.woff2') format('woff2');
+  unicode-range: U+10D0-10F6, U+10FB;
+}
+
+/* 'Stager Latin': Noto Sans Georgian's Latin files with every outline raised
+   49 units (0.049 em), onto the line BPG Nino Mtavruli's Georgian starts
+   from, and nothing else changed: same letters, weights, widths and line
+   metrics. Only Georgian pages ask for it (--font-sans-ka). SIL OFL 1.1
+   like the original (fonts/OFL.txt); how it was made, and how to make it
+   again from new Noto files, is in fonts/STAGER-LATIN.txt. */
+@font-face {
+  font-family: 'Stager Latin';
+  font-style: normal;
+  font-weight: 100 900;
+  font-stretch: 62.5% 100%;
+  font-display: swap;
+  src: url('./fonts/stager-latin-raised.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Stager Latin';
+  font-style: normal;
+  font-weight: 100 900;
+  font-stretch: 62.5% 100%;
+  font-display: swap;
+  src: url('./fonts/stager-latin-ext-raised.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+/* Georgian beyond those letters (Mtavruli capitals, old scripts): rare. */
 @font-face {
   font-family: 'Noto Sans Georgian';
   font-style: normal;

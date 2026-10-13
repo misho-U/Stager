@@ -66,8 +66,32 @@ function imageAllowed(src: string | undefined, hosts: readonly string[]): boolea
   }
 }
 
+/** Any HTML tag, opening or closing: "<p>", "</strong>", "<br/>". */
+const HAS_TAG = /<\/?[a-z][a-z0-9]*[\s/>]/i;
+
+const escapeText = (text: string) =>
+  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+/**
+ * Text written without any markup, typed in the dashboard or pasted from a
+ * document, as paragraphs: a blank line starts a new one, a single line
+ * break stays a line break. HTML ignores line breaks, so such text used to
+ * reach the page as one unbroken run. Text with any tag in it is the
+ * author's own markup and is left as it is.
+ */
+export function plainTextToHtml(text: string): string {
+  return text
+    .replace(/\r\n?/g, '\n')
+    .split(/\n[ \t]*\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+    .map((paragraph) => `<p>${escapeText(paragraph).replace(/[ \t]*\n[ \t]*/g, '<br>')}</p>`)
+    .join('');
+}
+
 export function sanitizeRichTextWith(html: string, policy: RichTextPolicy): string {
-  return sanitizeHtml(html, {
+  const source = HAS_TAG.test(html) ? html : plainTextToHtml(html);
+  return sanitizeHtml(source, {
     allowedTags: ALLOWED_TAGS,
     allowedAttributes: ALLOWED_ATTRIBUTES,
     // javascript:, vbscript:, data: and every other scheme are refused in
