@@ -101,7 +101,8 @@ export const config = {
     // dashboard page with no CSP, and this app serves no such files itself
     // (images come from the blob store, fonts from _next/static).
     // /monitoring is Sentry's tunnel (next.config.ts): browser error reports on
-    // their way out, which need neither a locale nor a session.
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|monitoring).*)',
+    // their way out, which need neither a locale nor a session. /llms.txt is
+    // the site for AI assistants (app/llms.txt), served by name like robots.txt.
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|llms.txt|monitoring).*)',
   ],
 };

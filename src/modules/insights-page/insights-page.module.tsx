@@ -1,13 +1,17 @@
 import { getFormatter, getTranslations } from 'next-intl/server';
 
 import { INSIGHTS_PATH, insightPath } from '@/entity/insight/model/insight.model';
-import { pageIntro } from '@/entity/page/model/page.model';
-import { loadInsightsPageData } from '@/modules/insights-page/insights-page.service';
+import { pageIntro, pageName } from '@/entity/page/model/page.model';
+import {
+  insightsStructuredData,
+  loadInsightsPageData,
+} from '@/modules/insights-page/insights-page.service';
 import { MediaFrame } from '@/shared/components/media-frame';
 import { joinMeta } from '@/shared/lib/content';
 import type { DbLocale } from '@/shared/types/enums';
 import { toAppLocale } from '@pkg/i18n/routing';
 import { InsightRows } from '@/widgets/insight-list/insight-list.module';
+import { JsonLd } from '@/widgets/seo/seo.module';
 import { PageHero, SubpageShell } from '@/widgets/site-chrome/site-chrome.module';
 
 type InsightsPageModuleProps = { locale: DbLocale };
@@ -19,14 +23,15 @@ type InsightsPageModuleProps = { locale: DbLocale };
  * Insights.
  */
 export async function InsightsPageModule({ locale }: InsightsPageModuleProps) {
-  const [{ chrome, page, insights, readFailed }, t, format] = await Promise.all([
+  const [content, t, format] = await Promise.all([
     loadInsightsPageData(locale),
     getTranslations(),
     getFormatter(),
   ]);
+  const { chrome, page, insights, readFailed } = content;
   const base = `/${toAppLocale(locale)}`;
   const intro = pageIntro(page);
-  const title = intro.heading || page?.title || t('nav.insights');
+  const title = pageName(page, t('nav.insights'));
   const [lead, ...rest] = insights;
   const featured = lead?.cover ? lead : null;
   const rows = featured ? rest : insights;
@@ -38,6 +43,12 @@ export async function InsightsPageModule({ locale }: InsightsPageModuleProps) {
       readFailed={readFailed}
       current={`${base}${INSIGHTS_PATH}`}
     >
+      <JsonLd
+        data={insightsStructuredData(content, locale, {
+          home: t('nav.home'),
+          insights: t('nav.insights'),
+        })}
+      />
       <PageHero title={title} lead={intro.lead} testId="insights-title" />
       <div className="px-gutter pb-section">
         <div className="max-w-page mx-auto flex flex-col gap-16">

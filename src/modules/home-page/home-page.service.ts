@@ -1,3 +1,6 @@
+import type { Metadata } from 'next';
+import { cache } from 'react';
+
 import type { PublicCourse } from '@/entity/course/model/course.model';
 import type { PublicInsightListItem } from '@/entity/insight/model/insight.model';
 import {
@@ -13,9 +16,20 @@ import type { PublicStat } from '@/entity/stat/model/stat.model';
 import type { PublicVideo } from '@/entity/video/model/video.model';
 import type { ListResponse } from '@/shared/types/api';
 import type { DbLocale } from '@/shared/types/enums';
-import { collectionTag, detailTag, PUBLIC_REVALIDATE_SECONDS } from '@pkg/cache/tags';
+import { collectionTag, PUBLIC_REVALIDATE_SECONDS } from '@pkg/cache/tags';
 import { serverFetch } from '@pkg/http/fetcher';
-import { loadSiteChrome, readPublic as read } from '@/widgets/site-chrome/site-chrome.service';
+import { descriptionFor, pageMetadata, siteSeo } from '@/widgets/seo/seo.service';
+import {
+  organizationNode,
+  structuredData,
+  websiteNode,
+  type JsonLdNode,
+} from '@/widgets/seo/seo.utils';
+import {
+  loadSiteChrome,
+  readPage,
+  readPublic as read,
+} from '@/widgets/site-chrome/site-chrome.service';
 
 /**
  * Server-side data loading for the home page.
@@ -48,20 +62,17 @@ function withGalleries(list: CachedProjectList): ListResponse<PublicProjectListI
   };
 }
 
-export async function loadHomePageData(locale: DbLocale) {
+/**
+ * Once per request (React `cache`): the page and its metadata read the same
+ * data, and a failed read is logged once.
+ */
+export const loadHomePageData = cache(async (locale: DbLocale) => {
   const [chrome, page, stats, projects, services, insights, courses, videos] = await Promise.all([
     // The site's settings, and which pages beside this one have anything
     // to show (the menu and footer link only to those).
     loadSiteChrome(locale),
 
-    read<PublicPage | null>(
-      'page:HOME',
-      serverFetch<PublicPage>(`/api/public/pages/HOME?locale=${locale}`, {
-        tags: [collectionTag('page'), detailTag('page', 'HOME')],
-        revalidate: PUBLIC_REVALIDATE_SECONDS,
-      }),
-      null,
-    ),
+    read<PublicPage | null>('page:HOME', readPage('HOME', locale), null),
 
     read<ListResponse<PublicStat>>(
       'stats',
@@ -151,6 +162,47 @@ export async function loadHomePageData(locale: DbLocale) {
       courses.failed ||
       videos.failed,
   };
-}
+});
 
 export type HomePageData = Awaited<ReturnType<typeof loadHomePageData>>;
+
+/**
+ * The home page's title, description and share card: its own search fields
+ * (Page copy → Home), else the site's (Site settings).
+ */
+export async function loadHomePageMetadata(locale: DbLocale): Promise<Metadata> {
+  const { chrome, page } = await loadHomePageData(locale);
+  const site = siteSeo(chrome.layout);
+  return pageMetadata({
+    locale,
+    path: '',
+    site,
+    title: page?.metaTitle?.trim() || site.title,
+    description: descriptionFor([page?.metaDescription], site),
+    image: page?.ogImageUrl ? { url: page.ogImageUrl } : null,
+    hasContent: true,
+  });
+}
+
+/**
+ * Who the company is, what it offers and the site itself, for search
+ * engines and AI answers. Real services only: the samples the page shows
+ * for empty sections never reach it.
+ */
+export function homeStructuredData(
+  { chrome, services }: HomePageData,
+  locale: DbLocale,
+  servicesName: string,
+): JsonLdNode {
+  const site = siteSeo(chrome.layout);
+  return structuredData([
+    organizationNode({
+      site,
+      layout: chrome.layout,
+      locale,
+      services: services.items,
+      servicesName,
+    }),
+    websiteNode(site, locale),
+  ]);
+}

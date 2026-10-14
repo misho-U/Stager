@@ -46,6 +46,13 @@ const nextConfig: NextConfig = {
   // Do not advertise the framework version.
   poweredByHeader: false,
 
+  // Every visitor gets the title, description and canonical in <head>.
+  // Next otherwise streams them into <body> for anyone not on its list of
+  // HTML-only bots, and that list leaves out the AI crawlers (GPTBot,
+  // ClaudeBot, PerplexityBot), which read no script. The pages wait for the
+  // same data their metadata reads (one memoized fetch), so nothing is slower.
+  htmlLimitedBots: /.*/,
+
   images: {
     // Modern formats first; next/image negotiates per browser.
     formats: ['image/avif', 'image/webp'],

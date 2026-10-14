@@ -1,11 +1,16 @@
 import { getTranslations } from 'next-intl/server';
 
 import { PRIVACY_PATH, privacyPolicy } from '@/entity/page/model/page.model';
-import { loadPrivacyPageData } from '@/modules/privacy-page/privacy-page.service';
+import {
+  loadPrivacyPageData,
+  privacyStructuredData,
+  privacyTitle,
+} from '@/modules/privacy-page/privacy-page.service';
 import { PendingSlot } from '@/shared/components/pending-slot';
 import { RichText } from '@/shared/components/rich-text';
 import type { DbLocale } from '@/shared/types/enums';
 import { toAppLocale } from '@pkg/i18n/routing';
+import { JsonLd } from '@/widgets/seo/seo.module';
 import { PageHero, SubpageShell } from '@/widgets/site-chrome/site-chrome.module';
 
 type PrivacyPageModuleProps = { locale: DbLocale };
@@ -22,7 +27,7 @@ export async function PrivacyPageModule({ locale }: PrivacyPageModuleProps) {
     getTranslations(),
   ]);
   const policy = privacyPolicy(page);
-  const title = policy?.heading || page?.title || t('privacy.title');
+  const title = privacyTitle(page, t('privacy.title'));
 
   return (
     <SubpageShell
@@ -31,6 +36,12 @@ export async function PrivacyPageModule({ locale }: PrivacyPageModuleProps) {
       readFailed={readFailed}
       current={`/${toAppLocale(locale)}${PRIVACY_PATH}`}
     >
+      <JsonLd
+        data={privacyStructuredData(page, locale, {
+          home: t('nav.home'),
+          privacy: t('privacy.title'),
+        })}
+      />
       <PageHero title={title} testId="privacy-title" />
       <div className="px-gutter pb-section">
         <div className="max-w-page mx-auto">

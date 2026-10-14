@@ -41,6 +41,19 @@ export function plainTextLength(html: string | null | undefined): number {
 }
 
 /**
+ * Plain text cut to `max` characters at a word, with an ellipsis where it was
+ * cut: a search description or a summary taken from a longer field. Line
+ * breaks and runs of spaces read as one space.
+ */
+export function shortText(text: string | null | undefined, max: number): string {
+  const flat = (text ?? '').replace(/\s+/g, ' ').trim();
+  if (flat.length <= max) return flat;
+  const cut = flat.slice(0, max - 1);
+  const atWord = cut.lastIndexOf(' ');
+  return `${(atWord > max / 2 ? cut.slice(0, atWord) : cut).replace(/[\s,.;:–—-]+$/, '')}…`;
+}
+
+/**
  * Joins the non-empty parts of a metadata line. The separator is a comma, not a
  * middle dot: one line of project metadata reads as a phrase ("Client name,
  * Tbilisi, 2025"), and dots between every part are a template tell.

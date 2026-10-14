@@ -1,12 +1,17 @@
 import { LinkedinLogoIcon } from '@phosphor-icons/react/dist/ssr/LinkedinLogo';
 import { getTranslations } from 'next-intl/server';
 
-import { pageIntro } from '@/entity/page/model/page.model';
+import { pageIntro, pageName } from '@/entity/page/model/page.model';
 import { TEAM_PATH } from '@/entity/team-member/model/team-member.model';
-import { initialsOf, loadTeamPageData } from '@/modules/team-page/team-page.service';
+import {
+  initialsOf,
+  loadTeamPageData,
+  teamStructuredData,
+} from '@/modules/team-page/team-page.service';
 import { MediaFrame } from '@/shared/components/media-frame';
 import type { DbLocale } from '@/shared/types/enums';
 import { toAppLocale } from '@pkg/i18n/routing';
+import { JsonLd } from '@/widgets/seo/seo.module';
 import { PageHero, SubpageShell } from '@/widgets/site-chrome/site-chrome.module';
 
 type TeamPageModuleProps = { locale: DbLocale };
@@ -17,12 +22,10 @@ type TeamPageModuleProps = { locale: DbLocale };
  * and the line under it are written under Page copy → Team.
  */
 export async function TeamPageModule({ locale }: TeamPageModuleProps) {
-  const [{ chrome, page, members, readFailed }, t] = await Promise.all([
-    loadTeamPageData(locale),
-    getTranslations(),
-  ]);
+  const [content, t] = await Promise.all([loadTeamPageData(locale), getTranslations()]);
+  const { chrome, page, members, readFailed } = content;
   const intro = pageIntro(page);
-  const title = intro.heading || page?.title || t('nav.team');
+  const title = pageName(page, t('nav.team'));
 
   return (
     <SubpageShell
@@ -31,6 +34,9 @@ export async function TeamPageModule({ locale }: TeamPageModuleProps) {
       readFailed={readFailed}
       current={`/${toAppLocale(locale)}${TEAM_PATH}`}
     >
+      <JsonLd
+        data={teamStructuredData(content, locale, { home: t('nav.home'), team: t('nav.team') })}
+      />
       <PageHero title={title} lead={intro.lead} testId="team-title" />
       <div className="px-gutter pb-section">
         <div className="max-w-page mx-auto">

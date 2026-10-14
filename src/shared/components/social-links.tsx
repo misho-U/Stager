@@ -31,6 +31,11 @@ const NAMES: Record<SocialPlatform, string> = {
 
 type SocialLink = { id: string; platform: SocialPlatform; url: string; label: string | null };
 
+/** A link's name: the one written for it in the dashboard, else its platform's. */
+export function socialName(link: Pick<SocialLink, 'platform' | 'label'>): string {
+  return link.label ?? NAMES[link.platform];
+}
+
 /**
  * The active social links from the dashboard. Renders nothing when there are
  * none — the seeded placeholders are inactive, so nothing broken shows.
@@ -50,7 +55,7 @@ export function SocialLinks({
     <ul className={cn('flex flex-wrap items-center gap-x-5 gap-y-2', className)}>
       {links.map((link) => {
         const Icon = ICONS[link.platform];
-        const name = link.label ?? NAMES[link.platform];
+        const name = socialName(link);
         return (
           <li key={link.id}>
             <a

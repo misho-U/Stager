@@ -3,13 +3,17 @@ import { getFormatter, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
 import { INSIGHTS_PATH, insightPath } from '@/entity/insight/model/insight.model';
-import { loadInsightPageData } from '@/modules/insight-page/insight-page.service';
+import {
+  insightStructuredData,
+  loadInsightPageData,
+} from '@/modules/insight-page/insight-page.service';
 import { MediaFrame } from '@/shared/components/media-frame';
 import { RichText } from '@/shared/components/rich-text';
 import { isBlankHtml, joinMeta } from '@/shared/lib/content';
 import type { DbLocale } from '@/shared/types/enums';
 import { toAppLocale } from '@pkg/i18n/routing';
 import { InsightRows } from '@/widgets/insight-list/insight-list.module';
+import { JsonLd } from '@/widgets/seo/seo.module';
 import { PageHero, SubpageShell } from '@/widgets/site-chrome/site-chrome.module';
 
 type InsightPageModuleProps = { locale: DbLocale; slug: string };
@@ -20,12 +24,17 @@ type InsightPageModuleProps = { locale: DbLocale; slug: string };
  * more to read. An address with no published article is a 404.
  */
 export async function InsightPageModule({ locale, slug }: InsightPageModuleProps) {
-  const [{ chrome, article, missing, more, readFailed }, t, format] = await Promise.all([
+  const [content, t, format] = await Promise.all([
     loadInsightPageData(locale, slug),
     getTranslations(),
     getFormatter(),
   ]);
+  const { chrome, article, missing, more, readFailed } = content;
   if (missing) notFound();
+  const structured = insightStructuredData(content, locale, slug, {
+    home: t('nav.home'),
+    insights: t('nav.insights'),
+  });
 
   const base = `/${toAppLocale(locale)}`;
   const allArticles = `${base}${INSIGHTS_PATH}`;
@@ -37,6 +46,7 @@ export async function InsightPageModule({ locale, slug }: InsightPageModuleProps
       readFailed={readFailed}
       current={`${base}${insightPath(slug)}`}
     >
+      {structured ? <JsonLd data={structured} /> : null}
       {article ? (
         <article aria-labelledby="page-title">
           <PageHero

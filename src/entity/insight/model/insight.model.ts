@@ -52,6 +52,12 @@ export const publicInsightListItemSchema = z.object({
   author: z.object({ slug: z.string(), name: z.string() }).nullable(),
   readingMinutes: z.number().int().nullable(),
   publishedAt: isoDateTime.nullable(),
+  /**
+   * When it last changed: the sitemap's date and the article's
+   * `dateModified`. Optional because a list cached before the field existed
+   * has none until it is refreshed (AGENTS.md § Caching).
+   */
+  updatedAt: isoDateTime.optional(),
 });
 
 export type PublicInsightListItem = z.infer<typeof publicInsightListItemSchema>;

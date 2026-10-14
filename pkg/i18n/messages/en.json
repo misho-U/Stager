@@ -36,6 +36,7 @@
     "company": "Company",
     "email": "Email",
     "phone": "Phone",
+    "address": "Address",
     "interest": "What are you looking for?",
     "message": "Tell us about your project",
     "submit": "Start a Conversation",
@@ -153,5 +154,8 @@
     "minutes": "{count, plural, one {# min read} other {# min read}}",
     "by": "By {name}",
     "more": "More articles"
+  },
+  "llms": {
+    "pages": "Pages"
   }
 }

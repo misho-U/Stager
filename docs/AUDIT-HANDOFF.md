@@ -153,7 +153,6 @@ hero's entrance instead of hiding text the visitor has already seen.
 | Item                                                           | Why not now                                                                                                                                                      |
 | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Static rendering of the home page, the biggest speed gain left | The design switch is gone (October 2026), but `/[locale]` still renders per request: the CSP's per-request nonce (`src/proxy.ts`) needs it. Decide the CSP first |
-| SEO fields (canonical, per-page share images)                  | Belong with the launch copy                                                                                                                                      |
 | About 68 KB (gzipped) of zod's message locales on public pages | Turbopack does not tree-shake them; a lighter contact form is still to do                                                                                        |
 | Password reset, an audit-log viewer, user management           | Features, not fixes                                                                                                                                              |
 | Two admins editing one record (last save wins)                 | There is one admin                                                                                                                                               |
@@ -191,7 +190,12 @@ Before launch:
 
 7. Vercel Pro under the client's account (Hobby forbids commercial use).
 8. Supabase Pro: the free plan has no backups and pauses after a quiet week.
-9. Logo files (favicon, share image), and the privacy policy's text: the page
+   Once on Pro, turn on leaked-password protection (Authentication →
+   Passwords; the free plan refuses it, and Supabase's security advisor
+   flags it until then).
+9. The logo artwork, and the privacy policy's text. The favicon, the
+   home-screen icons and the share card are set in type until a square logo
+   mark arrives (`pnpm brand:images` redraws them). The policy's page
    exists (`/ka/privacy`, `/en/privacy`); write it under Dashboard → Page copy
    → Privacy policy. Until then nothing links to it.
 10. **The BPG Nino Mtavruli licence.** The site sets Georgian in it at the
@@ -205,7 +209,21 @@ Before launch:
     member typed into the page's copy in September). The Team page shows
     that heading as its title on `/ka/team`: set it to "გუნდი" (or the
     client's own words) and clear the line. Members are added under
-    Dashboard → Team.
+    Dashboard → Team. Done 14 October 2026: the heading is cleared, and the
+    page's own title, "გუნდი", shows.
+12. **Before search engines are let in**, in the dashboard: the home page's
+    heading in Georgian (Page copy → Home, Georgian tab: it is still the
+    English line), the address and phone (Site settings: structured data and
+    local search need them), the company's figures and the Academy's courses
+    (until they exist the page shows marked samples), and optionally each
+    page's own search title and description (Page copy; without them the
+    site's are used).
+13. **Launch**: set `OPEN_TO_SEARCH` to true
+    (`src/widgets/seo/seo.constants.ts`, one line) and deploy. Then verify
+    stager.ge in Google Search Console and Bing Webmaster Tools (Bing's
+    index also feeds Microsoft Copilot) and submit `/sitemap.xml` to both; create a
+    Google Business Profile with the same name, address and phone as Site
+    settings.
 
 ## Where the rules live
 

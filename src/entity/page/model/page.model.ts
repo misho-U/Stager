@@ -225,3 +225,11 @@ export function pageIntro(page: PublicPage | null): { heading: string; lead: str
   const section = page?.sections.find((item) => item.key === PAGE_INTRO_SECTION_KEY);
   return { heading: section?.heading ?? '', lead: section?.subheading ?? '' };
 }
+
+/**
+ * A list page's name, as its heading and its search title show it: the
+ * heading written for it, else the page's title, else the site's word for it.
+ */
+export function pageName(page: PublicPage | null, fallback: string): string {
+  return pageIntro(page).heading || page?.title || fallback;
+}

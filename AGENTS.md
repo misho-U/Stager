@@ -202,6 +202,45 @@ can be pointed at the final domain before DNS propagates. `NEXT_PUBLIC_SITE_URL`
 is for canonical tags, OG URLs and the sitemap; it is not a fetch target on
 Vercel.
 
+### Search engines, share cards and AI crawlers (`widgets/seo`)
+
+- **`OPEN_TO_SEARCH` (`seo.constants.ts`) is the launch switch.** False until
+  the owner launches: every page says `noindex`. True, and the production
+  deployment is indexed; a preview or a local server never is, and
+  `robots.txt` keeps crawlers off everything but production.
+- **Every public page's `generateMetadata` calls its module's
+  `load…Metadata()`**, which builds `pageMetadata()`: the title and
+  description in the page's language, from the dashboard (the page's own
+  search fields in Page copy, or an article's; else its heading and the site
+  name; the home page falls back to Site settings, then the brand), the
+  canonical address and its translations (hreflang), the share card (the
+  page's image, else `share-image.png`) and `robots`. A page with nothing to
+  show (no published member or article, a policy not yet written) stays
+  `noindex` and out of the sitemap and `/llms.txt`.
+- **The page loaders are wrapped in React `cache()`**, so the metadata and the
+  page share one set of reads per request, and a failed read is logged once.
+- **`htmlLimitedBots: /.*/`** (`next.config.ts`): metadata is written in
+  `<head>` for every visitor. Next otherwise streams it into `<body>` for
+  anyone not on its bot list, which leaves out GPTBot, ClaudeBot and
+  PerplexityBot.
+- **Structured data (JSON-LD)** comes from `seo.utils.ts` and renders through
+  `<JsonLd>`: the company and its services and the website on the home page,
+  each published member as a `Person`, each article as a `BlogPosting`, and a
+  breadcrumb on every page beside home. Only what the dashboard holds: never a
+  sample entry, and a blank field is left out, not guessed. `<` is escaped, so
+  no stored value can close the tag.
+- **`/llms.txt`** (`app/llms.txt`, `modules/llms-txt`): the site in one Markdown
+  file for AI assistants, built from the same tagged reads. Served by name
+  past the locale routing, like `robots.txt` (the proxy's matcher).
+- **The favicon, the home-screen icons and the share card are drawn from the
+  brandbook** by `pnpm brand:images` (`scripts/brand-images.ts`), set in type
+  like the wordmark until the logo artwork is in the repository. Rerun it
+  after a brand change and commit the images. They are imported, so they are
+  served from `_next/static`, past the locale routing.
+- **A new public page** needs its `generateMetadata` through `pageMetadata()`,
+  a breadcrumb in its `<JsonLd>`, and an entry in the sitemap's `pages()` and
+  in `/llms.txt`'s.
+
 ---
 
 ## 4. Security rules
@@ -716,6 +755,7 @@ pnpm db:seed           # creates what is missing; never overwrites dashboard edi
 pnpm db:studio         # browse the database
 pnpm test:e2e          # Playwright (loads .env.local; needs a seeded database)
 pnpm brand:tokens      # regenerate the brand hex copies (runs on install/dev/build anyway)
+pnpm brand:images      # redraw the favicon, icons and share card from the brandbook; commit them
 ```
 
 All `db:*` scripts read `.env.local` through dotenv-cli — there is one env file,
@@ -832,8 +872,9 @@ database, unused.
 
 Still open: the real figures (the samples are placeholders, marked); the
 policy's text (the client's lawyer); the BPG Nino Mtavruli licence; rendering the home page statically (the per-request CSP nonce
-keeps it dynamic, see `docs/AUDIT-HANDOFF.md`); the SEO fields; and the
-noindex, which stays until launch. Keep the data-loading pattern in
+keeps it dynamic, see `docs/AUDIT-HANDOFF.md`); the logo artwork for the
+favicon and share card (set in type until then); and the noindex, which
+stays until launch (`OPEN_TO_SEARCH`, § Search engines). Keep the data-loading pattern in
 `home-page.service.ts`.
 
 Decided with the client: BPG Nino Mtavruli for Georgian letters and Noto Sans
