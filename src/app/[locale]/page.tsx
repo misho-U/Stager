@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { HomePageModule } from '@/modules/home-page/home-page.module';
+import { loadHomePageMetadata } from '@/modules/home-page/home-page.service';
 import { isAppLocale, toDbLocale, DEFAULT_LOCALE } from '@pkg/i18n/routing';
 
 /**
@@ -19,15 +20,18 @@ import { isAppLocale, toDbLocale, DEFAULT_LOCALE } from '@pkg/i18n/routing';
  */
 export const dynamic = 'force-dynamic';
 
-/**
- * Not for search engines until launch: design.stager.ge is a preview of the
- * site with sample entries in it. Lift with the launch (AGENTS.md § 7).
- */
-export const metadata: Metadata = { robots: { index: false, follow: false } };
+type Params = { params: Promise<{ locale: string }> };
 
-export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
+async function resolve(params: Params['params']) {
   const { locale } = await params;
-  const appLocale = isAppLocale(locale) ? locale : DEFAULT_LOCALE;
+  return toDbLocale(isAppLocale(locale) ? locale : DEFAULT_LOCALE);
+}
 
-  return <HomePageModule locale={toDbLocale(appLocale)} />;
+/** Search title, description and share card (widgets/seo); indexed from launch. */
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  return loadHomePageMetadata(await resolve(params));
+}
+
+export default async function HomePage({ params }: Params) {
+  return <HomePageModule locale={await resolve(params)} />;
 }

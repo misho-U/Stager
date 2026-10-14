@@ -123,6 +123,12 @@ Do not add a library outside this list without raising it first.
   split only through `splitReveal` (or a screen reader hears nothing), and the
   hero never waits for the script. AGENTS.md § Motion has the rules and the
   traps behind them.
+- **Search engines see nothing until `OPEN_TO_SEARCH` is true**
+  (`widgets/seo/seo.constants.ts`): the launch commit flips it, and only on
+  the owner's word. Every public page builds its metadata with
+  `pageMetadata()` and its JSON-LD from dashboard data only, never a sample. A
+  new public page also goes in the sitemap's `pages()` and in `/llms.txt`
+  (AGENTS.md § Search engines).
 - **Never a `<Button>` inside a `<Link>`**: use `ButtonLink`. Every page has a
   `SkipLink` and one `<main id={CONTENT_ID}>`; `keyboard.spec.ts` checks.
 - **Test accounts never touch the live project.** The test admin exists only

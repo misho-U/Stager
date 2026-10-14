@@ -211,6 +211,7 @@ type PublicRow = {
   showAuthor: boolean;
   readingMinutes: number | null;
   publishedAt: Date | null;
+  updatedAt: Date;
   coverMedia: Parameters<typeof toMediaSummary>[0];
   translations: Array<{
     title: string;
@@ -246,6 +247,7 @@ function toPublicListItem(row: PublicRow, locale: DbLocale): PublicInsightListIt
         : null,
     readingMinutes: row.readingMinutes,
     publishedAt: toIso(row.publishedAt),
+    updatedAt: toIsoRequired(row.updatedAt),
   };
 }
 

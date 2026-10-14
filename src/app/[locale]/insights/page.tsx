@@ -1,24 +1,23 @@
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 
 import { InsightsPageModule } from '@/modules/insights-page/insights-page.module';
+import { loadInsightsPageMetadata } from '@/modules/insights-page/insights-page.service';
 import { DEFAULT_LOCALE, isAppLocale, toDbLocale } from '@pkg/i18n/routing';
 
 /** Rendered per request, like the home page (see its page file for why). */
 export const dynamic = 'force-dynamic';
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('nav');
-  return {
-    title: t('insights'),
-    // Not for search engines until launch, like the rest of the preview.
-    robots: { index: false, follow: false },
-  };
+type Params = { params: Promise<{ locale: string }> };
+
+async function resolve(params: Params['params']) {
+  const { locale } = await params;
+  return toDbLocale(isAppLocale(locale) ? locale : DEFAULT_LOCALE);
 }
 
-export default async function InsightsPage({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params;
-  const appLocale = isAppLocale(locale) ? locale : DEFAULT_LOCALE;
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  return loadInsightsPageMetadata(await resolve(params));
+}
 
-  return <InsightsPageModule locale={toDbLocale(appLocale)} />;
+export default async function InsightsPage({ params }: Params) {
+  return <InsightsPageModule locale={await resolve(params)} />;
 }

@@ -28,6 +28,7 @@
     "test:e2e": "tsx scripts/brand-tokens.ts && dotenv -e .env.local -- playwright test",
     "test:e2e:ui": "tsx scripts/brand-tokens.ts && playwright test --ui",
     "brand:tokens": "tsx scripts/brand-tokens.ts",
+    "brand:images": "tsx scripts/brand-images.ts",
     "postinstall": "prisma generate && tsx scripts/brand-tokens.ts"
   },
   "prisma": {

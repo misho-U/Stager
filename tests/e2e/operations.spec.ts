@@ -69,28 +69,44 @@ test('outside production, robots.txt keeps every crawler out', async ({ request 
   expect(body).not.toMatch(/^Allow:/m);
 });
 
-test('the sitemap lists every page in both languages, each naming the other', async ({
+test('the sitemap lists every page that has something to show, in each language it has it', async ({
   request,
 }) => {
   const response = await request.get('/sitemap.xml');
   expect(response.status()).toBe(200);
   const xml = await response.text();
-  expect(xml.match(/<loc>[^<]+\/(ka|en)<\/loc>/g)).toHaveLength(2);
-  for (const path of ['team', 'insights', 'privacy']) {
-    expect(xml.match(new RegExp(`<loc>[^<]+/(ka|en)/${path}</loc>`, 'g'))).toHaveLength(2);
-  }
+  const listed = (path: string) =>
+    (xml.match(new RegExp(`<loc>[^<]+/(ka|en)${path}</loc>`, 'g')) ?? []).length;
+
+  expect(listed('')).toBe(2);
   for (const lang of ['ka', 'en', 'x-default']) {
     expect(xml).toContain(`hreflang="${lang}"`);
   }
 
-  // Every published article, in both languages.
-  const articles = (await (
-    await request.get('/api/public/insights?locale=EN&limit=100')
-  ).json()) as {
-    items: Array<{ slug: string }>;
-  };
-  for (const { slug } of articles.items) {
-    expect(xml.match(new RegExp(`<loc>[^<]+/(ka|en)/insights/${slug}</loc>`, 'g'))).toHaveLength(2);
+  // The team and the articles once there is anyone or anything to show,
+  // the policy in each language it has text in: an empty page is never offered.
+  const [team, insights] = await Promise.all([
+    request.get('/api/public/team?locale=EN&limit=1').then((r) => r.json()),
+    request.get('/api/public/insights?locale=EN&limit=100').then((r) => r.json()),
+  ]);
+  expect(listed('/team')).toBe(team.total > 0 ? 2 : 0);
+  expect(listed('/insights')).toBe(insights.total > 0 ? 2 : 0);
+  let written = 0;
+  for (const locale of ['KA', 'EN']) {
+    const page = await request.get(`/api/public/pages/PRIVACY?locale=${locale}`);
+    if (!page.ok()) continue;
+    const { sections } = (await page.json()) as { sections: Array<{ key: string; body: string }> };
+    const body = sections.find((section) => section.key === 'policy')?.body ?? '';
+    if (body.replace(/<[^>]*>/g, '').trim() !== '') written += 1;
+  }
+  expect(listed('/privacy')).toBe(written);
+
+  // Every published article, in both languages, with the day it last changed.
+  for (const { slug } of insights.items as Array<{ slug: string }>) {
+    expect(listed(`/insights/${slug}`)).toBe(2);
+    expect(xml).toMatch(
+      new RegExp(`<loc>[^<]+/ka/insights/${slug}</loc>\\s*(<xhtml:link[^>]*>\\s*)*<lastmod>`),
+    );
   }
 });
 
