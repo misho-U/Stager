@@ -1,9 +1,7 @@
 import { readQuery, withPublic } from '@/app/api/_lib/route-helpers';
-import { listPublicStats } from '@/app/api/_lib/repositories/stat.repository';
+import { listPublicStats } from '@/server/published/stats';
 import { localeQuerySchema } from '@/app/api/public/_query';
 import { apiOk } from '@pkg/http/api-response';
-
-export const dynamic = 'force-dynamic';
 
 export const GET = withPublic(async ({ request }) => {
   const query = readQuery(request, localeQuerySchema);

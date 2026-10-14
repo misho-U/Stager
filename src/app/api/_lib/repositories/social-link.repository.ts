@@ -1,7 +1,6 @@
 import { toIsoRequired } from '@/app/api/_lib/serializers';
 import type {
   AdminSocialLink,
-  PublicSocialLink,
   SocialLinkInput,
   SocialLinkUpdateInput,
 } from '@/entity/social-link/model/social-link.model';
@@ -73,15 +72,4 @@ export async function deleteSocialLink(id: string): Promise<boolean> {
 
   await prisma.socialLink.delete({ where: { id } });
   return true;
-}
-
-/** Only the active links, and without the timestamps. */
-export async function listPublicSocialLinks(): Promise<PublicSocialLink[]> {
-  const rows = await prisma.socialLink.findMany({
-    where: { isActive: true },
-    orderBy: { order: 'asc' },
-    select: { id: true, platform: true, url: true, label: true },
-  });
-
-  return rows;
 }

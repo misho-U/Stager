@@ -1,8 +1,11 @@
+import { cacheLife, cacheTag } from 'next/cache';
+
 import type { PublicCourse } from '@/entity/course/model/course.model';
 import type { PublicStat } from '@/entity/stat/model/stat.model';
 import type { PublicVideo } from '@/entity/video/model/video.model';
 import { todayInTbilisi } from '@/shared/lib/calendar-date';
 import type { DbLocale } from '@/shared/types/enums';
+import { collectionTag, COURSE_CACHE_LIFE } from '@pkg/cache/tags';
 
 /**
  * TEMPORARY: sample figures, Academy courses and videos.
@@ -44,17 +47,18 @@ const CATEGORY_NAMES: Localised<Record<SampleCategory, string>> = {
 export type SectionItems<T> = { items: T[]; sample: boolean };
 
 /**
- * The figures, the Academy and the videos show samples, marked "Sample" on the page, while
- * the dashboard holds none of their own; the first real entry replaces them
- * all. A FAILED read shows nothing instead: invented entries standing in for
- * content that did not load would hide the outage.
+ * The figures, the Academy and the videos show samples, marked "Sample" on the
+ * page, while the dashboard holds none of their own; the first real entry
+ * replaces them all. A failed read never gets here (it is not caught; see
+ * home-page.service.ts), so invented entries never stand in for content that
+ * did not load.
  */
-export function orSamples<T>(
-  read: { data: { items: T[] }; failed: boolean },
-  samples: () => T[],
-): SectionItems<T> {
-  if (read.failed || read.data.items.length > 0) return { items: read.data.items, sample: false };
-  return { items: samples(), sample: true };
+export async function orSamples<T>(
+  items: T[],
+  samples: () => T[] | Promise<T[]>,
+): Promise<SectionItems<T>> {
+  if (items.length > 0) return { items, sample: false };
+  return { items: await samples(), sample: true };
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -325,7 +329,16 @@ const VIDEOS: ReadonlyArray<
   },
 ];
 
-export function sampleCourses(locale: DbLocale): PublicCourse[] {
+/**
+ * Dated from today, so cached like the real courses (COURSE_CACHE_LIFE): a
+ * page built ahead of time may not read the clock outside a cache scope, and
+ * the dates move on with the daily refresh of the list.
+ */
+export async function sampleCourses(locale: DbLocale): Promise<PublicCourse[]> {
+  'use cache';
+  cacheLife(COURSE_CACHE_LIFE);
+  cacheTag(collectionTag('course'));
+
   // Soonest first, as the API lists them.
   return [...COURSES]
     .sort((a, b) => a.inDays - b.inDays)
@@ -339,7 +352,12 @@ export function sampleCourses(locale: DbLocale): PublicCourse[] {
     }));
 }
 
-export function sampleVideos(locale: DbLocale): PublicVideo[] {
+/** Dated from today, cached like the sample courses (see sampleCourses). */
+export async function sampleVideos(locale: DbLocale): Promise<PublicVideo[]> {
+  'use cache';
+  cacheLife(COURSE_CACHE_LIFE);
+  cacheTag(collectionTag('video'));
+
   return VIDEOS.map(({ daysAgo, text, ...video }) => ({
     ...video,
     ...text[locale],

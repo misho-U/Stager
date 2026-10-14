@@ -5,8 +5,6 @@ import { getAdminSession } from '@pkg/auth/admin-session';
 import { serverFetchAuthed } from '@pkg/http/fetcher';
 import { logger, serialiseError } from '@pkg/logger';
 
-export const dynamic = 'force-dynamic';
-
 type Stats = {
   projects: number;
   insights: number;

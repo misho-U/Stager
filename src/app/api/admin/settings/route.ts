@@ -8,8 +8,6 @@ import { requireOwner } from '@pkg/auth/admin-session';
 import { revalidateEntity } from '@pkg/cache/revalidate';
 import { apiOk } from '@pkg/http/api-response';
 
-export const dynamic = 'force-dynamic';
-
 /** A single row: no list, no create, no delete. */
 export const GET = withAdmin(async () => apiOk(await getSiteSettings()));
 

@@ -10,8 +10,6 @@ import {
   type TeamMemberUpdateInput,
 } from '@/entity/team-member/model/team-member.model';
 
-export const dynamic = 'force-dynamic';
-
 export const { GET, PATCH, DELETE } = createItemRoutes<AdminTeamMember, TeamMemberUpdateInput>({
   entity: 'teamMember',
   entityType: 'TeamMember',

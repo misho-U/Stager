@@ -10,8 +10,6 @@ import {
   type VideoUpdateInput,
 } from '@/entity/video/model/video.model';
 
-export const dynamic = 'force-dynamic';
-
 export const { GET, PATCH, DELETE } = createItemRoutes<AdminVideo, VideoUpdateInput>({
   entity: 'video',
   entityType: 'Video',

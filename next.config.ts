@@ -46,12 +46,17 @@ const nextConfig: NextConfig = {
   // Do not advertise the framework version.
   poweredByHeader: false,
 
-  // Every visitor gets the title, description and canonical in <head>.
-  // Next otherwise streams them into <body> for anyone not on its list of
-  // HTML-only bots, and that list leaves out the AI crawlers (GPTBot,
-  // ClaudeBot, PerplexityBot), which read no script. The pages wait for the
-  // same data their metadata reads (one memoized fetch), so nothing is slower.
-  htmlLimitedBots: /.*/,
+  // Cache Components: the public pages are built ahead of time from cached,
+  // tagged reads (src/server/published), and a save purges exactly the tags
+  // it touched (pkg/cache/revalidate.ts). Everything else (the dashboard, the
+  // API) renders per request. AGENTS.md § Data flow.
+  cacheComponents: true,
+
+  experimental: {
+    // Two root layouts (the site under /[locale], the dashboard under /admin)
+    // leave no single layout for a 404 outside both: app/global-not-found.tsx.
+    globalNotFound: true,
+  },
 
   images: {
     // Modern formats first; next/image negotiates per browser.

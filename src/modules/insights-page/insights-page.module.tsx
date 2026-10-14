@@ -28,7 +28,7 @@ export async function InsightsPageModule({ locale }: InsightsPageModuleProps) {
     getTranslations(),
     getFormatter(),
   ]);
-  const { chrome, page, insights, readFailed } = content;
+  const { chrome, page, insights } = content;
   const base = `/${toAppLocale(locale)}`;
   const intro = pageIntro(page);
   const title = pageName(page, t('nav.insights'));
@@ -40,7 +40,6 @@ export async function InsightsPageModule({ locale }: InsightsPageModuleProps) {
     <SubpageShell
       locale={locale}
       chrome={chrome}
-      readFailed={readFailed}
       current={`${base}${INSIGHTS_PATH}`}
     >
       <JsonLd
@@ -52,7 +51,7 @@ export async function InsightsPageModule({ locale }: InsightsPageModuleProps) {
       <PageHero title={title} lead={intro.lead} testId="insights-title" />
       <div className="px-gutter pb-section">
         <div className="max-w-page mx-auto flex flex-col gap-16">
-          {insights.length === 0 && !readFailed ? (
+          {insights.length === 0 ? (
             <p className="text-body-lg text-ink-muted">{t('insights.empty')}</p>
           ) : null}
 

@@ -2,6 +2,8 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import { expect, test } from '@playwright/test';
 
+import { REPURGE_AFTER_MS } from '@pkg/cache/tags';
+
 /**
  * The edit→live loop — the promise the whole CMS rests on.
  *
@@ -74,6 +76,8 @@ test.describe('the edit→live loop', () => {
       'Mutates shared database state; runs once, under chromium.',
     );
   });
+  // Both tests set the same heading.
+  test.describe.configure({ mode: 'serial' });
 
   test('a published edit reaches /ka on the next request, and not before', async ({
     page,
@@ -90,8 +94,11 @@ test.describe('the edit→live loop', () => {
 
     try {
       // Start from a known-cached state so "stale" below means the cache held,
-      // rather than the page never having been rendered.
+      // rather than the page never having been rendered. Every save purges
+      // again REPURGE_AFTER_MS later (pkg/cache/revalidate.ts); wait that out,
+      // or a second purge landing mid-test would read as "no caching".
       await revalidate();
+      await page.waitForTimeout(REPURGE_AFTER_MS + 1_000);
       await page.goto('/ka');
       await expect(page.getByTestId('hero-heading')).toHaveText(original);
 
@@ -113,6 +120,47 @@ test.describe('the edit→live loop', () => {
 
       // The read never silently degraded to placeholder copy.
       await expect(page.getByTestId('read-failure')).toHaveCount(0);
+    } finally {
+      await setHeading(sectionId, original);
+      await revalidate();
+    }
+  });
+
+  test('a save that lands while the page is rendering shows within seconds, not an hour', async ({
+    request,
+  }) => {
+    // Next dates a built page by when it was stored, not when its render
+    // began: a render already under way when the save lands read the old row,
+    // is stored after the purge and counts as fresh. Only the second purge
+    // (pkg/cache/revalidate.ts) takes it down. Locally a save 30 to 100 ms
+    // into the render hit this every time; without the second purge, /ka kept
+    // the old heading until the hourly refresh.
+    const { sectionId, original } = await heroTranslation();
+    const revalidate = () =>
+      request.post('/api/dev/revalidate-probe', {
+        data: { entity: 'page', key: 'HOME' },
+        headers: { 'sec-fetch-site': 'same-origin' },
+      });
+    const ka = async () => (await request.get('/ka')).text();
+
+    try {
+      for (const delay of [30, 60, 100]) {
+        const sentinel = `cache-race-${delay}-${Date.now()}`;
+        await revalidate();
+        const inFlight = ka();
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        await setHeading(sectionId, sentinel);
+        expect((await revalidate()).ok()).toBeTruthy();
+        await inFlight;
+
+        await expect
+          .poll(async () => (await ka()).includes(sentinel), {
+            message: `/ka shows the heading saved ${delay} ms into a render`,
+            timeout: REPURGE_AFTER_MS + 5_000,
+            intervals: [500],
+          })
+          .toBe(true);
+      }
     } finally {
       await setHeading(sectionId, original);
       await revalidate();

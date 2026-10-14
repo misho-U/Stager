@@ -9,8 +9,6 @@ import {
   type CourseCategoryInput,
 } from '@/entity/course-category/model/course-category.model';
 
-export const dynamic = 'force-dynamic';
-
 export const { GET, POST } = createCollectionRoutes<AdminCourseCategory, CourseCategoryInput>({
   entity: 'courseCategory',
   entityType: 'CourseCategory',

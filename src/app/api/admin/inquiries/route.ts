@@ -9,8 +9,6 @@ import {
 import { prisma } from '@pkg/db/prisma';
 import { apiOk } from '@pkg/http/api-response';
 
-export const dynamic = 'force-dynamic';
-
 const IN_INBOX = { status: { in: ['NEW' as const, 'READ' as const] } };
 const ARCHIVED = { status: 'ARCHIVED' as const };
 

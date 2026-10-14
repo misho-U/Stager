@@ -84,3 +84,35 @@ export function tagsToRevalidate(entity: ContentEntity, key?: string | null): st
 
 /** Default cache lifetime for public content, in seconds. */
 export const PUBLIC_REVALIDATE_SECONDS = 3600;
+
+/**
+ * How long a published read stays cached (`cacheLife` in
+ * src/server/published). A save purges its tags at once (`revalidateEntity`),
+ * so these are only the safety net: content is refreshed in the background an
+ * hour after it was read, and a browser keeps a page it navigated to for a
+ * minute before asking again.
+ */
+export const CONTENT_CACHE_LIFE = {
+  stale: 60,
+  revalidate: PUBLIC_REVALIDATE_SECONDS,
+  expire: 30 * 24 * 3600,
+} as const;
+
+/**
+ * The courses list drops a course once its start date has passed (Tbilisi
+ * time). The daily job purges it just after Tbilisi midnight
+ * (vercel.json, /api/cron/daily); if that run is missed, an entry older than
+ * a day is never served again.
+ */
+export const COURSE_CACHE_LIFE = {
+  stale: 60,
+  revalidate: PUBLIC_REVALIDATE_SECONDS,
+  expire: 24 * 3600,
+} as const;
+
+/**
+ * How long after a save its tags are purged a second time
+ * (`revalidateEntity`). Longer than any page render takes, so a render that
+ * was already under way when the save landed has been stored by then.
+ */
+export const REPURGE_AFTER_MS = 5_000;

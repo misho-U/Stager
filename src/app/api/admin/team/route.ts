@@ -9,8 +9,6 @@ import {
   type TeamMemberInput,
 } from '@/entity/team-member/model/team-member.model';
 
-export const dynamic = 'force-dynamic';
-
 export const { GET, POST } = createCollectionRoutes<AdminTeamMember, TeamMemberInput>({
   entity: 'teamMember',
   entityType: 'TeamMember',

@@ -10,8 +10,6 @@ import {
   type SocialLinkUpdateInput,
 } from '@/entity/social-link/model/social-link.model';
 
-export const dynamic = 'force-dynamic';
-
 export const { GET, PATCH, DELETE } = createItemRoutes<AdminSocialLink, SocialLinkUpdateInput>({
   entity: 'socialLink',
   entityType: 'SocialLink',

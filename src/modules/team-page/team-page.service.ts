@@ -3,12 +3,11 @@ import { getTranslations } from 'next-intl/server';
 import { cache } from 'react';
 
 import { pageIntro, pageName } from '@/entity/page/model/page.model';
-import { TEAM_PATH, type PublicTeamMember } from '@/entity/team-member/model/team-member.model';
-import type { ListResponse } from '@/shared/types/api';
+import { TEAM_PATH } from '@/entity/team-member/model/team-member.model';
 import type { DbLocale } from '@/shared/types/enums';
-import { collectionTag, PUBLIC_REVALIDATE_SECONDS } from '@pkg/cache/tags';
-import { serverFetch } from '@pkg/http/fetcher';
 import { toAppLocale } from '@pkg/i18n/routing';
+import { getPublicPage } from '@/server/published/pages';
+import { listPublicTeamMembers } from '@/server/published/team';
 import { descriptionFor, pageMetadata, siteSeo, titleFor } from '@/widgets/seo/seo.service';
 import {
   breadcrumbNode,
@@ -16,35 +15,23 @@ import {
   structuredData,
   type JsonLdNode,
 } from '@/widgets/seo/seo.utils';
-import { loadSiteChrome, readPage, readPublic } from '@/widgets/site-chrome/site-chrome.service';
+import { loadSiteChrome } from '@/widgets/site-chrome/site-chrome.service';
 
 /**
  * The team page's reads: its heading and line (Page copy → Team) and every
- * published member (dashboard → Team), in the dashboard's order. Tagged like
- * every public read (widgets/site-chrome). A failed read shows no one, and
- * the page says it failed; never placeholder people. Once per request
- * (React `cache`), for the page and its metadata alike.
+ * published member (dashboard → Team), in the dashboard's order, through the
+ * published layer (cached and tagged; a failed read is not caught, see
+ * widgets/site-chrome). Never placeholder people. Once per render (React
+ * `cache`), for the page and its metadata alike.
  */
 export const loadTeamPageData = cache(async (locale: DbLocale) => {
   const [chrome, page, members] = await Promise.all([
     loadSiteChrome(locale),
-    readPublic('page:TEAM', readPage('TEAM', locale), null),
-    readPublic<ListResponse<PublicTeamMember>>(
-      'team',
-      serverFetch<ListResponse<PublicTeamMember>>(`/api/public/team?locale=${locale}&limit=100`, {
-        tags: [collectionTag('teamMember')],
-        revalidate: PUBLIC_REVALIDATE_SECONDS,
-      }),
-      { items: [], total: 0 },
-    ),
+    getPublicPage('TEAM', locale),
+    listPublicTeamMembers(locale, 100, 0),
   ]);
 
-  return {
-    chrome,
-    page: page.data,
-    members: members.data.items,
-    readFailed: page.failed || members.failed,
-  };
+  return { chrome, page, members: members.items };
 });
 
 /** The page's search title, description and share card; indexed once someone is published. */

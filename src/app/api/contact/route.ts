@@ -14,8 +14,6 @@ import { checkRateLimit, RATE_LIMITS } from '@pkg/ratelimit/limiter';
 import { getClientIp, getUserAgent, hashIp, isSameOriginRequest } from '@pkg/security/request';
 import { sanitizePlainText } from '@pkg/security/sanitize';
 
-export const dynamic = 'force-dynamic';
-
 /**
  * Public contact form.
  *

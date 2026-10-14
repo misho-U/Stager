@@ -6,8 +6,6 @@ import {
   type InsightInput,
 } from '@/entity/insight/model/insight.model';
 
-export const dynamic = 'force-dynamic';
-
 export const { GET, POST } = createCollectionRoutes<AdminInsight, InsightInput>({
   entity: 'insight',
   entityType: 'Insight',

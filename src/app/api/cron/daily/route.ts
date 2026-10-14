@@ -2,6 +2,7 @@ import { timingSafeEqual } from 'node:crypto';
 
 import { notifyInquiry } from '@/app/api/_lib/notify-inquiry';
 import { withPublic } from '@/app/api/_lib/route-helpers';
+import { revalidateEntity } from '@pkg/cache/revalidate';
 import { serverEnv } from '@pkg/config/env.server';
 import { prisma } from '@pkg/db/prisma';
 import { apiFail, apiOk } from '@pkg/http/api-response';
@@ -9,7 +10,6 @@ import { logger } from '@pkg/logger';
 import { isEmailConfigured } from '@pkg/mail/resend';
 import { pruneRateLimits } from '@pkg/ratelimit/limiter';
 
-export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 const MINUTE = 60 * 1000;
@@ -27,8 +27,12 @@ function fromScheduler(authorization: string | null): boolean {
 }
 
 /**
- * Once a day (vercel.json `crons`, production deployments only):
+ * Once a day, just after Tbilisi midnight (vercel.json `crons`: 20:05 UTC,
+ * production deployments only):
  *
+ *  - refreshes the courses list, which drops a course once its start date has
+ *    passed (Tbilisi time): the built pages show it until their list is
+ *    purged, and COURSE_CACHE_LIFE is only the fallback if a run is missed;
  *  - retries inquiry emails that failed: not notified, older than ten minutes
  *    (so never racing the first attempt), newer than a week;
  *  - prunes audit entries older than a year and rate-limit windows older than
@@ -42,6 +46,9 @@ export const GET = withPublic(async ({ request }) => {
   if (!fromScheduler(request.headers.get('authorization'))) {
     return apiFail('UNAUTHENTICATED', 'Only the scheduler may run this');
   }
+
+  // First, so a failure further down never leaves yesterday's courses up.
+  revalidateEntity('course');
 
   const now = Date.now();
 
@@ -70,6 +77,7 @@ export const GET = withPublic(async ({ request }) => {
   const rateLimitsPruned = await pruneRateLimits(now);
 
   const summary = {
+    coursesRefreshed: true,
     mail: isEmailConfigured ? 'on' : 'off',
     retried: pending.length,
     notified,

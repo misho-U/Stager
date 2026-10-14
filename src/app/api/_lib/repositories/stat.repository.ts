@@ -1,11 +1,5 @@
 import { toIsoRequired, toTranslationMap, translationUpsert } from '@/app/api/_lib/serializers';
-import type {
-  AdminStat,
-  PublicStat,
-  StatInput,
-  StatUpdateInput,
-} from '@/entity/stat/model/stat.model';
-import type { DbLocale } from '@/shared/types/enums';
+import type { AdminStat, StatInput, StatUpdateInput } from '@/entity/stat/model/stat.model';
 import { prisma } from '@pkg/db/prisma';
 
 const adminInclude = { translations: true } as const;
@@ -40,23 +34,6 @@ export async function listAdminStats() {
 export async function getAdminStat(id: string) {
   const row = await prisma.stat.findUnique({ where: { id }, include: adminInclude });
   return row ? toAdminStat(row) : null;
-}
-
-/** The figures shown on the site: switched on, in the dashboard's order. */
-export async function listPublicStats(locale: DbLocale) {
-  const rows = await prisma.stat.findMany({
-    where: { isActive: true },
-    include: { translations: { where: { locale } } },
-    orderBy: ORDER,
-  });
-
-  const items: PublicStat[] = rows.map((row) => ({
-    id: row.id,
-    value: row.value,
-    label: row.translations[0]?.label ?? '',
-  }));
-
-  return { items, total: items.length };
 }
 
 export async function createStat(input: StatInput): Promise<AdminStat> {

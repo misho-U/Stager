@@ -10,8 +10,6 @@ import {
   type ServiceUpdateInput,
 } from '@/entity/service/model/service.model';
 
-export const dynamic = 'force-dynamic';
-
 export const { GET, PATCH, DELETE } = createItemRoutes<AdminService, ServiceUpdateInput>({
   entity: 'service',
   entityType: 'Service',

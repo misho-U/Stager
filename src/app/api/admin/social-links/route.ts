@@ -9,8 +9,6 @@ import {
   type SocialLinkInput,
 } from '@/entity/social-link/model/social-link.model';
 
-export const dynamic = 'force-dynamic';
-
 export const { GET, POST } = createCollectionRoutes<AdminSocialLink, SocialLinkInput>({
   entity: 'socialLink',
   entityType: 'SocialLink',

@@ -1,11 +1,8 @@
 import { mediaInclude, toMediaSummary, toTranslationMap } from '@/app/api/_lib/serializers';
-import { listPublicSocialLinks } from '@/app/api/_lib/repositories/social-link.repository';
 import type {
   AdminSiteSetting,
-  PublicLayoutData,
   SiteSettingUpdateInput,
 } from '@/entity/site-setting/model/site-setting.model';
-import type { DbLocale } from '@/shared/types/enums';
 import { prisma } from '@pkg/db/prisma';
 
 const SINGLETON_ID = 'singleton';
@@ -79,9 +76,7 @@ function emptyToNull(value: string | null | undefined): string | null {
   return value.trim() === '' ? null : value;
 }
 
-export async function updateSiteSettings(
-  input: SiteSettingUpdateInput,
-): Promise<AdminSiteSetting> {
+export async function updateSiteSettings(input: SiteSettingUpdateInput): Promise<AdminSiteSetting> {
   await ensureRow();
 
   await prisma.siteSetting.update({
@@ -135,37 +130,4 @@ export async function getInquiryInbox(): Promise<string | null> {
   });
 
   return row?.inquiryInboxEmail ?? null;
-}
-
-// --- Public ---
-
-/** Everything the header and footer need, in one cached read. */
-export async function getPublicLayoutData(locale: DbLocale): Promise<PublicLayoutData> {
-  const [row, socialLinks] = await Promise.all([
-    prisma.siteSetting.findUnique({
-      where: { id: SINGLETON_ID },
-      include: {
-        logoMedia: mediaInclude,
-        logoLightMedia: mediaInclude,
-        translations: { where: { locale } },
-      },
-    }),
-    listPublicSocialLinks(),
-  ]);
-
-  const translation = row?.translations[0];
-
-  return {
-    siteName: translation?.siteName ?? 'STAGER',
-    tagline: translation?.tagline ?? '',
-    footerText: translation?.footerText ?? '',
-    address: translation?.address ?? '',
-    contactEmail: row?.contactEmail ?? null,
-    phone: row?.phone ?? null,
-    logo: toMediaSummary(row?.logoMedia, locale),
-    logoLight: toMediaSummary(row?.logoLightMedia, locale),
-    metaTitle: translation?.metaTitle ?? null,
-    metaDescription: translation?.metaDescription ?? null,
-    socialLinks,
-  };
 }

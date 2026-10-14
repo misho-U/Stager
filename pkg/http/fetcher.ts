@@ -29,18 +29,6 @@ type RequestOptions = {
   headers?: Record<string, string>;
 };
 
-type ServerReadOptions = {
-  /** Cache tags this read participates in — see @pkg/cache/tags. */
-  tags: string[];
-  /**
-   * Required, so every read decides. Caching is opt-in in this Next: on a page
-   * rendered per request (the home page is), a read without it reaches the
-   * API, and the database, on every visit.
-   */
-  revalidate: number | false;
-  headers?: Record<string, string>;
-};
-
 async function toApiError(response: Response): Promise<ApiError> {
   let code: ApiErrorCode = 'INTERNAL';
   let message = response.statusText || 'Request failed';
@@ -65,28 +53,6 @@ async function parse<T>(response: Response): Promise<T> {
   if (!response.ok) throw await toApiError(response);
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
-}
-
-/**
- * Read public data from our own API in a server component.
- *
- * Deliberately sends no cookies: the response is shared by every visitor, so
- * personalising it would be both wrong and uncacheable. `tags` is required —
- * an untagged read can never be invalidated when the admin edits content, and
- * would serve stale copy until the TTL expires.
- */
-export async function serverFetch<T>(path: string, options: ServerReadOptions): Promise<T> {
-  const response = await fetch(toAbsoluteUrl(path), {
-    method: 'GET',
-    headers: selfFetchHeaders(options.headers),
-    signal: AbortSignal.timeout(SELF_FETCH_TIMEOUT_MS),
-    next: {
-      tags: options.tags,
-      revalidate: options.revalidate,
-    },
-  });
-
-  return parse<T>(response);
 }
 
 /**

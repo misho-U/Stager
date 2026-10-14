@@ -1,7 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
-import { ReadFailureNotice } from '@/shared/components/read-failure-notice';
 import { CONTENT_ID, SkipLink } from '@/shared/components/skip-link';
 import { Wordmark } from '@/shared/components/wordmark';
 import type { DbLocale } from '@/shared/types/enums';
@@ -17,8 +16,6 @@ import { StageDecor } from '@/widgets/stage-decor/stage-decor.module';
 type SubpageShellProps = {
   locale: DbLocale;
   chrome: SiteChrome;
-  /** The page's own reads failed: the page says so, as for the header's. */
-  readFailed: boolean;
   /** This page's own link (`/ka/team`), marked as current in the menu. */
   current: string;
   children: ReactNode;
@@ -34,14 +31,13 @@ type SubpageShellProps = {
 export async function SubpageShell({
   locale,
   chrome,
-  readFailed,
   current,
   children,
 }: SubpageShellProps) {
   const t = await getTranslations();
   const home = `/${toAppLocale(locale)}`;
   const toInquiry = `${home}#${INQUIRY_ANCHOR}`;
-  const siteName = chrome.layout?.siteName || 'STAGER';
+  const siteName = chrome.layout.siteName || 'STAGER';
   const links = [
     { href: home, label: t('nav.home') },
     chrome.teamHref ? { href: chrome.teamHref, label: t('nav.team') } : null,
@@ -57,7 +53,6 @@ export async function SubpageShell({
     // `overflow-x-clip`: nothing that moves may widen the page (see the home page).
     <div data-site className="bg-surface text-ink overflow-x-clip">
       <SkipLink label={t('common.skipToContent')} />
-      {chrome.failed || readFailed ? <ReadFailureNotice message={t('home.readFailed')} /> : null}
       <SiteMotion className="flex min-h-dvh flex-col">
         <SiteHeader
           links={links}

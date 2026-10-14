@@ -3,9 +3,7 @@ import type {
   AdminCategory,
   CategoryInput,
   CategoryUpdateInput,
-  PublicCategory,
 } from '@/entity/category/model/category.model';
-import type { DbLocale } from '@/shared/types/enums';
 import { prisma } from '@pkg/db/prisma';
 
 // How many articles use it: the delete confirmation says so.
@@ -101,21 +99,4 @@ export async function deleteCategory(id: string): Promise<boolean> {
   // taxonomy entry must never delete the writing filed under it.
   await prisma.category.delete({ where: { id } });
   return true;
-}
-
-// --- Public ---
-
-export async function listPublicCategories(locale: DbLocale) {
-  const rows = await prisma.category.findMany({
-    include: { translations: { where: { locale } } },
-    orderBy: { order: 'asc' },
-  });
-
-  const items: PublicCategory[] = rows.map((row) => ({
-    id: row.id,
-    slug: row.slug,
-    name: row.translations[0]?.name ?? '',
-  }));
-
-  return { items, total: items.length };
 }

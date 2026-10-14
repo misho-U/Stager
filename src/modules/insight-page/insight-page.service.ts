@@ -5,14 +5,10 @@ import {
   INSIGHTS_PATH,
   insightPath,
   type PublicInsightDetail,
-  type PublicInsightListItem,
 } from '@/entity/insight/model/insight.model';
-import type { ListResponse } from '@/shared/types/api';
 import { SLUG_PATTERN } from '@/shared/types/api';
 import type { DbLocale } from '@/shared/types/enums';
-import { collectionTag, detailTag, PUBLIC_REVALIDATE_SECONDS } from '@pkg/cache/tags';
-import { ApiError } from '@pkg/http/api-error';
-import { serverFetch } from '@pkg/http/fetcher';
+import { getPublicInsight, listPublicInsights } from '@/server/published/insights';
 import { descriptionFor, pageMetadata, siteSeo, titleFor } from '@/widgets/seo/seo.service';
 import {
   articleNode,
@@ -20,50 +16,55 @@ import {
   structuredData,
   type JsonLdNode,
 } from '@/widgets/seo/seo.utils';
-import { loadSiteChrome, readPublic } from '@/widgets/site-chrome/site-chrome.service';
+import { loadSiteChrome } from '@/widgets/site-chrome/site-chrome.service';
 
 /** How many other articles an article suggests at its end. */
 const MORE_COUNT = 3;
 
+/** How many articles are built ahead of time: every one the API lists. */
+const BUILT_ARTICLES = 100;
+
+/**
+ * Built with the address of no article when there are none: Cache Components
+ * needs at least one param for a page to be built, and this one can never be
+ * a published slug (SLUG_PATTERN refuses it), so it is built as a 404.
+ */
+export const NO_ARTICLE_SLUG = '-';
+
+/** The articles built ahead of time: every published one, or the placeholder. */
+export async function builtInsightSlugs(): Promise<string[]> {
+  const { items } = await listPublicInsights('EN', BUILT_ARTICLES, 0);
+  return items.length > 0 ? items.map((item) => item.slug) : [NO_ARTICLE_SLUG];
+}
+
 /**
  * One published article, or null where there is none by that address (a
- * draft, a deleted one, a mistyped link): the page is then a 404, not a
- * failed read. Tagged with the article's slug, the key every save of it
- * revalidates (app/api/admin/insights).
+ * draft, a deleted one, a mistyped link): the page is then a 404. Tagged with
+ * the article's slug, the key every save of it revalidates
+ * (app/api/admin/insights). An address that cannot be a slug never reaches
+ * the database.
  */
 export function readInsight(locale: DbLocale, slug: string): Promise<PublicInsightDetail | null> {
   if (!SLUG_PATTERN.test(slug)) return Promise.resolve(null);
-  return serverFetch<PublicInsightDetail>(`/api/public/insights/${slug}?locale=${locale}`, {
-    tags: [collectionTag('insight'), detailTag('insight', slug)],
-    revalidate: PUBLIC_REVALIDATE_SECONDS,
-  }).catch((error: unknown) => {
-    if (error instanceof ApiError && error.status === 404) return null;
-    throw error;
-  });
+  return getPublicInsight(slug, locale);
 }
 
-/** Once per request (React `cache`), for the page and its metadata alike. */
+/**
+ * The article and three more to read, through the published layer (cached
+ * and tagged; a failed read is not caught, see widgets/site-chrome). Once per
+ * render (React `cache`), for the page and its metadata alike.
+ */
 export const loadInsightPageData = cache(async (locale: DbLocale, slug: string) => {
   const [chrome, article, latest] = await Promise.all([
     loadSiteChrome(locale),
-    readPublic('insight', readInsight(locale, slug), null),
-    readPublic<ListResponse<PublicInsightListItem>>(
-      'insights:more',
-      serverFetch<ListResponse<PublicInsightListItem>>(
-        `/api/public/insights?locale=${locale}&limit=${MORE_COUNT + 1}`,
-        { tags: [collectionTag('insight')], revalidate: PUBLIC_REVALIDATE_SECONDS },
-      ),
-      { items: [], total: 0 },
-    ),
+    readInsight(locale, slug),
+    listPublicInsights(locale, MORE_COUNT + 1, 0),
   ]);
 
   return {
     chrome,
-    article: article.data,
-    /** No such article: a 404. A failed read is not that; the page says it failed. */
-    missing: article.data === null && !article.failed,
-    more: latest.data.items.filter((item) => item.slug !== slug).slice(0, MORE_COUNT),
-    readFailed: article.failed || latest.failed,
+    article,
+    more: latest.items.filter((item) => item.slug !== slug).slice(0, MORE_COUNT),
   };
 });
 

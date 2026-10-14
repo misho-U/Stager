@@ -29,8 +29,8 @@ export async function InsightPageModule({ locale, slug }: InsightPageModuleProps
     getTranslations(),
     getFormatter(),
   ]);
-  const { chrome, article, missing, more, readFailed } = content;
-  if (missing) notFound();
+  const { chrome, article, more } = content;
+  if (!article) notFound();
   const structured = insightStructuredData(content, locale, slug, {
     home: t('nav.home'),
     insights: t('nav.insights'),
@@ -43,7 +43,6 @@ export async function InsightPageModule({ locale, slug }: InsightPageModuleProps
     <SubpageShell
       locale={locale}
       chrome={chrome}
-      readFailed={readFailed}
       current={`${base}${insightPath(slug)}`}
     >
       {structured ? <JsonLd data={structured} /> : null}

@@ -10,8 +10,6 @@ import {
   type CategoryUpdateInput,
 } from '@/entity/category/model/category.model';
 
-export const dynamic = 'force-dynamic';
-
 export const { GET, PATCH, DELETE } = createItemRoutes<AdminCategory, CategoryUpdateInput>({
   entity: 'category',
   entityType: 'Category',

@@ -1,10 +1,8 @@
 import { readQuery, withPublic } from '@/app/api/_lib/route-helpers';
-import { getPublicPage } from '@/app/api/_lib/repositories/page.repository';
+import { getPublicPage } from '@/server/published/pages';
 import { localeQuerySchema } from '@/app/api/public/_query';
 import { pageKeySchema } from '@/shared/types/enums';
 import { apiFail, apiOk } from '@pkg/http/api-response';
-
-export const dynamic = 'force-dynamic';
 
 export const GET = withPublic<{ key: string }>(async ({ request, params }) => {
   const query = readQuery(request, localeQuerySchema);

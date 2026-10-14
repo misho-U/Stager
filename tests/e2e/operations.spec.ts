@@ -53,6 +53,7 @@ test.describe('the daily job runs only for the scheduler', () => {
     expect(response.status()).toBe(200);
     expect(Object.keys(await response.json()).sort()).toEqual([
       'auditPruned',
+      'coursesRefreshed',
       'mail',
       'notified',
       'rateLimitsPruned',

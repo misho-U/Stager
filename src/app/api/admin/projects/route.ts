@@ -6,9 +6,6 @@ import {
   type ProjectInput,
 } from '@/entity/project/model/project.model';
 
-/** Admin views always read through, never from a cache. */
-export const dynamic = 'force-dynamic';
-
 export const { GET, POST } = createCollectionRoutes<AdminProject, ProjectInput>({
   entity: 'project',
   entityType: 'Project',

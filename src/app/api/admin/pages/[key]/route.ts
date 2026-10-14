@@ -5,8 +5,6 @@ import { pageKeySchema } from '@/shared/types/enums';
 import { revalidateEntity } from '@pkg/cache/revalidate';
 import { apiFail, apiOk } from '@pkg/http/api-response';
 
-export const dynamic = 'force-dynamic';
-
 type Params = { key: string };
 
 export const GET = withAdmin<Params>(async ({ params }) => {

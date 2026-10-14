@@ -11,9 +11,6 @@ import { checkRateLimit, RATE_LIMITS } from '@pkg/ratelimit/limiter';
 import { getClientIp, hashIdentifier, hashIp, isSameOriginRequest } from '@pkg/security/request';
 import { createSupabaseServerClient } from '@pkg/supabase/server';
 
-/** Sessions are per-request; never let a CDN hold one. */
-export const dynamic = 'force-dynamic';
-
 /**
  * Sign in.
  *
