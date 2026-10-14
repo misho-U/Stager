@@ -79,10 +79,7 @@ test.describe('the edit→live loop', () => {
   // Both tests set the same heading.
   test.describe.configure({ mode: 'serial' });
 
-  test('a published edit reaches /ka on the next request, and not before', async ({
-    page,
-    request,
-  }) => {
+  test('a published edit reaches /ka on the next request, and not before', async ({ request }) => {
     const { sectionId, original } = await heroTranslation();
     const sentinel = `cache-probe-${Date.now()}`;
 
@@ -91,6 +88,9 @@ test.describe('the edit→live loop', () => {
         data: { entity: 'page', key: 'HOME' },
         headers: { 'sec-fetch-site': 'same-origin' },
       });
+    // One request, its HTML as served: no browser and no retry, so a stale
+    // response cannot be followed by a fresh one that passes instead.
+    const ka = async () => (await request.get('/ka')).text();
 
     try {
       // Start from a known-cached state so "stale" below means the cache held,
@@ -98,28 +98,22 @@ test.describe('the edit→live loop', () => {
       // again REPURGE_AFTER_MS later (pkg/cache/revalidate.ts); wait that out,
       // or a second purge landing mid-test would read as "no caching".
       await revalidate();
-      await page.waitForTimeout(REPURGE_AFTER_MS + 1_000);
-      await page.goto('/ka');
-      await expect(page.getByTestId('hero-heading')).toHaveText(original);
+      await new Promise((resolve) => setTimeout(resolve, REPURGE_AFTER_MS + 1_000));
+      expect(await ka()).not.toContain(sentinel);
 
       await setHeading(sectionId, sentinel);
 
       // 1. Cached: the write alone must not reach the page.
-      await page.goto('/ka');
-      await expect(page.getByTestId('hero-heading')).toHaveText(original);
+      expect(await ka()).not.toContain(sentinel);
 
-      // 2. Invalidated: the very next request must show it.
+      // 2. Invalidated: the very first request after the purge must show it.
       const response = await revalidate();
       expect(response.ok()).toBeTruthy();
       expect(await response.json()).toMatchObject({
         tags: ['collection:page', 'detail:page:HOME'],
       });
 
-      await page.goto('/ka');
-      await expect(page.getByTestId('hero-heading')).toHaveText(sentinel);
-
-      // The read never silently degraded to placeholder copy.
-      await expect(page.getByTestId('read-failure')).toHaveCount(0);
+      expect(await ka()).toContain(sentinel);
     } finally {
       await setHeading(sectionId, original);
       await revalidate();
@@ -129,12 +123,14 @@ test.describe('the edit→live loop', () => {
   test('a save that lands while the page is rendering shows within seconds, not an hour', async ({
     request,
   }) => {
-    // Next dates a built page by when it was stored, not when its render
-    // began: a render already under way when the save lands read the old row,
-    // is stored after the purge and counts as fresh. Only the second purge
-    // (pkg/cache/revalidate.ts) takes it down. Locally a save 30 to 100 ms
-    // into the render hit this every time; without the second purge, /ka kept
-    // the old heading until the hourly refresh.
+    // The one case the test above cannot promise: a render of /ka already
+    // under way when the save lands. It read the old row, is stored after the
+    // purge, and Next counts it fresh (it dates a page by when it was stored);
+    // a request arriving meanwhile joins that render. So the first requests
+    // after such a save can be stale, and this polls instead. Only the second
+    // purge (pkg/cache/revalidate.ts) takes the page down. Locally a save 30
+    // to 100 ms into the render hit this every time; without the second
+    // purge, /ka kept the old heading until the hourly refresh.
     const { sectionId, original } = await heroTranslation();
     const revalidate = () =>
       request.post('/api/dev/revalidate-probe', {

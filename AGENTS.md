@@ -226,8 +226,9 @@ dashboard and the API render per request.
   next-intl call reads the request.
 - **404s.** An address no route answers gets `app/global-not-found.tsx`
   (`experimental.globalNotFound`): built once, in both languages in the
-  HTML, and a head script keeps only the address's language before the
-  first paint. A page's own `notFound()` (an unknown article) gets
+  HTML; a script right after them gives the other language the `hidden`
+  attribute before the first paint (`error-pages.spec.ts` counts the frames
+  drawn, with a slow stylesheet). A page's own `notFound()` (an unknown article) gets
   `app/[locale]/not-found.tsx`, which Next 16 draws in the browser from the
   page's data, not in the HTML. The status is 404 either way. No catch-all
   page under `[locale]`: it also caught `/api/…` as a locale, and its 404
@@ -245,8 +246,13 @@ dashboard and the API render per request.
   off the site until the hourly refresh. So `revalidateEntity()` also drops
   every built page `REPURGE_AFTER_MS` (5 s) later, from `after()`, by path:
   Next ignores a second `revalidateTag` of a tag the same request already
-  purged. The worst case is now seconds; `cache-invalidation.spec.ts` lands
-  a save mid-render to check it.
+  purged. The path purge also drops each page's cached reads, so every page
+  re-reads the database once on its next visit. `after()` runs under the
+  platform's `waitUntil` and counts towards `maxDuration`: a save ends
+  around 6 s, inside the smallest default (10 s). Only in that race can the
+  first request after a save be stale, and only for seconds;
+  `cache-invalidation.spec.ts` asserts the first request is fresh otherwise,
+  and lands a save mid-render to check the race.
 - **A failed read is never caught on a public page.** In a build, the build
   fails. In a refresh, Next keeps serving the last good page. A page rendered
   on request (an article published after the build) shows the site's error
