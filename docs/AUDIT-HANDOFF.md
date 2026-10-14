@@ -190,6 +190,9 @@ Before launch:
 
 7. Vercel Pro under the client's account (Hobby forbids commercial use).
 8. Supabase Pro: the free plan has no backups and pauses after a quiet week.
+   Once on Pro, turn on leaked-password protection (Authentication →
+   Passwords; the free plan refuses it, and Supabase's security advisor
+   flags it until then).
 9. The logo artwork, and the privacy policy's text. The favicon, the
    home-screen icons and the share card are set in type until a square logo
    mark arrives (`pnpm brand:images` redraws them). The policy's page
@@ -221,8 +224,6 @@ Before launch:
     index also feeds Microsoft Copilot) and submit `/sitemap.xml` to both; create a
     Google Business Profile with the same name, address and phone as Site
     settings.
-14. Supabase → Authentication → Passwords: turn on leaked-password
-    protection (its security advisor flags it).
 
 ## Where the rules live
 
