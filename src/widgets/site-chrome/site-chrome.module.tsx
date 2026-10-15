@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 
 import { CONTENT_ID, SkipLink } from '@/shared/components/skip-link';
 import { Wordmark } from '@/shared/components/wordmark';
+import { SiteLink } from '@/shared/components/site-link';
 import type { DbLocale } from '@/shared/types/enums';
 import { toAppLocale } from '@pkg/i18n/routing';
 import { INQUIRY_ANCHOR } from '@/widgets/inquiry-form/inquiry-form.constants';
@@ -28,12 +29,7 @@ type SubpageShellProps = {
  * <main>. The menu leads home, to the other pages (each only once it has
  * something to show) and to the contact form on the home page.
  */
-export async function SubpageShell({
-  locale,
-  chrome,
-  current,
-  children,
-}: SubpageShellProps) {
+export async function SubpageShell({ locale, chrome, current, children }: SubpageShellProps) {
   const t = await getTranslations();
   const home = `/${toAppLocale(locale)}`;
   const toInquiry = `${home}#${INQUIRY_ANCHOR}`;
@@ -59,13 +55,13 @@ export async function SubpageShell({
           current={current}
           cta={{ href: toInquiry, label: t('nav.startProject') }}
           brand={
-            <a
+            <SiteLink
               href={home}
               aria-label={siteName}
               className="inline-flex min-h-11 shrink-0 items-center"
             >
               <Wordmark className="text-body-lg" />
-            </a>
+            </SiteLink>
           }
           language={<LanguageSwitcher />}
           menuLanguage={<LanguageSwitcher />}

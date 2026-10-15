@@ -3,6 +3,7 @@ import { ArrowRightIcon } from '@phosphor-icons/react/dist/ssr/ArrowRight';
 import type { ReactNode } from 'react';
 
 import { cn } from '@/shared/lib/cn';
+import { SiteLink } from '@/shared/components/site-link';
 
 const TONES = {
   solid: 'bg-primary text-on-primary hover:bg-primary-hover',
@@ -28,9 +29,10 @@ type CtaLinkProps = {
 };
 
 /**
- * A call to action that navigates — an <a>, never a <button>, because it goes
- * somewhere. Colour and corner radius come from the design's tokens, so the
- * same component reads correctly in every variant and on dark bands.
+ * A call to action that navigates — a link, never a <button>, because it goes
+ * somewhere (SiteLink: another page opens without a reload). Colour and corner
+ * radius come from the design's tokens, so the same component reads correctly
+ * in every variant and on dark bands.
  */
 export function CtaLink({
   href,
@@ -43,7 +45,7 @@ export function CtaLink({
   const Icon = icon ? ICONS[icon] : null;
 
   return (
-    <a
+    <SiteLink
       href={href}
       className={cn(
         'ease-brand inline-flex items-center justify-center gap-2 rounded-md font-medium whitespace-nowrap transition-colors active:translate-y-px',
@@ -54,6 +56,6 @@ export function CtaLink({
     >
       {children}
       {Icon ? <Icon aria-hidden size="1.1em" /> : null}
-    </a>
+    </SiteLink>
   );
 }

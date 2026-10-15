@@ -65,6 +65,23 @@ export function focusArrival(target: HTMLElement) {
   target.focus({ preventScroll: true });
 }
 
+/** Whether no page has arrived yet in this document: the first one came by a full load. */
+let firstArrival = true;
+
+/**
+ * Starts the keyboard at the top of the page, as a full load does, without a
+ * ring or a scroll: the next Tab offers the skip link. After a page opened
+ * without a reload, the link the keyboard was on went with the page it was
+ * on, and the next Tab carried on from where it had been, deep in a page no
+ * longer shown. The body is made focusable only for the moment it takes.
+ */
+function focusPageStart() {
+  const { body } = document;
+  body.setAttribute('tabindex', '-1');
+  body.focus({ preventScroll: true });
+  body.removeAttribute('tabindex');
+}
+
 /** The element an in-page link points at, or null for a link elsewhere. */
 function inPageTarget(link: HTMLAnchorElement): HTMLElement | null {
   const url = new URL(link.href, window.location.href);
@@ -85,6 +102,21 @@ function inPageTarget(link: HTMLAnchorElement): HTMLElement | null {
  *   momentum is better than any imitation of it.
  */
 export function useSmoothScroll({ lerp }: { lerp: number }) {
+  // Where the keyboard starts on arrival, with or without motion. An address
+  // with a section (`/en#services`, from another page's menu) lands on it,
+  // and the keyboard goes there too: Next scrolls to the section after a
+  // client-side page change but cannot focus it (a section takes focus only
+  // by script). Any other page opened without a reload starts at its top.
+  // Runs again when Back brings a page Next kept hidden into view.
+  useEffect(() => {
+    const first = firstArrival;
+    firstArrival = false;
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    const target = id ? document.getElementById(id) : null;
+    if (target) focusArrival(target);
+    else if (!first) focusPageStart();
+  }, []);
+
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     registerMotion();

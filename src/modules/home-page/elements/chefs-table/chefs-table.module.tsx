@@ -40,6 +40,7 @@ import { hasServiceIcon, ServiceIcon } from '@/shared/components/service-icon';
 import { SocialLinks } from '@/shared/components/social-links';
 import { Wordmark } from '@/shared/components/wordmark';
 import { CONTENT_ID } from '@/shared/components/skip-link';
+import { SiteLink } from '@/shared/components/site-link';
 import { cn } from '@/shared/lib/cn';
 import { ALL } from '@/shared/lib/motion/use-flip-filter';
 import { isBlankHtml, joinMeta, plainTextLength } from '@/shared/lib/content';
@@ -829,14 +830,14 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                 title={insightsTitle}
                 description={section.insights?.subheading}
                 action={
-                  <a
+                  <SiteLink
                     href={`/${toAppLocale(locale)}${INSIGHTS_PATH}`}
                     data-testid="all-insights"
                     className={BUTTON_OUTLINE}
                   >
                     {t('insights.all')}
                     <ArrowRightIcon aria-hidden />
-                  </a>
+                  </SiteLink>
                 }
               />
               <InsightRows

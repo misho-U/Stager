@@ -59,8 +59,13 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
     notFound();
   }
 
+  // `data-scroll-behavior`: the stylesheet glides in-page jumps (globals.css),
+  // and Next turns that off while it moves to the top of a newly opened page.
+  // Without it the move to the top glided too, and the page's scroll scenes,
+  // measuring as they set up, put the old position back: a link at the foot
+  // of a page opened the next one at the same depth.
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className="bg-surface text-ink min-h-dvh antialiased">
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>

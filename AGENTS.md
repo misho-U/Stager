@@ -229,9 +229,11 @@ dashboard and the API render per request.
   next-intl call reads the request.
 - **404s.** An address no route answers gets `app/global-not-found.tsx`
   (`experimental.globalNotFound`): built once, in both languages in the
-  HTML; a script right after them gives the other language the `hidden`
-  attribute before the first paint (`error-pages.spec.ts` counts the frames
-  drawn, with a slow stylesheet). A page's own `notFound()` (an unknown article) gets
+  HTML; a script right after them shows the address's language and gives
+  the other the `hidden` attribute. Until it runs neither shows (an inline
+  `@media (scripting: enabled)` rule): the stylesheet holds back both the
+  paint and the script, and once it arrives the browser may paint first
+  (`error-pages.spec.ts` counts the frames drawn, with a slow stylesheet). A page's own `notFound()` (an unknown article) gets
   `app/[locale]/not-found.tsx`, which Next 16 draws in the browser from the
   page's data, not in the HTML. The status is 404 either way. No catch-all
   page under `[locale]`: it also caught `/api/…` as a locale, and its 404
@@ -341,6 +343,49 @@ server once the admin is signed in. `admin-speed.spec.ts` checks each part.
   The same skeletons stand in while a page's own data loads. They say
   "Loading…" once, to a screen reader (`role="status"`, visually hidden),
   and pulse only where the system allows motion.
+
+### Moving between the public pages
+
+A link to another page of the site opens it without a reload, and what a
+full load used to give for free still holds. `site-navigation.spec.ts`
+checks each part, and the keyboard spec the skip link after a page change.
+
+- **Every link to another page of the site is a `SiteLink`**
+  (`shared/components/site-link.tsx`): next/link for an address
+  (`/en/team`, an article, `/en#services`), a plain `<a>` for a section of
+  the page already open (`#inquiry`, which the smooth scroll glides to). A
+  link fetches its built page as it comes into view, so the page is usually
+  there before the click. Links off the site, mail and phone, and links
+  inside dashboard rich text stay plain `<a>`. The language switch was
+  already next-intl's `Link` (`pkg/i18n/navigation`) and moves the same
+  way: `<html lang>`, which picks the Georgian typeface, and every message
+  change with the page.
+- **Next keeps the last three pages mounted, hidden** (Cache Components wraps
+  each in React's `<Activity>`). The page left behind stays in the
+  document, `display: none` and out of the accessibility tree. Its effects
+  stop as it hides and run again when Back shows it: its motion and Lenis
+  start over, and a half-typed inquiry survives. Ids repeat while a page is
+  hidden; the page shown always comes first in the document, so
+  `getElementById` and the skip link's `#content` find its own. Find
+  elements by id or inside a ref, never by a document-wide
+  `querySelector`. In tests take the match shown
+  (`.filter({ visible: true })`); `tests/e2e/motion.ts` and `headings.ts`
+  look only inside the page shown.
+- **`data-scroll-behavior="smooth"` on `<html>`** (both root layouts). The
+  stylesheet glides in-page jumps; with the attribute, Next turns that off
+  while it moves to the top of a newly opened page. Without it the move to
+  the top glided, and the page's scroll scenes, measuring as they set up
+  (`ScrollTrigger.refresh` keeps the scroll where it finds it), put the old
+  position back: a link at the foot of a page opened the next one at the
+  same depth.
+- **Where the keyboard starts on arrival** (`useSmoothScroll`): an address
+  with a section lands on it and focuses it (`focusArrival`); Next scrolls
+  there but cannot focus a section. Any other page opened without a reload
+  starts the keyboard at its top, as a full load does, so the next Tab
+  offers the skip link: the link the keyboard was on went with its page.
+- **The menu closes before it follows a link to another page**
+  (`SiteHeader`): a link to the page already open changes nothing on
+  screen, and left the menu open over it.
 
 ### Search engines, share cards and AI crawlers (`widgets/seo`)
 
@@ -674,6 +719,11 @@ Lenis. The dashboard has none.
   client-side); a design that needs a heavier plugin (Draggable, Inertia,
   Flip) registers it in its own service, so no other design downloads it. `useMotion` scopes every tween to the design and reverts it on
   unmount; Lenis comes from `widgets/smooth-scroll`.
+- **A page opened without a reload moves as if loaded.** Its `SiteMotion`
+  mounts afresh: the entrance, the reveals and one new Lenis, after the last
+  page's were reverted (§ Moving between the public pages). The navigation
+  spec scrolls a page reached that way, and one brought back by Back, with
+  motion on.
 - **Reduced motion means none.** Every effect runs under
   `(prefers-reduced-motion: no-preference)`: with reduced motion the page is
   static and fully visible and Lenis is off. Pinned and sideways scenes run

@@ -33,7 +33,9 @@ async function skipToContent(page: Page, label: string) {
   expect((await skip.boundingBox())?.width ?? 0).toBeGreaterThan(40);
 
   await page.keyboard.press('Enter');
-  await expect(page.locator('main#content')).toBeFocused();
+  // The page shown: after a page change without a reload, Next keeps the
+  // page left behind in the document, hidden.
+  await expect(page.locator('main#content').filter({ visible: true })).toBeFocused();
   await page.keyboard.press('Tab');
   expect(await focusIsIn(page, 'main'), 'the next Tab stays in the content').toBe(true);
 }
@@ -62,6 +64,26 @@ test.describe('the public site', () => {
       await expect(page.locator('main#content')).toBeFocused();
     });
   }
+
+  test('after a link opens another page, the first Tab offers the skip again', async ({ page }) => {
+    await page.goto('/en/insights');
+    await expect(page.locator('[data-site]')).toHaveAttribute('data-motion', 'on');
+    // Followed from the keyboard at the foot of the page. The page changes
+    // without a reload, and the link the keyboard was on is gone with it.
+    await page.locator('footer a[href="/en"]').focus();
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL('/en');
+    await expect(page.getByTestId('hero-heading')).toBeVisible();
+    // Past the end of the page a real browser's Tab reaches its own toolbar;
+    // a test browser has none and wraps to the top, which would pass without
+    // the reset. A control after the page stands in for the toolbar.
+    await page.evaluate(() => {
+      const after = document.createElement('button');
+      after.textContent = 'after the page';
+      document.body.append(after);
+    });
+    await skipToContent(page, en.common.skipToContent);
+  });
 
   test('Start a Project takes the keyboard to the form', async ({ page }) => {
     // With smooth scrolling on, which takes over the browser's own jump.

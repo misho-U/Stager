@@ -4,6 +4,7 @@ import type { PublicLayoutData } from '@/entity/site-setting/model/site-setting.
 import { ContactDetails } from '@/shared/components/contact-details';
 import { SocialLinks } from '@/shared/components/social-links';
 import { Wordmark } from '@/shared/components/wordmark';
+import { SiteLink } from '@/shared/components/site-link';
 
 type Link = { href: string; label: string };
 
@@ -41,13 +42,13 @@ export function SiteFooter({ layout, links, privacy, current = null, labels }: S
             <ul className="grid grid-cols-2 gap-x-6">
               {links.map((link) => (
                 <li key={link.href}>
-                  <a
+                  <SiteLink
                     href={link.href}
                     aria-current={link.href === current ? 'page' : undefined}
                     className="text-body text-ink-muted hover:text-ink inline-flex min-h-11 items-center transition-colors"
                   >
                     {link.label}
-                  </a>
+                  </SiteLink>
                 </li>
               ))}
             </ul>
@@ -75,13 +76,13 @@ export function SiteFooter({ layout, links, privacy, current = null, labels }: S
           </p>
           <div className="flex flex-wrap items-center gap-x-6">
             {privacy ? (
-              <a
+              <SiteLink
                 href={privacy.href}
                 data-testid="privacy-link"
                 className="hover:text-ink inline-flex min-h-11 items-center underline-offset-4 transition-colors hover:underline"
               >
                 {privacy.label}
-              </a>
+              </SiteLink>
             ) : null}
             <p>{labels.rights}</p>
           </div>

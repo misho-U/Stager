@@ -93,7 +93,9 @@ test.describe('the articles', () => {
     await links.filter({ hasText: first!.title }).click();
     await expect(page).toHaveURL(`/en/insights/${first!.slug}`);
     await expect(page.getByTestId('insight-title')).toHaveText(first!.title);
-    await expect(page.locator('h1')).toHaveCount(1);
+    // One title to a screen reader: the list, opened without a reload, stays
+    // in the document, hidden (AGENTS.md § Moving between the public pages).
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
     await expect(page.getByRole('link', { name: en.insights.all })).toHaveAttribute(
       'href',
       '/en/insights',
