@@ -58,6 +58,11 @@ rather than adding a dependency.
   content had failed to load. Page lookups go through `byKey`
   (`page.repository.ts`, `isUnknownEnumValue`), which reads that as no page,
   and the dashboard's list filters its keys after the query, not in it.
+  A new table is the same trap (P2021): the course syllabus
+  (`course_modules`) is read on its own in `server/published/courses.ts`,
+  and `isMissingTable` reads a missing table as no syllabus, so a preview
+  lists its courses without the button. Only for an addition the site can
+  do without.
 - **The middleware file is `src/proxy.ts`.** Next 16 renamed the convention from
   `middleware.ts` to `proxy.ts` (default export, not a named `middleware`
   export). It must sit next to `src/app`; at the repo root it is silently

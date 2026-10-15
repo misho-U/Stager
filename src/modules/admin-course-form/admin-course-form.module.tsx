@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { Controller } from 'react-hook-form';
 
+import { SyllabusFields } from '@/modules/admin-course-form/elements/syllabus-fields/syllabus-fields.module';
 import { useAdminCourseForm } from '@/modules/admin-course-form/admin-course-form.service';
 import { Button, ButtonLink } from '@/shared/components/button';
 import {
@@ -100,6 +101,8 @@ export function AdminCourseFormModule({ courseId }: { courseId?: string }) {
             )}
           </TranslatedFields>
         </Panel>
+
+        <SyllabusFields form={form} />
 
         <Panel title={t('courses.form.schedulePanel')}>
           <div className="grid gap-4 sm:grid-cols-2">

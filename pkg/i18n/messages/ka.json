@@ -118,6 +118,9 @@
     "registerMessageUndated": "მსურს დავრეგისტრირდე კურსზე „{course}“.",
     "waitlistMessage": "მსურს ჩავეწერო მოლოდინის სიაში კურსზე „{course}“, რომელიც იწყება {date}.",
     "waitlistMessageUndated": "მსურს ჩავეწერო მოლოდინის სიაში კურსზე „{course}“.",
+    "syllabus": "სილაბუსის ნახვა",
+    "syllabusTitle": "სილაბუსი",
+    "syllabusCount": "{count, plural, other {# მოდული}}",
     "close": "დახურვა"
   },
   "videos": {
