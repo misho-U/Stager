@@ -22,35 +22,6 @@ export const IS_BUILD = process.env.NEXT_PHASE === 'phase-production-build';
 /**
  * Host of the current Vercel deployment, without a scheme. Set automatically by
  * Vercel and absent locally. On preview deployments this differs from the
- * configured site URL, which matters when the server fetches its own API.
+ * configured site URL, so pkg/security/request.ts accepts it as an origin too.
  */
 export const VERCEL_URL = process.env.VERCEL_URL ?? null;
-
-/**
- * Explicit origin for the server's own /api calls, overriding everything else.
- *
- * Server components fetch this app's API over HTTP, so they need an origin that
- * resolves from inside the server — which is not the same requirement as the
- * public, user-facing domain:
- *
- *   - a domain whose DNS has not propagated yet resolves for nobody, including
- *     us, so the site would render empty until it did;
- *   - a Vercel preview with Deployment Protection turned on answers 401 to an
- *     unauthenticated request, including our own.
- *
- * Set this to a loopback origin (`http://127.0.0.1:3000`) to take the public
- * domain out of the path entirely. Left unset, the defaults in
- * pkg/http/site-url.ts already avoid the public domain on Vercel.
- *
- * Server-only by design: it has no NEXT_PUBLIC_ prefix, so it is `undefined` in
- * the browser, where nothing needs it — client fetches use relative paths.
- */
-export const INTERNAL_API_ORIGIN = process.env.INTERNAL_API_ORIGIN ?? null;
-
-/**
- * Set by Vercel when the project's "Protection Bypass for Automation" is on.
- * With Deployment Protection, Vercel answers 401 to a deployment fetching its
- * own URL unless the request carries this, and every public read would fail.
- * Server-side only: it is not NEXT_PUBLIC, so client bundles see undefined.
- */
-export const VERCEL_AUTOMATION_BYPASS_SECRET = process.env.VERCEL_AUTOMATION_BYPASS_SECRET ?? null;
