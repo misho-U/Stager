@@ -9,6 +9,7 @@ import {
 } from '@/modules/insight-page/insight-page.service';
 import { MediaFrame } from '@/shared/components/media-frame';
 import { RichText } from '@/shared/components/rich-text';
+import { SiteLink } from '@/shared/components/site-link';
 import { isBlankHtml, joinMeta } from '@/shared/lib/content';
 import type { DbLocale } from '@/shared/types/enums';
 import { toAppLocale } from '@pkg/i18n/routing';
@@ -40,11 +41,7 @@ export async function InsightPageModule({ locale, slug }: InsightPageModuleProps
   const allArticles = `${base}${INSIGHTS_PATH}`;
 
   return (
-    <SubpageShell
-      locale={locale}
-      chrome={chrome}
-      current={`${base}${insightPath(slug)}`}
-    >
+    <SubpageShell locale={locale} chrome={chrome} current={`${base}${insightPath(slug)}`}>
       {structured ? <JsonLd data={structured} /> : null}
       {article ? (
         <article aria-labelledby="page-title">
@@ -54,13 +51,13 @@ export async function InsightPageModule({ locale, slug }: InsightPageModuleProps
             testId="insight-title"
             meta={
               <div className="flex flex-col items-start gap-6">
-                <a
+                <SiteLink
                   href={allArticles}
                   className="text-ink-muted hover:text-ink inline-flex min-h-11 items-center gap-2 transition-colors"
                 >
                   <ArrowLeftIcon aria-hidden />
                   {t('insights.all')}
-                </a>
+                </SiteLink>
                 <p>
                   {joinMeta([
                     article.category?.name,

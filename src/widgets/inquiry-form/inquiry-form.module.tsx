@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/shared/components/button';
 import { SelectField, TextAreaField, TextField } from '@/shared/components/field';
 import { QueryProvider } from '@/shared/components/query-provider';
+import { SiteLink } from '@/shared/components/site-link';
 import { cn } from '@/shared/lib/cn';
 import type { DbLocale } from '@/shared/types/enums';
 import { INTERESTS } from '@/widgets/inquiry-form/inquiry-form.constants';
@@ -140,12 +141,12 @@ function InquiryFormFields({
         <p data-testid="privacy-note" className="text-body-sm text-ink-muted text-pretty">
           {t.rich('privacyNote', {
             link: (chunks) => (
-              <a
+              <SiteLink
                 href={privacyHref}
                 className="text-ink underline underline-offset-4 hover:no-underline"
               >
                 {chunks}
-              </a>
+              </SiteLink>
             ),
           })}
         </p>

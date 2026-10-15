@@ -7,6 +7,8 @@ import {
   disconnectTestPrisma,
   testPrisma,
 } from './db-guard';
+import { headingSkips } from './headings';
+import { expectSettledVisible } from './motion';
 
 /**
  * The home page, in the site's one design ("Chef's Table", dark).
@@ -281,28 +283,7 @@ test.describe('split text and screen readers', () => {
 test('the headings never skip a level', async ({ page }) => {
   await page.goto('/en');
   await expect(page.locator('[data-site]')).toBeVisible();
-  const skips = await page.evaluate(() => {
-    const headings = [
-      ...document.querySelectorAll<HTMLElement>(
-        '[data-site] :is(h1, h2, h3, h4, h5, h6, [role="heading"])',
-      ),
-    ].filter(
-      (heading) =>
-        !heading.closest('[aria-hidden="true"], [hidden], dialog:not([open])') &&
-        getComputedStyle(heading).display !== 'none',
-    );
-    const found: string[] = [];
-    let previous = 0;
-    for (const heading of headings) {
-      const level = Number(heading.getAttribute('aria-level') ?? heading.tagName.slice(1));
-      if (level > previous + 1) {
-        found.push(`h${previous} → h${level}: ${(heading.textContent ?? '').trim().slice(0, 40)}`);
-      }
-      previous = level;
-    }
-    return found;
-  });
-  expect(skips).toEqual([]);
+  expect(await headingSkips(page)).toEqual([]);
 });
 
 /**
@@ -316,50 +297,7 @@ for (const path of ['/en', '/en/team', '/en/insights']) {
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.goto(path);
     await expect(page.locator('[data-site]')).toBeVisible();
-    await page.waitForTimeout(path === '/en' ? 4500 : 2000);
-
-    // Scroll through like a visitor, so every scroll-driven entrance fires,
-    // then back to the top, where the first scene is shown in full again.
-    const height = await page.evaluate(() => document.documentElement.scrollHeight);
-    for (const step of [500, -500]) {
-      for (let y = 0; y <= height; y += 500) {
-        await page.mouse.wheel(0, step);
-        await page.waitForTimeout(100);
-      }
-      await page.waitForTimeout(1500);
-    }
-
-    const hidden = await page.evaluate(() => {
-      const shown = (element: Element) => {
-        for (let node: Element | null = element; node; node = node.parentElement) {
-          const style = getComputedStyle(node);
-          if (style.display === 'none' || style.visibility === 'hidden') return false;
-          if (Number(style.opacity) < 0.99) return false;
-        }
-        return true;
-      };
-      return [
-        ...document.querySelectorAll(
-          '[data-site] h1, [data-site] h2, [data-site] h3, [data-testid="inquiry-form"]',
-        ),
-      ]
-        .filter((element) => !element.closest('dialog, [role="dialog"]'))
-        .filter((element) => !shown(element))
-        .map((element) => (element.textContent ?? '').trim().slice(0, 40));
-    });
-    expect(hidden).toEqual([]);
-
-    // Every figure has counted all the way up to its own number.
-    const figures = await page.evaluate(() =>
-      [...document.querySelectorAll<HTMLElement>('[data-count-to]')].map((figure) => {
-        const to = Number(figure.dataset.countTo);
-        const expected = figure.hasAttribute('data-grouped')
-          ? to.toLocaleString('en-US')
-          : String(to);
-        return { shown: figure.textContent, expected };
-      }),
-    );
-    for (const { shown, expected } of figures) expect(shown).toBe(expected);
+    await expectSettledVisible(page, path === '/en' ? 4500 : 2000);
   });
 }
 

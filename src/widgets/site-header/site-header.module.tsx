@@ -4,6 +4,7 @@ import { ListIcon } from '@phosphor-icons/react/dist/csr/List';
 import { XIcon } from '@phosphor-icons/react/dist/csr/X';
 import type { MouseEvent, ReactNode } from 'react';
 
+import { SiteLink } from '@/shared/components/site-link';
 import { cn } from '@/shared/lib/cn';
 import { isInPageLink } from '@/widgets/site-header/site-header.constants';
 import { useMenu, useScrolled } from '@/widgets/site-header/site-header.service';
@@ -53,9 +54,17 @@ export function SiteHeader({
   const { marker, scrolled } = useScrolled();
   const { dialog, trigger, open, close, onClose, onDialogClick, follow } = useMenu();
   const hasMenu = links.length > 0;
-  /** A link to a section of this page glides there; any other is followed. */
+  /**
+   * A link to a section of this page glides there. Any other is followed
+   * without a reload (SiteLink), so the menu closes first: the page it sits
+   * on may stay (a link to this very page), and a closed menu hands the
+   * scroll back.
+   */
   const onMenuLink = (href: string) => (event: MouseEvent<HTMLAnchorElement>) => {
-    if (!isInPageLink(href)) return;
+    if (!isInPageLink(href)) {
+      close();
+      return;
+    }
     event.preventDefault();
     follow(href);
   };
@@ -79,13 +88,13 @@ export function SiteHeader({
           {brand}
           <div className="flex items-center gap-2">
             <div className="ct-lang">{language}</div>
-            <a
+            <SiteLink
               href={cta.href}
               data-magnetic
               className="bg-primary text-on-primary hover:bg-primary-hover text-body-sm hidden min-h-11 items-center rounded-full px-5 font-medium whitespace-nowrap transition-colors md:inline-flex"
             >
               {cta.label}
-            </a>
+            </SiteLink>
             {hasMenu ? (
               <button
                 ref={trigger}
@@ -129,7 +138,7 @@ export function SiteHeader({
               <ul className="border-line flex flex-col border-t">
                 {links.map((link) => (
                   <li key={link.href} className="border-line overflow-hidden border-b">
-                    <a
+                    <SiteLink
                       href={link.href}
                       data-menu-link
                       aria-current={link.href === current ? 'page' : undefined}
@@ -137,7 +146,7 @@ export function SiteHeader({
                       className="text-title-sm font-heading hover:text-accent flex min-h-12 items-center py-2 transition-colors"
                     >
                       {link.label}
-                    </a>
+                    </SiteLink>
                   </li>
                 ))}
               </ul>
@@ -145,13 +154,13 @@ export function SiteHeader({
             {teaser}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="ct-lang">{menuLanguage}</div>
-              <a
+              <SiteLink
                 href={cta.href}
                 onClick={onMenuLink(cta.href)}
                 className="bg-primary text-on-primary hover:bg-primary-hover text-body-sm inline-flex min-h-11 items-center rounded-full px-5 font-medium whitespace-nowrap transition-colors"
               >
                 {cta.label}
-              </a>
+              </SiteLink>
             </div>
           </div>
         </dialog>

@@ -43,7 +43,8 @@ function placeMenu(menu: HTMLDialogElement | null, button: HTMLElement | null) {
  * bar and a pill, so the spot is measured, not fixed), follows it through a
  * resize, and closes on a click outside it. Its links rise in one after
  * another; a link to a section of this page closes the menu first, then
- * glides there. A link to another page is simply followed (see the module).
+ * glides there. A link to another page closes it and is followed without a
+ * reload (see the module).
  */
 export function useMenu() {
   const dialog = useRef<HTMLDialogElement>(null);

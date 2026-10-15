@@ -28,12 +28,16 @@
     -webkit-text-size-adjust: 100%;
   }
 
-  /* In-page links ("start a project" → the inquiry form) glide rather than
-     jump, unless the visitor has asked for less motion. Where a design runs
-     Lenis, Lenis does the gliding and the browser's must stand down, or the
-     two fight over every frame. */
+  /* In-page jumps glide rather than jump, unless the visitor has asked for
+     less motion. Never on the public site: Lenis glides there
+     (widgets/smooth-scroll), and the browser's own must stand down, or the
+     two fight over every frame. `html.lenis` alone did not hold it back:
+     GSAP's ScrollTrigger reads this value once, before Lenis starts, and
+     writes it back inline after every re-measure. Every jump the browser
+     made (a focused link scrolled into view) then glided, and a link
+     followed mid-glide opened the next page a few pixels down. */
   @media (prefers-reduced-motion: no-preference) {
-    html {
+    html:not(:has([data-site])) {
       scroll-behavior: smooth;
     }
   }

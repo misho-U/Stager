@@ -60,7 +60,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const theme = parseAdminTheme(cookieStore.get(ADMIN_THEME_COOKIE)?.value);
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    // `data-scroll-behavior`: Next jumps, rather than glides, to the top of a
+    // newly opened page (see app/[locale]/layout.tsx).
+    <html lang={locale} data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className="bg-surface text-ink min-h-dvh antialiased">
         <NextIntlClientProvider>
           <AdminThemeProvider initialTheme={theme}>

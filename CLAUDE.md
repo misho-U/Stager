@@ -82,6 +82,15 @@ Do not add a library outside this list without raising it first.
   form. Never `router.refresh()` after a save: every save already marks every
   query stale, and a refresh throws away every prefetched page. Signing out
   is a full page load.
+- **A link to another public page is a `SiteLink`**, which opens it without
+  a reload (a `#section` of the same page stays a plain `<a>`). Next then
+  keeps the last three pages in the document, hidden: ids repeat, so find
+  elements by id or ref, never a document-wide `querySelector`, and tests
+  take the visible match. The public site never sets the browser's
+  `scroll-behavior: smooth` (Lenis glides, and GSAP writes the value back
+  inline), and `<html>` keeps `data-scroll-behavior="smooth"`: either
+  slipping opened a new page part-way down. AGENTS.md § Moving between the
+  public pages.
 - **Never let a failed read fall back to content-shaped copy.** A placeholder
   that reads like the real thing turns an outage into a page that merely looks
   fine, and hid a dead API for days. On a public page a failed read is not

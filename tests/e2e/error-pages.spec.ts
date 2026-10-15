@@ -63,10 +63,23 @@ test('a missing page never draws the other language, even while its stylesheet i
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(2);
   expect(await kaFrames()).toBeGreaterThan(0);
 
-  expect((await page.goto('/en/no-such-page-anywhere'))?.status()).toBe(404);
-  await page.waitForLoadState('networkidle');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText(en.common.notFound);
-  await expect(page.locator('[data-copy][lang="ka"]')).toHaveAttribute('hidden', '');
-  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-  expect(await kaFrames()).toBe(0);
+  // Several loads: the frame that slipped through came in about one in three,
+  // when the browser painted between the stylesheet's arrival and the script.
+  for (let load = 0; load < 3; load += 1) {
+    expect((await page.goto('/en/no-such-page-anywhere'))?.status()).toBe(404);
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(en.common.notFound);
+    await expect(page.locator('[data-copy][lang="ka"]')).toHaveAttribute('hidden', '');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    expect(await kaFrames()).toBe(0);
+  }
+});
+
+test.describe('without scripts', () => {
+  test.use({ javaScriptEnabled: false });
+
+  test('a missing page says it in both languages', async ({ page }) => {
+    expect((await page.goto('/en/no-such-page-anywhere'))?.status()).toBe(404);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(2);
+  });
 });

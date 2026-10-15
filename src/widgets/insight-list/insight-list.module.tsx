@@ -3,6 +3,7 @@ import { getFormatter, getTranslations } from 'next-intl/server';
 
 import { insightPath, type PublicInsightListItem } from '@/entity/insight/model/insight.model';
 import { joinMeta } from '@/shared/lib/content';
+import { SiteLink } from '@/shared/components/site-link';
 
 type InsightRowsProps = {
   items: readonly PublicInsightListItem[];
@@ -39,13 +40,13 @@ export async function InsightRows({ items, base, headingLevel: Heading }: Insigh
           </p>
           <div className="flex flex-col gap-2 lg:col-span-8">
             <Heading className="text-title font-heading stretch-heading text-balance">
-              <a
+              <SiteLink
                 href={`${base}${insightPath(insight.slug)}`}
                 data-testid="insight-link"
                 className="group-hover:text-accent transition-colors after:absolute after:inset-0"
               >
                 {insight.title}
-              </a>
+              </SiteLink>
             </Heading>
             {insight.excerpt ? (
               <p className="text-body text-ink-muted max-w-3xl text-pretty">{insight.excerpt}</p>

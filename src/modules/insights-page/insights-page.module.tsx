@@ -7,6 +7,7 @@ import {
   loadInsightsPageData,
 } from '@/modules/insights-page/insights-page.service';
 import { MediaFrame } from '@/shared/components/media-frame';
+import { SiteLink } from '@/shared/components/site-link';
 import { joinMeta } from '@/shared/lib/content';
 import type { DbLocale } from '@/shared/types/enums';
 import { toAppLocale } from '@pkg/i18n/routing';
@@ -37,11 +38,7 @@ export async function InsightsPageModule({ locale }: InsightsPageModuleProps) {
   const rows = featured ? rest : insights;
 
   return (
-    <SubpageShell
-      locale={locale}
-      chrome={chrome}
-      current={`${base}${INSIGHTS_PATH}`}
-    >
+    <SubpageShell locale={locale} chrome={chrome} current={`${base}${INSIGHTS_PATH}`}>
       <JsonLd
         data={insightsStructuredData(content, locale, {
           home: t('nav.home'),
@@ -85,13 +82,13 @@ export async function InsightsPageModule({ locale }: InsightsPageModuleProps) {
                   ])}
                 </p>
                 <h2 className="text-title-lg font-heading stretch-heading text-balance">
-                  <a
+                  <SiteLink
                     href={`${base}${insightPath(featured.slug)}`}
                     data-testid="insight-link"
                     className="group-hover:text-accent transition-colors after:absolute after:inset-0"
                   >
                     {featured.title}
-                  </a>
+                  </SiteLink>
                 </h2>
                 {featured.excerpt ? (
                   <p className="text-body-lg text-ink-muted text-pretty">{featured.excerpt}</p>

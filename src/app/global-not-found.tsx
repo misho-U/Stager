@@ -13,11 +13,16 @@ import { routing } from '@pkg/i18n/routing';
  * without scripts, and a crawler, read.
  *
  * KEEP_ADDRESS_LANGUAGE runs as soon as both are parsed: it reads the
- * language from the address, gives the other one the `hidden` attribute and
- * sets `<html lang>`, so a visitor at /en/… sees one English page. Under
- * neither language (/api/…) both stay. It runs before the first paint: the
- * stylesheet holds the paint back, and it holds this script back no longer
- * than that (error-pages.spec.ts checks with a slow stylesheet).
+ * language from the address, shows that one (`data-shown`), gives the other
+ * the `hidden` attribute and sets `<html lang>`, so a visitor at /en/… sees
+ * one English page. Under neither language (/api/…) both show.
+ *
+ * Until it has run, neither shows (HOLD_COPY, only where scripts run). The
+ * stylesheet holds back both the first paint and this script, and once it
+ * arrives the browser may paint before the script runs: an English 404 drew
+ * a frame of both languages in more than one load in three, with the
+ * stylesheet slow. error-pages.spec.ts counts the frames.
+ *
  * A page that calls notFound() itself (an unknown article) gets
  * app/[locale]/not-found.tsx instead, already in its language.
  */
@@ -26,18 +31,27 @@ const COPY = [
   { lang: 'en', messages: en },
 ] as const;
 
-const KEEP_ADDRESS_LANGUAGE = `(function(){var l=location.pathname.split('/')[1];if(${JSON.stringify(routing.locales)}.indexOf(l)<0)return;document.documentElement.lang=l;document.querySelectorAll('[data-copy]').forEach(function(e){e.hidden=e.lang!==l;});})();`;
+/**
+ * Neither copy shows until the script picks one; without scripts both do (not
+ * the `hidden` attribute, which would show neither). Unlayered, so it beats
+ * the `flex` utility.
+ */
+const HOLD_COPY =
+  '@media (scripting: enabled) { [data-copy]:not([data-shown]) { display: none; } }';
+
+const KEEP_ADDRESS_LANGUAGE = `(function(){var l=location.pathname.split('/')[1];var one=${JSON.stringify(routing.locales)}.indexOf(l)>=0;if(one)document.documentElement.lang=l;document.querySelectorAll('[data-copy]').forEach(function(e){var show=!one||e.lang===l;e.hidden=!show;if(show)e.setAttribute('data-shown','');});})();`;
 
 export const metadata: Metadata = { title: 'STAGER' };
 
 export default function GlobalNotFound() {
   return (
-    // KEEP_ADDRESS_LANGUAGE changes lang, and `hidden` below, before React
-    // hydrates.
+    // KEEP_ADDRESS_LANGUAGE changes lang, and `hidden` and `data-shown`
+    // below, before React hydrates.
     <html lang={routing.defaultLocale} suppressHydrationWarning>
       <body className="bg-surface text-ink min-h-dvh antialiased">
         <main className="px-gutter mx-auto flex min-h-dvh max-w-2xl flex-col items-center justify-center gap-8 text-center">
           <p className="text-caption tracking-label text-ink-subtle uppercase">404</p>
+          <style dangerouslySetInnerHTML={{ __html: HOLD_COPY }} />
           {COPY.map(({ lang, messages }) => (
             <div
               key={lang}
