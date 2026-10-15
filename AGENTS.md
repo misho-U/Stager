@@ -371,13 +371,21 @@ checks each part, and the keyboard spec the skip link after a page change.
   `querySelector`. In tests take the match shown
   (`.filter({ visible: true })`); `tests/e2e/motion.ts` and `headings.ts`
   look only inside the page shown.
-- **`data-scroll-behavior="smooth"` on `<html>`** (both root layouts). The
-  stylesheet glides in-page jumps; with the attribute, Next turns that off
-  while it moves to the top of a newly opened page. Without it the move to
-  the top glided, and the page's scroll scenes, measuring as they set up
-  (`ScrollTrigger.refresh` keeps the scroll where it finds it), put the old
-  position back: a link at the foot of a page opened the next one at the
-  same depth.
+- **The public site never glides a native jump** (`globals.css`: the
+  browser's `scroll-behavior: smooth` applies only where no `[data-site]`
+  is, the dashboard). Lenis glides there. GSAP's ScrollTrigger reads the
+  value once, before Lenis starts, and writes it back inline after every
+  re-measure, so `html.lenis { scroll-behavior: auto }` never held. Two
+  faults came of it: Next's move to the top of a newly opened page glided,
+  and the scroll scenes, measuring as they set up, put the old position
+  back (a footer link opened the next page at the same depth); and a glide
+  of the browser's own still under way when a link was followed (a focused
+  link scrolled into view) carried on into the next page. Both root
+  layouts also keep `data-scroll-behavior="smooth"` on `<html>`, with which
+  Next turns smooth scrolling off while it moves to the top: the dashboard
+  glides, and the public site must never depend on that rule alone.
+  `site-navigation.spec.ts` asserts no smooth value, computed or inline,
+  once the motion is set up.
 - **Where the keyboard starts on arrival** (`useSmoothScroll`): an address
   with a section lands on it and focuses it (`focusArrival`); Next scrolls
   there but cannot focus a section. Any other page opened without a reload

@@ -86,8 +86,10 @@ Do not add a library outside this list without raising it first.
   a reload (a `#section` of the same page stays a plain `<a>`). Next then
   keeps the last three pages in the document, hidden: ids repeat, so find
   elements by id or ref, never a document-wide `querySelector`, and tests
-  take the visible match. Keep `data-scroll-behavior="smooth"` on `<html>`,
-  or a new page opens at the old one's depth. AGENTS.md § Moving between the
+  take the visible match. The public site never sets the browser's
+  `scroll-behavior: smooth` (Lenis glides, and GSAP writes the value back
+  inline), and `<html>` keeps `data-scroll-behavior="smooth"`: either
+  slipping opened a new page part-way down. AGENTS.md § Moving between the
   public pages.
 - **Never let a failed read fall back to content-shaped copy.** A placeholder
   that reads like the real thing turns an outage into a page that merely looks

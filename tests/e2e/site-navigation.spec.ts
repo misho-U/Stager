@@ -56,12 +56,15 @@ async function publishedArticles(request: APIRequestContext) {
 
 test.describe('a link to another page of the site', () => {
   test('opens it without a reload, at its top, and Back and Forward follow', async ({ page }) => {
+    // From the foot of the page, so arriving at the top of the next is
+    // proven. In a short window, as the articles page must scroll even with
+    // no article in it (CI's database has none; the footer alone is taller
+    // than this), and to its foot outright: the link may already show.
+    await page.setViewportSize({ width: page.viewportSize()?.width ?? 1280, height: 400 });
     await open(page, ARTICLES);
-    // From the foot of the page, so arriving at the top of the next is proven.
-    const homeLink = page.locator(`footer a[href="${HOME}"]`);
-    await homeLink.scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await expect.poll(() => scrollY(page)).toBeGreaterThan(100);
-    await homeLink.click();
+    await page.locator(`footer a[href="${HOME}"]`).click();
 
     await expect(page).toHaveURL(HOME);
     await expect(byTestId(page, 'hero-heading')).toBeVisible();
@@ -123,6 +126,25 @@ test.describe('a link to another page of the site', () => {
     await expect(site(page)).toHaveAttribute('data-motion', 'on');
     await expectSettledVisible(page, 2000);
     expect(await notReloaded(page)).toBe(true);
+  });
+
+  test('never lets the browser glide on its own, with motion on', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium', 'one browser is enough for motion');
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await open(page, ARTICLES);
+    await expect(site(page)).toHaveAttribute('data-motion', 'on');
+    // Lenis glides; a native glide (a focused link scrolled into view) still
+    // under way when a link is followed carried the next page a few pixels
+    // down. GSAP's ScrollTrigger writes back, inline, whatever it first read
+    // here, so the stylesheet must never say smooth on the public site.
+    const behaviour = () =>
+      page.evaluate(() => ({
+        computed: getComputedStyle(document.documentElement).scrollBehavior,
+        inline: document.documentElement.style.scrollBehavior,
+      }));
+    expect(await behaviour()).toEqual({ computed: 'auto', inline: '' });
+    await page.setViewportSize({ width: 1000, height: 600 });
+    await expect.poll(behaviour).toEqual({ computed: 'auto', inline: '' });
   });
 
   test('opens a page that still meets the contrast minimums and keeps its outline', async ({

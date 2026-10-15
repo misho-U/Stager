@@ -59,11 +59,12 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
     notFound();
   }
 
-  // `data-scroll-behavior`: the stylesheet glides in-page jumps (globals.css),
-  // and Next turns that off while it moves to the top of a newly opened page.
-  // Without it the move to the top glided too, and the page's scroll scenes,
-  // measuring as they set up, put the old position back: a link at the foot
-  // of a page opened the next one at the same depth.
+  // `data-scroll-behavior`: Next turns smooth scrolling off while it moves to
+  // the top of a newly opened page. The public site no longer glides native
+  // jumps (globals.css), but when it did, the move to the top glided too,
+  // and the page's scroll scenes, measuring as they set up, put the old
+  // position back: a link at the foot of a page opened the next one at the
+  // same depth. Kept so that can never come back.
   return (
     <html lang={locale} data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className="bg-surface text-ink min-h-dvh antialiased">
