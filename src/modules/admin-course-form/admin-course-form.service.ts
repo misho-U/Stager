@@ -38,6 +38,7 @@ const EMPTY_COURSE: CourseFormValues = {
   status: 'DRAFT',
   order: 0,
   translations: { KA: { ...EMPTY_TRANSLATION }, EN: { ...EMPTY_TRANSLATION } },
+  syllabus: [],
 };
 
 function toFormValues(course: AdminCourse): CourseFormValues {
@@ -57,6 +58,9 @@ function toFormValues(course: AdminCourse): CourseFormValues {
       KA: { ...course.translations.KA },
       EN: { ...course.translations.EN },
     },
+    syllabus: course.syllabus.map((module) => ({
+      translations: { KA: { ...module.translations.KA }, EN: { ...module.translations.EN } },
+    })),
   };
 }
 

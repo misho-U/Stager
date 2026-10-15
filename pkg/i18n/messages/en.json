@@ -118,6 +118,9 @@
     "registerMessageUndated": "I would like to register for \"{course}\".",
     "waitlistMessage": "I would like to join the waiting list for \"{course}\", starting {date}.",
     "waitlistMessageUndated": "I would like to join the waiting list for \"{course}\".",
+    "syllabus": "See syllabus",
+    "syllabusTitle": "Syllabus",
+    "syllabusCount": "{count, plural, one {# module} other {# modules}}",
     "close": "Close"
   },
   "videos": {

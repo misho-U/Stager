@@ -13,7 +13,14 @@ export type RegistrationCourse = {
   date: string | null;
   /** No seats left: the visitor joins the waiting list instead. */
   full: boolean;
+  /** Duration, place and price, already worded for the page ("2 days", "300 ₾"). */
+  details: string[];
+  /** What the course covers, step by step; empty when it has no syllabus. */
+  syllabus: ReadonlyArray<{ title: string; duration: string; description: string }>;
 };
+
+/** What the drawer shows: the course's syllabus, or its registration form. */
+export type RegistrationView = 'syllabus' | 'register';
 
 /**
  * Which course's registration is open, shared by every "Register" button on
@@ -22,11 +29,16 @@ export type RegistrationCourse = {
  */
 export const useRegistrationStore = create<{
   course: RegistrationCourse | null;
-  open: (course: RegistrationCourse) => void;
+  view: RegistrationView;
+  open: (course: RegistrationCourse, view?: RegistrationView) => void;
+  /** From the syllabus to the form, without closing the drawer. */
+  showRegistration: () => void;
   close: () => void;
 }>((set) => ({
   course: null,
-  open: (course) => set({ course }),
+  view: 'register',
+  open: (course, view = 'register') => set({ course, view }),
+  showRegistration: () => set({ view: 'register' }),
   close: () => set({ course: null }),
 }));
 
@@ -38,7 +50,9 @@ export const useRegistrationStore = create<{
  */
 export function useRegistrationDialog() {
   const course = useRegistrationStore((state) => state.course);
+  const view = useRegistrationStore((state) => state.view);
   const close = useRegistrationStore((state) => state.close);
+  const showRegistration = useRegistrationStore((state) => state.showRegistration);
   const dialog = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -58,5 +72,19 @@ export function useRegistrationDialog() {
     close();
   };
 
-  return { course, dialog, onClose, requestClose: () => dialog.current?.close() };
+  // The form replaces the syllabus in the same drawer: back to its top, so
+  // the form's heading is what the visitor sees next.
+  const register = () => {
+    showRegistration();
+    dialog.current?.scrollTo({ top: 0 });
+  };
+
+  return {
+    course,
+    view,
+    dialog,
+    onClose,
+    register,
+    requestClose: () => dialog.current?.close(),
+  };
 }

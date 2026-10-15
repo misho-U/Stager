@@ -561,6 +561,8 @@ model Course {
   updatedAt DateTime @updatedAt
 
   translations CourseTranslation[]
+  /// The syllabus, in `order`: what the course covers, step by step.
+  modules      CourseModule[]
 
   @@index([status, startsAt])
   @@map("courses")
@@ -582,6 +584,39 @@ model CourseTranslation {
 
   @@unique([courseId, locale])
   @@map("course_translations")
+}
+
+/// One step of a course's syllabus: a day, a session or a topic. The
+/// dashboard saves the whole list at once, so a save replaces every module.
+model CourseModule {
+  id String @id @default(cuid())
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  order Int @default(0)
+
+  translations CourseModuleTranslation[]
+
+  @@index([courseId, order])
+  @@map("course_modules")
+}
+
+model CourseModuleTranslation {
+  id String @id @default(cuid())
+
+  moduleId String
+  module   CourseModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  locale   Locale
+
+  title       String
+  /// When or how long, as it should read: "Day 1", "3 hours". May be empty.
+  duration    String @default("")
+  /// Plain text; a line break stays a line break.
+  description String @default("") @db.Text
+
+  @@unique([moduleId, locale])
+  @@map("course_module_translations")
 }
 
 /// A video on STAGER's channel. Always a YouTube link, played through the

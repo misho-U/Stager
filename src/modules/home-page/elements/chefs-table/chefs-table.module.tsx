@@ -51,6 +51,7 @@ import { toAppLocale } from '@pkg/i18n/routing';
 import {
   RegisterButton,
   RegistrationDialog,
+  SyllabusButton,
 } from '@/widgets/course-registration/course-registration.module';
 import type { RegistrationCourse } from '@/widgets/course-registration/course-registration.service';
 import { INQUIRY_ANCHOR } from '@/widgets/inquiry-form/inquiry-form.constants';
@@ -262,6 +263,12 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
     title: course.title,
     date: course.startsAt ? longDate(course.startsAt) : null,
     full: course.seatsLeft === 0,
+    details: [
+      course.duration || null,
+      course.location ?? t(`academy.formats.${course.format}`),
+      price(course.priceGel),
+    ].filter((detail) => detail !== null),
+    syllabus: course.syllabus,
   });
 
   const sampleBadge = <SampleBadge label={t('sample.badge')} hint={t('sample.hint')} />;
@@ -649,13 +656,21 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                                 {course.location ?? t(`academy.formats.${course.format}`)}
                               </li>
                             </ul>
-                            <div className="mt-auto pt-2">
+                            <div className="mt-auto flex flex-wrap gap-3 pt-2">
                               <RegisterButton
                                 course={registration(course)}
                                 className={full ? BUTTON_OUTLINE : BUTTON_PRIMARY}
                               >
                                 {full ? t('academy.waitlist') : t('academy.register')}
                               </RegisterButton>
+                              {course.syllabus.length > 0 ? (
+                                <SyllabusButton
+                                  course={registration(course)}
+                                  className={BUTTON_OUTLINE}
+                                >
+                                  {t('academy.syllabus')}
+                                </SyllabusButton>
+                              ) : null}
                             </div>
                           </div>
                           {/* The stub: torn off along the dashed line. */}
@@ -905,7 +920,11 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
         labels={{ sections: t('home.sections'), rights: t('home.rights') }}
       />
 
-      <RegistrationDialog locale={locale} privacyHref={privacyHref} />
+      <RegistrationDialog
+        locale={locale}
+        privacyHref={privacyHref}
+        registerClassName={`${BUTTON_PRIMARY} w-full`}
+      />
       <ScreeningPlayer
         videos={videos.items.map((video) => ({
           id: video.id,

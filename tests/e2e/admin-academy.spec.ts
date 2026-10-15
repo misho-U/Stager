@@ -2,10 +2,15 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { ADMIN_SESSION, CREDENTIALS_PRESENT } from './admin-session';
 import { DB_WRITES_ALLOWED, DB_WRITES_SKIP_REASON } from './db-guard';
-import { courseInputSchema } from '@/entity/course/model/course.model';
+import {
+  courseInputSchema,
+  courseUpdateInputSchema,
+  MAX_COURSE_MODULES,
+} from '@/entity/course/model/course.model';
 import { todayInTbilisi } from '@/shared/lib/calendar-date';
 import { describeIssue } from '@/shared/lib/validation-message';
 import adminEn from '@pkg/i18n/messages/admin.en.json';
+import siteEn from '@pkg/i18n/messages/en.json';
 
 /**
  * Courses and videos: the owner keeps them in the dashboard, the site lists
@@ -51,6 +56,34 @@ test.describe('course rules', () => {
     expect(parsed.startsAt).toBeNull();
     expect(parsed.categoryId).toBeNull();
     expect(parsed.serviceId).toBeNull();
+  });
+
+  test('a syllabus is optional, and each module needs a title in both languages', () => {
+    expect(courseInputSchema.parse(COURSE).syllabus).toEqual([]);
+
+    const step = (ka: string, en: string) => ({
+      translations: { KA: { title: ka }, EN: { title: en } },
+    });
+    const parsed = courseInputSchema.parse({ ...COURSE, syllabus: [step(' ა ', 'A ')] });
+    expect(parsed.syllabus).toEqual([
+      {
+        translations: {
+          KA: { title: 'ა', duration: '', description: '' },
+          EN: { title: 'A', duration: '', description: '' },
+        },
+      },
+    ]);
+
+    const untitled = courseInputSchema.safeParse({ ...COURSE, syllabus: [step('ა', ' ')] });
+    expect(untitled.error?.issues[0]?.path).toEqual(['syllabus', 0, 'translations', 'EN', 'title']);
+
+    const tooLong = Array.from({ length: MAX_COURSE_MODULES + 1 }, () => step('ა', 'A'));
+    expect(courseInputSchema.safeParse({ ...COURSE, syllabus: tooLong }).success).toBe(false);
+  });
+
+  test('a save that leaves the syllabus out keeps it; an empty list clears it', () => {
+    expect(courseUpdateInputSchema.parse({ priceGel: 10 })).not.toHaveProperty('syllabus');
+    expect(courseUpdateInputSchema.parse({ syllabus: [] }).syllabus).toEqual([]);
   });
 
   test("the site's day turns at Tbilisi midnight, not the server's", () => {
@@ -132,8 +165,73 @@ test.describe('courses and videos in the dashboard', () => {
     await expect(listed).toContainText(category.en);
     await expect(listed).toContainText('4 weeks');
 
+    // No syllabus yet: no button for one.
+    await expect(listed.getByRole('button', { name: siteEn.academy.syllabus })).toHaveCount(0);
+
     await page.goto('/ka');
     await expect(page.getByTestId('course-list').getByText(course.ka)).toBeVisible();
+  });
+
+  test('a syllabus added in the dashboard opens from the course card, Register after it', async ({
+    page,
+  }) => {
+    const syllabus = form.syllabus;
+    await page.goto('/admin/courses');
+    await page.getByRole('link', { name: course.ka }).click();
+    await expect(
+      page.locator('[data-content-locale="KA"]').getByLabel(labelled(adminEn.fields.title)),
+    ).toHaveValue(course.ka);
+
+    const steps = page.getByTestId('syllabus-fields').locator('ol > li');
+    const step = (index: number, locale: 'KA' | 'EN') =>
+      steps.nth(index).locator(`[data-content-locale="${locale}"]`);
+
+    await page.getByRole('button', { name: syllabus.add }).click();
+    await page.getByRole('button', { name: syllabus.add }).click();
+    await step(0, 'KA').getByLabel(labelled(syllabus.title)).fill('სამზარეულოს მოწყობა');
+    await step(0, 'KA').getByLabel(labelled(syllabus.duration.label)).fill('დღე 1');
+    await step(1, 'KA').getByLabel(labelled(syllabus.title)).fill('მენიუს ფასწარმოქმნა');
+
+    // The English titles are missing: the save is refused and the form
+    // switches to English, where the problem is.
+    await page.getByRole('button', { name: form.submit }).click();
+    await expect(step(0, 'EN').getByLabel(labelled(syllabus.title))).toBeVisible();
+
+    await step(0, 'EN').getByLabel(labelled(syllabus.title)).fill('Kitchen setup');
+    await step(0, 'EN').getByLabel(labelled(syllabus.duration.label)).fill('Day 1');
+    await step(0, 'EN')
+      .getByLabel(labelled(syllabus.description.label))
+      .fill('Layout and flow\nHACCP basics');
+    await step(1, 'EN').getByLabel(labelled(syllabus.title)).fill('Menu costing');
+    // Second becomes first.
+    await page.getByRole('button', { name: syllabus.moveUp.replace('{number}', '2') }).click();
+    await page.getByRole('button', { name: form.submit }).click();
+    await expect(page).toHaveURL(/\/admin\/courses$/);
+
+    await page.goto('/en');
+    const listed = page.getByTestId('course-list').locator('li', { hasText: course.en });
+    await listed.getByRole('button', { name: siteEn.academy.syllabus }).click();
+
+    const drawer = page.locator('dialog[open]');
+    await expect(drawer.getByRole('heading', { name: course.en })).toBeVisible();
+    const modules = drawer.getByTestId('syllabus').locator('ol > li');
+    await expect(modules).toHaveCount(2);
+    await expect(modules.nth(0)).toContainText('Menu costing');
+    await expect(modules.nth(1)).toContainText('Kitchen setup');
+    await expect(modules.nth(1)).toContainText('Day 1');
+    await expect(modules.nth(1)).toContainText('HACCP basics');
+
+    // Register turns the same drawer into the registration form.
+    await drawer.getByRole('button', { name: siteEn.academy.register }).click();
+    await expect(drawer.getByText(siteEn.academy.registerTitle)).toBeVisible();
+    await expect(drawer.getByTestId('syllabus')).toHaveCount(0);
+
+    // Saved in its new order.
+    await page.goto('/admin/courses');
+    await page.getByRole('link', { name: course.ka }).click();
+    await expect(step(0, 'KA').getByLabel(labelled(syllabus.title))).toHaveValue(
+      'მენიუს ფასწარმოქმნა',
+    );
   });
 
   test('once its start date has passed, the course leaves the site and the list says so', async ({

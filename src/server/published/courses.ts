@@ -6,6 +6,7 @@ import type { PublicCourse } from '@/entity/course/model/course.model';
 import { todayInTbilisi } from '@/shared/lib/calendar-date';
 import type { DbLocale } from '@/shared/types/enums';
 import { collectionTag, COURSE_CACHE_LIFE } from '@pkg/cache/tags';
+import { isMissingTable } from '@pkg/db/errors';
 import { prisma } from '@pkg/db/prisma';
 import {
   fromCalendarDate,
@@ -48,6 +49,11 @@ export async function listPublicCourses(locale: DbLocale, limit: number, offset:
     prisma.course.count({ where }),
   ]);
 
+  const syllabi = await listSyllabi(
+    rows.map((row) => row.id),
+    locale,
+  );
+
   const items: PublicCourse[] = rows.map((row) => {
     const translation = row.translations[0];
     return {
@@ -67,8 +73,50 @@ export async function listPublicCourses(locale: DbLocale, limit: number, offset:
       seatsLeft: row.seatsLeft,
       priceGel: row.priceGel,
       cover: toMediaSummary(row.coverMedia, locale),
+      syllabus: syllabi.get(row.id) ?? [],
     };
   });
 
   return { items, total };
+}
+
+/**
+ * The listed courses' syllabi in the page's language, by course. Read on
+ * its own so a preview of the change that added syllabi, built against the
+ * live database before its migration has run, lists the courses without
+ * one rather than failing (isMissingTable). Called only from the cached
+ * list above, so it shares that list's tag.
+ */
+async function listSyllabi(
+  courseIds: string[],
+  locale: DbLocale,
+): Promise<Map<string, PublicCourse['syllabus']>> {
+  const syllabi = new Map<string, PublicCourse['syllabus']>();
+  if (courseIds.length === 0) return syllabi;
+
+  let modules;
+  try {
+    modules = await prisma.courseModule.findMany({
+      where: { courseId: { in: courseIds } },
+      include: { translations: { where: { locale } } },
+      orderBy: { order: 'asc' },
+    });
+  } catch (error) {
+    if (isMissingTable(error)) return syllabi;
+    throw error;
+  }
+
+  for (const step of modules) {
+    const translation = step.translations[0];
+    // A step without a title in this language has nothing to show.
+    if (!translation?.title) continue;
+    const list = syllabi.get(step.courseId) ?? [];
+    list.push({
+      title: translation.title,
+      duration: translation.duration,
+      description: translation.description,
+    });
+    syllabi.set(step.courseId, list);
+  }
+  return syllabi;
 }

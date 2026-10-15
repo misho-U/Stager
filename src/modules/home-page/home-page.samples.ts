@@ -69,7 +69,10 @@ function dayFromToday(days: number): string {
 }
 
 const COURSES: ReadonlyArray<
-  Omit<PublicCourse, keyof CourseText | 'startsAt' | 'cover' | 'category' | 'serviceId'> & {
+  Omit<
+    PublicCourse,
+    keyof CourseText | 'startsAt' | 'cover' | 'category' | 'serviceId' | 'syllabus'
+  > & {
     category: SampleCategory;
     inDays: number;
     text: Localised<CourseText>;
@@ -349,6 +352,8 @@ export async function sampleCourses(locale: DbLocale): Promise<PublicCourse[]> {
       serviceId: null,
       startsAt: dayFromToday(inDays),
       cover: null,
+      // No invented syllabus: a sample card offers none.
+      syllabus: [],
     }));
 }
 

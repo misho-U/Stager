@@ -29,6 +29,20 @@ export const courseTranslationSchema = z.object({
   location: z.string(),
 });
 
+/** One step of the syllabus in one language. */
+export const courseModuleTranslationSchema = z.object({
+  title: z.string(),
+  duration: z.string(),
+  description: z.string(),
+});
+
+export const adminCourseModuleSchema = z.object({
+  id: z.string(),
+  translations: bothLocales(courseModuleTranslationSchema),
+});
+
+export type AdminCourseModule = z.infer<typeof adminCourseModuleSchema>;
+
 export const adminCourseSchema = z.object({
   id: z.string(),
   slug: z.string(),
@@ -46,6 +60,8 @@ export const adminCourseSchema = z.object({
   createdAt: isoDateTime,
   updatedAt: isoDateTime,
   translations: bothLocales(courseTranslationSchema),
+  /** The syllabus, in order. */
+  syllabus: z.array(adminCourseModuleSchema),
 });
 
 export type AdminCourse = z.infer<typeof adminCourseSchema>;
@@ -78,6 +94,8 @@ export const publicCourseSchema = z.object({
   /** Whole lari; null for a free course. */
   priceGel: z.number().int().nonnegative().nullable(),
   cover: mediaSummarySchema.nullable(),
+  /** What the course covers, step by step, in the page's language. Empty: no syllabus. */
+  syllabus: z.array(courseModuleTranslationSchema),
 });
 
 export type PublicCourse = z.infer<typeof publicCourseSchema>;
@@ -94,6 +112,19 @@ export const courseTranslationInputSchema = z.object({
   location: z.string().trim().max(160).default(''),
 });
 
+export const courseModuleTranslationInputSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  duration: z.string().trim().max(60).default(''),
+  description: z.string().trim().max(2000).default(''),
+});
+
+export const courseModuleInputSchema = z.object({
+  translations: bothLocales(courseModuleTranslationInputSchema),
+});
+
+/** Enough for a long programme; a list this long is a mistake, not a course. */
+export const MAX_COURSE_MODULES = 40;
+
 const courseFieldsSchema = z.object({
   slug: slugSchema,
   categoryId: optionalChoice(),
@@ -107,6 +138,8 @@ const courseFieldsSchema = z.object({
   status: contentStatusSchema.default('DRAFT'),
   order: z.number().int().min(0).max(100_000).default(0),
   translations: bothLocales(courseTranslationInputSchema),
+  /** The whole syllabus, in order: a save replaces it. */
+  syllabus: z.array(courseModuleInputSchema).max(MAX_COURSE_MODULES).default([]),
 });
 
 /** More seats left than there are seats is a typing mistake, said at the field. */

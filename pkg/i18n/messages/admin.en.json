@@ -370,6 +370,26 @@
         "none": "No category",
         "hint": "Groups courses on the site. Add categories under Course categories."
       },
+      "syllabusPanel": "Syllabus",
+      "syllabus": {
+        "intro": "What the course covers, step by step. On the site, the course card shows a See syllabus button that opens this list. Leave it empty to show no button.",
+        "empty": "No modules yet.",
+        "add": "Add module",
+        "module": "Module {number}",
+        "title": "Module title",
+        "duration": {
+          "label": "When or how long",
+          "hint": "Optional, e.g. Day 1 or 3 hours."
+        },
+        "description": {
+          "label": "What it covers",
+          "hint": "Optional. Plain text; a new line stays a new line."
+        },
+        "moveUp": "Move module {number} up",
+        "moveDown": "Move module {number} down",
+        "remove": "Remove module {number}",
+        "limit": "A syllabus holds up to {max} modules."
+      },
       "submit": "Save course"
     }
   },

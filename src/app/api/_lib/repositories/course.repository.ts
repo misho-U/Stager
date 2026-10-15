@@ -17,9 +17,11 @@ import { prisma } from '@pkg/db/prisma';
 const adminInclude = {
   coverMedia: mediaInclude,
   translations: true,
+  modules: { orderBy: { order: 'asc' }, include: { translations: true } },
 } as const;
 
 const EMPTY_TRANSLATION = { title: '', summary: '', duration: '', location: '' };
+const EMPTY_MODULE_TRANSLATION = { title: '', duration: '', description: '' };
 
 type AdminRow = Awaited<
   ReturnType<typeof prisma.course.findFirstOrThrow<{ include: typeof adminInclude }>>
@@ -52,7 +54,32 @@ function toAdminCourse(row: AdminRow): AdminCourse {
       }),
       EMPTY_TRANSLATION,
     ),
+    syllabus: row.modules.map((module) => ({
+      id: module.id,
+      translations: toTranslationMap(
+        module.translations,
+        (translation) => ({
+          title: translation.title,
+          duration: translation.duration,
+          description: translation.description,
+        }),
+        EMPTY_MODULE_TRANSLATION,
+      ),
+    })),
   };
+}
+
+/** The syllabus as nested writes: each module in its place, in both languages. */
+function moduleCreates(syllabus: CourseInput['syllabus']) {
+  return syllabus.map((module, order) => ({
+    order,
+    translations: {
+      create: (['KA', 'EN'] as const).map((locale) => ({
+        locale,
+        ...module.translations[locale],
+      })),
+    },
+  }));
 }
 
 function translationData(translations: CourseInput['translations']) {
@@ -94,6 +121,7 @@ export async function createCourse(input: CourseInput): Promise<AdminCourse> {
       translations: {
         create: (['KA', 'EN'] as const).map((locale) => ({ locale, ...translations[locale] })),
       },
+      modules: { create: moduleCreates(input.syllabus) },
     },
     include: adminInclude,
   });
@@ -136,6 +164,11 @@ export async function updateCourse(
             },
           }
         : {}),
+      // The dashboard sends the whole list: the old one goes, the new one is
+      // written in its place, in the same transaction as the rest.
+      ...(input.syllabus === undefined
+        ? {}
+        : { modules: { deleteMany: {}, create: moduleCreates(input.syllabus) } }),
     },
     include: adminInclude,
   });

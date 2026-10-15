@@ -60,3 +60,15 @@ export function isUniqueViolationOn(error: unknown, field: string): boolean {
 export function isUnknownEnumValue(error: unknown): boolean {
   return describeDbError(error)?.code === 'P2007';
 }
+
+/**
+ * The table the query reads does not exist (P2021): a table a new migration
+ * adds, read by a Vercel preview of that change before the migration has
+ * run on the live database. Production applies its migrations before it
+ * builds, so there it never happens. Only for an addition that may be
+ * missing, as "none" (a course without a syllabus), never for a table the
+ * site cannot do without.
+ */
+export function isMissingTable(error: unknown): boolean {
+  return describeDbError(error)?.code === 'P2021';
+}
