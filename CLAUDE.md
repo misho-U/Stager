@@ -96,8 +96,9 @@ Do not add a library outside this list without raising it first.
   fine, and hid a dead API for days. On a public page a failed read is not
   caught at all: the build fails, or the last good page stays up, or the
   error page says so. A built page must never hold the failure.
-- `NEXT_PUBLIC_SITE_URL` is **not** what the server fetches itself on — see
-  `getSiteOrigin()`. It may point at a domain whose DNS has not propagated yet.
+- `NEXT_PUBLIC_SITE_URL` is only for canonical tags, OG URLs and the sitemap.
+  The server never fetches its own API, so it may point at a domain whose DNS
+  has not propagated yet.
 - **Never add a jsdom-based dependency** (`isomorphic-dompurify`, `jsdom`). It
   crashes at import inside Vercel functions — every route importing it returned
   an empty 500 in production while passing every local test.

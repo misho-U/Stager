@@ -202,19 +202,11 @@ written. Everything else still goes through `/api`.
   request after it. It drives `/api/dev/revalidate-probe`, which needs no
   credentials, so unlike the admin flow spec it actually runs.
 
-### Which origin the server calls itself on
+### `NEXT_PUBLIC_SITE_URL`
 
-None, any more: public pages read through `src/server/published`, and the
-dashboard's overview loads its counts in the browser like every other
-dashboard page. `getSiteOrigin()`, `INTERNAL_API_ORIGIN` and
-`VERCEL_AUTOMATION_BYPASS_SECRET` are left with no caller, to be removed.
-What they did: `getSiteOrigin()` in
-`pkg/http/site-url.ts` picks, in order: `INTERNAL_API_ORIGIN`
-→ `VERCEL_URL` → `NEXT_PUBLIC_SITE_URL`. Server-side rendering therefore does
-**not** depend on the public domain resolving, which means `NEXT_PUBLIC_SITE_URL`
-can be pointed at the final domain before DNS propagates. `NEXT_PUBLIC_SITE_URL`
-is for canonical tags, OG URLs and the sitemap; it is not a fetch target on
-Vercel.
+Only for canonical tags, OG URLs and the sitemap (`toCanonicalUrl()`). The
+server never fetches its own API, so it can name the final domain before DNS
+propagates.
 
 ### Static public pages (Cache Components)
 
@@ -983,10 +975,9 @@ the migrations match `schema.prisma` (`prisma migrate diff … --exit-code`).
   and rate-limit windows older than a day, and keeps a Free Supabase project
   from pausing. Vercel calls it with `Authorization: Bearer $CRON_SECRET`;
   without the variable it refuses everyone.
-- **Everything outward has a time limit:** the server's own API 10 s, mail
-  10 s, health 5 s, the page editor's transaction 15 s. A slow dependency
-  fails in seconds and is reported, instead of hanging until Vercel kills the
-  function.
+- **Everything outward has a time limit:** mail 10 s, health 5 s, the page
+  editor's transaction 15 s. A slow dependency fails in seconds and is
+  reported, instead of hanging until Vercel kills the function.
 - **Lists carry no bodies.** The admin project, insight and service lists and
   the public service list omit `body`; a detail endpoint has it. A Vercel
   response over 4.5 MB fails outright, and bodies in two languages get there.

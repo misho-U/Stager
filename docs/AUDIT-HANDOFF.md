@@ -162,6 +162,11 @@ hero's entrance instead of hiding text the visitor has already seen.
   same cached functions.
 - The daily job moved to 20:05 UTC (just after Tbilisi midnight) and refreshes
   the course list; a missed run is covered by a one-day expiry.
+- The server no longer fetches its own API (the dashboard's overview loads
+  its counts in the browser, like every other screen). The two variables that
+  only steered that fetch are gone from the code; if either is still set in
+  Vercel → Settings → Environment Variables, it can be deleted there (the
+  commit that removed them names both).
 
 
 
