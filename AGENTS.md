@@ -81,9 +81,11 @@ prisma/          schema, migrations (committed SQL), seed
 pkg/             framework-agnostic packages — no React, never imports src/
 src/
   app/
-    api/         THE ONLY PLACE THAT TOUCHES THE DATABASE
-    [locale]/    public routes (KA/EN)
-    admin/       dashboard (not locale-prefixed)
+    api/         route handlers: every write, and the dashboard's reads
+    [locale]/    public routes (KA/EN), built at build time; root layout
+    admin/       dashboard (not locale-prefixed); its own root layout
+  server/
+    published/   server-only, read-only reads of published content (§3)
   modules/       one folder per page
   entity/        per-domain model + api + query
   widgets/       reusable composite UI (header, media picker, …)
@@ -95,18 +97,24 @@ tests/e2e/       Playwright
 ### Import direction — enforced by ESLint, not convention
 
 ```
-app  →  modules  →  widgets  →  entity  →  shared  →  pkg
+app  →  modules  →  widgets  →  server  →  entity  →  shared  →  pkg
 ```
 
-Imports only ever point **down** this list. `eslint-plugin-boundaries` fails the
+Imports only ever point **down** this list (`server` is the published read
+layer: app, modules and widgets may read through it). `eslint-plugin-boundaries` fails the
 build on a violation, so a mistake here is a lint error, not a review comment.
 
 Two extra rules:
 
 1. **A module's `elements/` may not import from its parent module.** Shared logic
    moves down into `shared/`, or is passed in as props.
-2. **Only `src/app/api/**` may import `@pkg/db` or `@prisma/client`.** Everything
-   else reaches data through an entity `.api.ts` that calls `/api`.
+2. **Only `src/app/api/**` and `src/server/published` may import `@pkg/db` or
+   `@prisma/client`.** The browser and the dashboard reach data through an
+   entity `.api.ts` that calls `/api`. The published layer is server-only
+   (`import 'server-only'`), read-only (a Prisma write call fails lint there)
+   and reads only what is published (`status: 'PUBLISHED'`, visible sections,
+   active links): the public pages are built from it at build time, when no
+   API is running to call.
 
    The ESLint rule is scoped to `src/**`, so three places outside the app are
    exempt by construction and use Prisma directly: `prisma/seed.ts`,
@@ -150,8 +158,9 @@ settings) writes them out instead.
 
 ## 3. Data flow
 
-**Reads (public):** server component → `serverFetch('/api/public/…', { tags })`
-→ route handler → repository → Prisma.
+**Reads (public):** server component → `src/server/published` (`'use cache'`
+with `cacheTag` and `cacheLife`) → Prisma. The `/api/public/*` routes answer
+from the same functions, so one purge refreshes both.
 
 **Reads (admin):** client component → TanStack Query hook → entity `.api.ts` →
 route handler → repository → Prisma.
@@ -159,15 +168,18 @@ route handler → repository → Prisma.
 **Writes:** form → mutation hook → entity `.api.ts` → route handler → zod →
 sanitize → Prisma → audit log → `revalidateEntity()`.
 
-Yes, server components fetch their own API over HTTP. That extra hop is
-deliberate: it gives one contract and one cache layer for both the server and the
-browser, and it is what makes the "only api routes touch the DB" rule hold.
+Public pages read the database directly through the published layer, not
+over HTTP: they are built at build time (§ Static public pages), when no API
+is listening, and the published layer is the one place those reads are
+written. Everything else still goes through `/api`.
 
 ### Caching — the edit→live loop
 
 - Tags live in `pkg/cache/tags.ts`. **Never write a tag as an inline string.**
-- Public reads pass `tags` to `serverFetch`. An untagged read can never be
-  invalidated and will serve stale copy until its TTL expires.
+- Every function in `src/server/published` calls `cacheTag(...)` with the
+  registry's tags and `cacheLife(CONTENT_CACHE_LIFE)` (courses:
+  `COURSE_CACHE_LIFE`). An untagged read can never be invalidated and would
+  serve stale copy until its lifetime ends.
 - Every admin write calls `revalidateEntity(entity, key)` **after** the
   transaction commits.
 - `revalidateTag(tag, { expire: 0 })` — immediate purge. A non-zero profile means
@@ -181,13 +193,10 @@ browser, and it is what makes the "only api routes touch the DB" rule hold.
   that looked correct, and "my edits do not appear" could not be told apart from
   a healthy site. Failed reads are logged as `public.read_failed` and say so on
   the page.
-- **A cached response can be older than the code reading it.** The data
-  cache keeps a response until its tag is purged or its time runs out, and
-  it is not emptied by a new deployment's code (a dev server's certainly is
-  not). A field added to a public response may be missing from a cached copy
-  for up to `PUBLIC_REVALIDATE_SECONDS`: the reading service fills it in
-  (`withGalleries`, `home-page.service.ts`). The first projects list without
-  `gallery` crashed the home page.
+- **A cache entry does not outlive a deploy.** `'use cache'` keys include the
+  build, so a new field in a published read is there on the first request
+  after the deploy. (Under the old fetch cache it was not: a projects list
+  without `gallery` crashed the home page.)
 - **Test the loop, do not reason about it.** `tests/e2e/cache-invalidation.spec.ts`
   asserts both halves: stale without revalidation, fresh on the very next
   request after it. It drives `/api/dev/revalidate-probe`, which needs no
@@ -195,12 +204,96 @@ browser, and it is what makes the "only api routes touch the DB" rule hold.
 
 ### Which origin the server calls itself on
 
-`getSiteOrigin()` in `pkg/http/site-url.ts` picks, in order: `INTERNAL_API_ORIGIN`
+Only the dashboard's overview page still fetches its own API from the server
+(`serverFetchAuthed`, with the admin's cookies). `getSiteOrigin()` in
+`pkg/http/site-url.ts` picks, in order: `INTERNAL_API_ORIGIN`
 → `VERCEL_URL` → `NEXT_PUBLIC_SITE_URL`. Server-side rendering therefore does
 **not** depend on the public domain resolving, which means `NEXT_PUBLIC_SITE_URL`
 can be pointed at the final domain before DNS propagates. `NEXT_PUBLIC_SITE_URL`
 is for canonical tags, OG URLs and the sitemap; it is not a fetch target on
 Vercel.
+
+### Static public pages (Cache Components)
+
+`cacheComponents: true` (`next.config.ts`). Every public page (home, team,
+articles, every published article, privacy, `sitemap.xml`, `llms.txt`) is
+built at build time in both languages and served as a static file; the
+dashboard and the API render per request.
+
+- **Two root layouts.** `app/[locale]/layout.tsx` sets `<html lang>` from the
+  URL (`next/root-params`); `app/admin/layout.tsx` from the admin's cookie.
+  `pkg/i18n/request.ts` reads the site's locale from the root param, so no
+  next-intl call reads the request.
+- **404s.** An address no route answers gets `app/global-not-found.tsx`
+  (`experimental.globalNotFound`): built once, in both languages in the
+  HTML; a script right after them gives the other language the `hidden`
+  attribute before the first paint (`error-pages.spec.ts` counts the frames
+  drawn, with a slow stylesheet). A page's own `notFound()` (an unknown article) gets
+  `app/[locale]/not-found.tsx`, which Next 16 draws in the browser from the
+  page's data, not in the HTML. The status is 404 either way. No catch-all
+  page under `[locale]`: it also caught `/api/…` as a locale, and its 404
+  shell came out empty.
+- **An article published after the build** is rendered on the server on its
+  first visit and kept from then on (`admin-crud.spec.ts` reads its HTML).
+- **A save shows on the very next request.** Route handlers call
+  `revalidateEntity()`, which runs `revalidateTag(tag, { expire: 0 })` for the
+  entity's tags (Server Actions would use `updateTag`; there are none).
+  `tests/e2e/cache-invalidation.spec.ts` asserts both halves: stale without
+  the purge, fresh right after it.
+- **A page that was rendering when the save landed** read the old row, is
+  stored after the purge, and Next counts it fresh (it dates a page by when
+  it was stored). Measured locally: a save 30 to 100 ms into a render stayed
+  off the site until the hourly refresh. So `revalidateEntity()` also drops
+  every built page `REPURGE_AFTER_MS` (5 s) later, from `after()`, by path:
+  Next ignores a second `revalidateTag` of a tag the same request already
+  purged. The path purge also drops each page's cached reads, so every page
+  re-reads the database once on its next visit. `after()` runs under the
+  platform's `waitUntil` and counts towards `maxDuration`: a save ends
+  around 6 s, inside the smallest default (10 s). Only in that race can the
+  first request after a save be stale, and only for seconds;
+  `cache-invalidation.spec.ts` asserts the first request is fresh otherwise,
+  and lands a save mid-render to check the race.
+- **A failed read is never caught on a public page.** In a build, the build
+  fails. In a refresh, Next keeps serving the last good page. A page rendered
+  on request (an article published after the build) shows the site's error
+  page. A built page must never hold "content failed to load": it would be
+  served to everyone until the next save.
+- **`generateStaticParams` never returns an empty array** (Cache Components
+  fails the build): the locales always; the articles, or `NO_ARTICLE_SLUG`,
+  an address no article can have, built as a 404, while there are none.
+- **No `export const dynamic`, `revalidate` or `dynamicParams` anywhere**:
+  Cache Components rejects them. Pages are dynamic by default; a cached read
+  makes them static.
+- **Never read the clock or a random number outside a cache scope** in a
+  public page (`new Date()`, `Date.now()`, `Math.random()`): the build fails.
+  Put it in a `'use cache'` function (the footer's year, the sample dates) or
+  after `await connection()` inside Suspense.
+- **Where Suspense is required, and why:**
+  - `app/admin/(dashboard)/layout.tsx`: the sign-in check (Supabase, then the
+    allowlist) waits inside Suspense (`AdminShellPending`); the sidebar and
+    the page render only after it passes.
+  - `app/admin/layout.tsx` blocks on its cookies instead (`instant = false`):
+    `<html lang>` and the theme come from them, and reading cookies costs no
+    round trip.
+  - `app/admin/login/page.tsx`: the login form reads `?next=` (`useSearchParams`).
+  - `widgets/language-switcher`: reads the query string to carry it across.
+  - `app/[locale]/test/error/page.tsx`: decides per request (`connection()`).
+- **Route handlers rethrow Next's control flow** (`unstable_rethrow` in
+  `withAdmin` / `withPublic`): at build time Next tries to prerender every
+  GET, and reading the session stops the attempt by throwing. Caught and
+  logged, it looked like an error in every build.
+- **Every `/api/admin/*` handler checks the session per request**: each
+  route file exports handlers built by `withAdmin` (directly or through
+  `createCollectionRoutes` / `createItemRoutes`), which calls
+  `requireAdmin()` on every call. They read cookies, so the build marks them
+  dynamic (ƒ); `api-auth-matrix.spec.ts` asserts the 401 for each.
+- **The build reads the database** through `DATABASE_URL` (the pooler), two
+  connections per build worker (`IS_BUILD`, `pkg/db/prisma.ts`).
+  `scripts/vercel-build.ts` warns if that URL is not the Supabase pooler. CI
+  migrates and seeds before it builds.
+- **Courses**: a course leaves the list once its start date passes. The daily
+  job (20:05 UTC, just after Tbilisi midnight) purges the course list;
+  `COURSE_CACHE_LIFE` expires it after a day if a run is missed.
 
 ### Search engines, share cards and AI crawlers (`widgets/seo`)
 
@@ -218,11 +311,11 @@ Vercel.
   show (no published member or article, a policy not yet written) stays
   `noindex` and out of the sitemap and `/llms.txt`.
 - **The page loaders are wrapped in React `cache()`**, so the metadata and the
-  page share one set of reads per request, and a failed read is logged once.
-- **`htmlLimitedBots: /.*/`** (`next.config.ts`): metadata is written in
-  `<head>` for every visitor. Next otherwise streams it into `<body>` for
-  anyone not on its bot list, which leaves out GPTBot, ClaudeBot and
-  PerplexityBot.
+  page share one set of reads per render.
+- **Metadata is in `<head>` of the built page**, for every visitor and every
+  crawler (GPTBot and ClaudeBot included). **Never set `htmlLimitedBots`**:
+  under Cache Components a matching request skips the built page and renders
+  from scratch, so `/.*/` made every visit a full render.
 - **Structured data (JSON-LD)** comes from `seo.utils.ts` and renders through
   `<JsonLd>`: the company and its services and the website on the home page,
   each published member as a `Person`, each article as a `BlogPosting`, and a
@@ -747,7 +840,7 @@ pnpm admin:set-password # create/repair the admin account in BOTH systems
 pnpm dev               # dev server
 pnpm build             # prisma generate + next build
 pnpm lint              # ESLint, including the architecture boundaries
-pnpm typecheck         # tsc --noEmit
+pnpm typecheck         # next typegen (route and root-param types), then tsc --noEmit
 pnpm db:migrate        # create + apply a migration (writes SQL to prisma/migrations)
 pnpm db:generate       # regenerate the Prisma client; run after db:migrate, which no longer does in Prisma 7
 pnpm db:migrate:deploy # apply committed migrations, no prompts and no resets: how the live database is updated
@@ -779,7 +872,8 @@ the migrations match `schema.prisma` (`prisma migrate diff … --exit-code`).
   share the live database, so a preview of a schema change needs its own.
 - **`/api/health`** answers 200 `{ ok: true }` when `SELECT 1` returns within
   5 s, 503 otherwise, never cached. Point an uptime monitor at it.
-- **`/api/cron/daily`** (03:17 UTC, production only) retries inquiry emails
+- **`/api/cron/daily`** (20:05 UTC, just after Tbilisi midnight, production
+  only) refreshes the course list, retries inquiry emails
   that failed (while email is set up), prunes audit entries older than a year
   and rate-limit windows older than a day, and keeps a Free Supabase project
   from pausing. Vercel calls it with `Authorization: Bearer $CRON_SECRET`;
@@ -871,11 +965,11 @@ PRIVACY), each section with only the fields the site shows
 database, unused.
 
 Still open: the real figures (the samples are placeholders, marked); the
-policy's text (the client's lawyer); the BPG Nino Mtavruli licence; rendering the home page statically (the per-request CSP nonce
-keeps it dynamic, see `docs/AUDIT-HANDOFF.md`); the logo artwork for the
-favicon and share card (set in type until then); and the noindex, which
-stays until launch (`OPEN_TO_SEARCH`, § Search engines). Keep the data-loading pattern in
-`home-page.service.ts`.
+policy's text (the client's lawyer); the BPG Nino Mtavruli licence; the logo
+artwork for the favicon and share card (set in type until then); and the
+noindex, which stays until launch (`OPEN_TO_SEARCH`, § Search engines). The
+public pages are built at build time (§ Static public pages); keep the
+data-loading pattern in `home-page.service.ts`.
 
 Decided with the client: BPG Nino Mtavruli for Georgian letters and Noto Sans
 Georgian for the rest (October 2026); the site's teal turned 12° toward green

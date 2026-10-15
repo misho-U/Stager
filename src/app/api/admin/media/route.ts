@@ -13,8 +13,6 @@ import { revalidateEntity } from '@pkg/cache/revalidate';
 import { serverEnv } from '@pkg/config/env.server';
 import { apiCreated, apiFail, apiOk } from '@pkg/http/api-response';
 
-export const dynamic = 'force-dynamic';
-
 export const GET = withAdmin(async () => apiOk(await listMedia()));
 
 /**

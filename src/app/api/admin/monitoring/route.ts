@@ -4,8 +4,6 @@ import { apiOk } from '@pkg/http/api-response';
 import { MONITORING_ON } from '@pkg/monitoring/options';
 import { reportServerError } from '@pkg/monitoring/server';
 
-export const dynamic = 'force-dynamic';
-
 /**
  * Sends Sentry a test error, so the owner can see reporting work after
  * setting it up (Settings → Error reporting). Says whether anything was sent:

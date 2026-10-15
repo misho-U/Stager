@@ -6,8 +6,6 @@ import {
   type StatUpdateInput,
 } from '@/entity/stat/model/stat.model';
 
-export const dynamic = 'force-dynamic';
-
 export const { GET, PATCH, DELETE } = createItemRoutes<AdminStat, StatUpdateInput>({
   entity: 'stat',
   entityType: 'Stat',

@@ -10,8 +10,6 @@ import {
   type CourseCategoryUpdateInput,
 } from '@/entity/course-category/model/course-category.model';
 
-export const dynamic = 'force-dynamic';
-
 export const { GET, PATCH, DELETE } = createItemRoutes<
   AdminCourseCategory,
   CourseCategoryUpdateInput

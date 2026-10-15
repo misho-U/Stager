@@ -7,11 +7,9 @@ import {
 } from '@/app/api/_lib/serializers';
 import type {
   AdminTeamMember,
-  PublicTeamMember,
   TeamMemberInput,
   TeamMemberUpdateInput,
 } from '@/entity/team-member/model/team-member.model';
-import type { DbLocale } from '@/shared/types/enums';
 import { prisma } from '@pkg/db/prisma';
 import { sanitizeRichText } from '@pkg/security/sanitize';
 
@@ -146,37 +144,4 @@ export async function deleteTeamMember(id: string): Promise<boolean> {
   // — see onDelete: SetNull on Insight.authorId.
   await prisma.teamMember.delete({ where: { id } });
   return true;
-}
-
-// --- Public ---
-
-export async function listPublicTeamMembers(locale: DbLocale, limit: number, offset: number) {
-  const where = { status: 'PUBLISHED' as const };
-
-  const [rows, total] = await Promise.all([
-    prisma.teamMember.findMany({
-      where,
-      include: { photoMedia: mediaInclude, translations: { where: { locale } } },
-      orderBy: { order: 'asc' },
-      take: limit,
-      skip: offset,
-    }),
-    prisma.teamMember.count({ where }),
-  ]);
-
-  const items: PublicTeamMember[] = rows.map((row) => {
-    const translation = row.translations[0];
-    return {
-      id: row.id,
-      slug: row.slug,
-      name: translation?.name ?? '',
-      position: translation?.position ?? '',
-      bio: translation?.bio ?? '',
-      expertise: translation?.expertise ?? '',
-      photo: toMediaSummary(row.photoMedia, locale),
-      linkedinUrl: row.linkedinUrl,
-    };
-  });
-
-  return { items, total };
 }

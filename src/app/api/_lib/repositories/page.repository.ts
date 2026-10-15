@@ -4,13 +4,8 @@ import {
   toTranslationMap,
   translationUpsert,
 } from '@/app/api/_lib/serializers';
-import {
-  isSitePage,
-  type AdminPage,
-  type PageUpdateInput,
-  type PublicPage,
-} from '@/entity/page/model/page.model';
-import type { DbLocale, PageKey } from '@/shared/types/enums';
+import { isSitePage, type AdminPage, type PageUpdateInput } from '@/entity/page/model/page.model';
+import type { PageKey } from '@/shared/types/enums';
 import { isUnknownEnumValue } from '@pkg/db/errors';
 import { prisma } from '@pkg/db/prisma';
 import { sanitizeRichText } from '@pkg/security/sanitize';
@@ -191,46 +186,4 @@ export async function updateAdminPage(
   );
 
   return getAdminPage(key);
-}
-
-// --- Public ---
-
-export async function getPublicPage(key: PageKey, locale: DbLocale): Promise<PublicPage | null> {
-  const row = await byKey(() =>
-    prisma.page.findUnique({
-      where: { key },
-      include: {
-        translations: { where: { locale }, include: { ogMedia: mediaInclude } },
-        sections: {
-          where: { isVisible: true },
-          orderBy: { order: 'asc' },
-          include: { media: mediaInclude, translations: { where: { locale } } },
-        },
-      },
-    }),
-  );
-
-  if (!row) return null;
-
-  const translation = row.translations[0];
-
-  return {
-    key: row.key,
-    title: translation?.title ?? '',
-    metaTitle: translation?.metaTitle ?? null,
-    metaDescription: translation?.metaDescription ?? null,
-    ogImageUrl: translation?.ogMedia?.url ?? null,
-    sections: row.sections.map((section) => {
-      const sectionTranslation = section.translations[0];
-      return {
-        key: section.key,
-        heading: sectionTranslation?.heading ?? '',
-        subheading: sectionTranslation?.subheading ?? '',
-        body: sectionTranslation?.body ?? '',
-        ctaLabel: sectionTranslation?.ctaLabel ?? '',
-        ctaHref: sectionTranslation?.ctaHref ?? '',
-        media: toMediaSummary(section.media, locale),
-      };
-    }),
-  };
 }

@@ -35,8 +35,6 @@ import { isSameOriginRequest } from '@pkg/security/request';
  * endpoint you know exists.
  */
 
-export const dynamic = 'force-dynamic';
-
 const probeSchema = z.object({
   entity: z.enum(CONTENT_ENTITIES),
   key: z.string().min(1).nullish(),

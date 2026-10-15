@@ -1,9 +1,7 @@
 import { readQuery, withPublic } from '@/app/api/_lib/route-helpers';
-import { listPublicVideos } from '@/app/api/_lib/repositories/video.repository';
+import { listPublicVideos } from '@/server/published/videos';
 import { listQuerySchema } from '@/app/api/public/_query';
 import { apiOk } from '@pkg/http/api-response';
-
-export const dynamic = 'force-dynamic';
 
 export const GET = withPublic(async ({ request }) => {
   const query = readQuery(request, listQuerySchema);

@@ -33,3 +33,40 @@ for (const [locale, messages] of [
     await expect(error.getByRole('button', { name: messages.common.retry })).toBeVisible();
   });
 }
+
+test('a missing page never draws the other language, even while its stylesheet is slow', async ({
+  page,
+}) => {
+  // app/global-not-found.tsx holds both languages and hides one with a
+  // script. Count every frame the browser draws with the Georgian copy
+  // showing: a frame is drawn only once the page may render, so this sees
+  // what a visitor would.
+  await page.addInitScript(() => {
+    const probe = window as unknown as { kaFrames: number };
+    probe.kaFrames = 0;
+    const frame = () => {
+      const georgian = document.querySelector<HTMLElement>('[data-copy][lang="ka"]');
+      if (georgian?.checkVisibility()) probe.kaFrames += 1;
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  });
+  await page.route('**/*.css', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 1_500));
+    await route.continue();
+  });
+  const kaFrames = () => page.evaluate(() => (window as unknown as { kaFrames: number }).kaFrames);
+
+  // Under neither language both stay, so the probe must see Georgian here;
+  // otherwise it is not counting anything.
+  expect((await page.goto('/api/no-such-route'))?.status()).toBe(404);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCount(2);
+  expect(await kaFrames()).toBeGreaterThan(0);
+
+  expect((await page.goto('/en/no-such-page-anywhere'))?.status()).toBe(404);
+  await page.waitForLoadState('networkidle');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(en.common.notFound);
+  await expect(page.locator('[data-copy][lang="ka"]')).toHaveAttribute('hidden', '');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  expect(await kaFrames()).toBe(0);
+});

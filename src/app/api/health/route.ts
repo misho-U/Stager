@@ -5,8 +5,6 @@ import { prisma } from '@pkg/db/prisma';
 import { withTimeout } from '@pkg/http/timeout';
 import { logger, serialiseError } from '@pkg/logger';
 
-export const dynamic = 'force-dynamic';
-
 const NO_STORE = { 'Cache-Control': 'no-store' };
 
 /**

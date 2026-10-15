@@ -1,21 +1,25 @@
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { CONTENT_ID } from '@/shared/components/skip-link';
 import { AdminNoAccess } from '@/widgets/admin-no-access/admin-no-access.module';
+import { AdminShellPending } from '@/widgets/admin-shell-pending/admin-shell-pending.module';
 import { AdminSidebar } from '@/widgets/admin-sidebar/admin-sidebar.module';
 import { getAdminAccess } from '@pkg/auth/admin-session';
 
-/** Never cache a page rendered for a specific signed-in admin. */
-export const dynamic = 'force-dynamic';
-
 /**
- * The real authentication boundary.
+ * The real authentication boundary, checked on every request.
  *
  * Middleware already bounced anonymous visitors, but it runs on Edge where
  * Prisma is unavailable, so it can only prove that *a* Supabase session exists.
  * This check runs in the Node runtime and is the one that consults the
  * AdminUser allowlist — an authenticated Supabase user who is not on it never
  * gets past here.
+ *
+ * It waits inside a Suspense boundary: the check asks Supabase and the
+ * database, and the page around it need not wait for either. Nothing inside
+ * renders before it passes: the sidebar and the page are children of the
+ * checked branch, and the fallback holds nothing of the admin's.
  *
  * Someone signed in but not allowed is told so, with a way to sign out, rather
  * than sent to the login page: middleware sends anyone with a session from
@@ -25,7 +29,15 @@ export const dynamic = 'force-dynamic';
  * Every route handler repeats the check independently. Defence here is for the
  * UI; defence there is for the data.
  */
-export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<AdminShellPending />}>
+      <SignedInDashboard>{children}</SignedInDashboard>
+    </Suspense>
+  );
+}
+
+async function SignedInDashboard({ children }: { children: React.ReactNode }) {
   const access = await getAdminAccess();
 
   if (access.state === 'anonymous') {

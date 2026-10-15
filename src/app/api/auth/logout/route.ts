@@ -5,8 +5,6 @@ import { logger, serialiseError } from '@pkg/logger';
 import { isSameOriginRequest } from '@pkg/security/request';
 import { createSupabaseServerClient } from '@pkg/supabase/server';
 
-export const dynamic = 'force-dynamic';
-
 export const POST = withPublic(async ({ request }) => {
   if (!isSameOriginRequest(request)) {
     return apiFail('FORBIDDEN', 'Cross-site request rejected');

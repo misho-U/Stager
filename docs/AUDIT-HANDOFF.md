@@ -86,7 +86,8 @@ The test admin cannot reach production by any path in the code:
 
 ### Operations (`db70f63`)
 
-- `/api/health` (above), and a daily job (`/api/cron/daily`, 03:17 UTC,
+- `/api/health` (above), and a daily job (`/api/cron/daily`, 20:05 UTC since
+  October 2026, just after Tbilisi midnight,
   production): retries inquiry emails from the last 7 days that never went
   out, prunes the audit log past a year and rate-limit windows past a day. It
   needs `CRON_SECRET`; without it every caller gets 401.
@@ -148,11 +149,24 @@ hero's entrance instead of hiding text the visitor has already seen.
 - Inbox: Inbox and Archived views, honest totals past the newest 500, and an
   unread count beside Inquiries in the sidebar on every page.
 
-## Open, on purpose
+### Static public pages (October 2026, after the audit)
+
+- Every public page is built at build time and served as a static file, in
+  both languages: home, team, articles, every published article, privacy,
+  `sitemap.xml` and `llms.txt` (Cache Components). A save purges the tags it
+  touched and the next visit rebuilds that page; the dashboard and the API
+  render per request. AGENTS.md § Static public pages.
+- The public pages read published content through `src/server/published`
+  (server-only, read-only, published-only), the one place besides the API
+  allowed to touch the database. The `/api/public/*` routes answer from the
+  same cached functions.
+- The daily job moved to 20:05 UTC (just after Tbilisi midnight) and refreshes
+  the course list; a missed run is covered by a one-day expiry.
+
+
 
 | Item                                                           | Why not now                                                                                                                                                      |
 | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Static rendering of the home page, the biggest speed gain left | The design switch is gone (October 2026), but `/[locale]` still renders per request: the CSP's per-request nonce (`src/proxy.ts`) needs it. Decide the CSP first |
 | About 68 KB (gzipped) of zod's message locales on public pages | Turbopack does not tree-shake them; a lighter contact form is still to do                                                                                        |
 | Password reset, an audit-log viewer, user management           | Features, not fixes                                                                                                                                              |
 | Two admins editing one record (last save wins)                 | There is one admin                                                                                                                                               |

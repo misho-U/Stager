@@ -6,8 +6,6 @@ import {
   type ServiceInput,
 } from '@/entity/service/model/service.model';
 
-export const dynamic = 'force-dynamic';
-
 export const { GET, POST } = createCollectionRoutes<AdminService, ServiceInput>({
   entity: 'service',
   entityType: 'Service',

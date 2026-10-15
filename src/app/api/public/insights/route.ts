@@ -1,9 +1,7 @@
 import { readQuery, withPublic } from '@/app/api/_lib/route-helpers';
-import { listPublicInsights } from '@/app/api/_lib/repositories/insight.repository';
+import { listPublicInsights } from '@/server/published/insights';
 import { insightListQuerySchema } from '@/app/api/public/_query';
 import { apiOk } from '@pkg/http/api-response';
-
-export const dynamic = 'force-dynamic';
 
 export const GET = withPublic(async ({ request }) => {
   const query = readQuery(request, insightListQuerySchema);

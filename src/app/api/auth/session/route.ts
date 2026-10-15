@@ -1,8 +1,6 @@
 import { withAdmin } from '@/app/api/_lib/route-helpers';
 import { apiOk } from '@pkg/http/api-response';
 
-export const dynamic = 'force-dynamic';
-
 /**
  * Who am I?
  *

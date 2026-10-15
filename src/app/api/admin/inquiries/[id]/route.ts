@@ -4,8 +4,6 @@ import { inquiryStatusUpdateSchema } from '@/entity/contact-inquiry/model/contac
 import { prisma } from '@pkg/db/prisma';
 import { apiFail, apiNoContent, apiOk } from '@pkg/http/api-response';
 
-export const dynamic = 'force-dynamic';
-
 type Params = { id: string };
 
 const selection = {

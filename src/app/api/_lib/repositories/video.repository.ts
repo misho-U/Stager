@@ -5,13 +5,7 @@ import {
   toTranslationMap,
   translationUpsert,
 } from '@/app/api/_lib/serializers';
-import type {
-  AdminVideo,
-  PublicVideo,
-  VideoInput,
-  VideoUpdateInput,
-} from '@/entity/video/model/video.model';
-import type { DbLocale } from '@/shared/types/enums';
+import type { AdminVideo, VideoInput, VideoUpdateInput } from '@/entity/video/model/video.model';
 import { prisma } from '@pkg/db/prisma';
 
 const adminInclude = { translations: true } as const;
@@ -117,38 +111,4 @@ export async function deleteVideo(id: string): Promise<boolean> {
 
   await prisma.video.delete({ where: { id } });
   return true;
-}
-
-// --- Public ---
-
-/** Published videos, newest first. */
-export async function listPublicVideos(locale: DbLocale, limit: number, offset: number) {
-  const where = { status: 'PUBLISHED' as const };
-
-  const [rows, total] = await Promise.all([
-    prisma.video.findMany({
-      where,
-      include: { translations: { where: { locale } } },
-      orderBy: NEWEST_FIRST,
-      take: limit,
-      skip: offset,
-    }),
-    prisma.video.count({ where }),
-  ]);
-
-  const items: PublicVideo[] = rows.map((row) => {
-    const translation = row.translations[0];
-    return {
-      id: row.id,
-      slug: row.slug,
-      title: translation?.title ?? '',
-      summary: translation?.summary ?? '',
-      kind: row.kind,
-      youtubeUrl: row.youtubeUrl,
-      publishedAt: toCalendarDate(row.publishedAt),
-      durationMinutes: row.durationMinutes,
-    };
-  });
-
-  return { items, total };
 }

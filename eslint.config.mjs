@@ -10,9 +10,15 @@ import boundaries from 'eslint-plugin-boundaries';
  *
  *   app  →  modules  →  widgets  →  entity  →  shared  →  pkg
  *
- * Plus two project-specific rules:
+ * Plus three project-specific rules:
  *   1. A module's `elements/` may not import from its parent module.
- *   2. Only `src/app/api/**` may touch the database.
+ *   2. Only `src/app/api/**` and the published layer (`src/server/published`)
+ *      may touch the database.
+ *   3. The published layer only reads: no Prisma write call compiles there.
+ *
+ * `src/server/*` is the server-only, read-only layer of published content
+ * (AGENTS.md § Data flow): pages, modules and widgets read through it at
+ * build time and on revalidation, where the API is not there to call.
  */
 const boundaryElements = [
   // Order matters: the first matching pattern wins, so the more specific
@@ -27,6 +33,7 @@ const boundaryElements = [
     capture: ['moduleName', 'elementName'],
   },
   { type: 'module', pattern: 'src/modules/*', capture: ['moduleName'] },
+  { type: 'server', pattern: 'src/server/*', capture: ['serverName'] },
   { type: 'app', pattern: 'src/app' },
 ];
 
@@ -88,7 +95,9 @@ const eslintConfig = [
               allow: {
                 to: {
                   element: {
-                    types: { anyOf: ['app', 'module', 'widget', 'entity', 'shared', 'pkg'] },
+                    types: {
+                      anyOf: ['app', 'module', 'widget', 'server', 'entity', 'shared', 'pkg'],
+                    },
                   },
                 },
               },
@@ -107,7 +116,7 @@ const eslintConfig = [
                 },
                 {
                   to: {
-                    element: { types: { anyOf: ['widget', 'entity', 'shared', 'pkg'] } },
+                    element: { types: { anyOf: ['widget', 'server', 'entity', 'shared', 'pkg'] } },
                   },
                 },
               ],
@@ -123,7 +132,16 @@ const eslintConfig = [
             {
               from: { element: { type: 'widget' } },
               allow: {
-                to: { element: { types: { anyOf: ['widget', 'entity', 'shared', 'pkg'] } } },
+                to: {
+                  element: { types: { anyOf: ['widget', 'server', 'entity', 'shared', 'pkg'] } },
+                },
+              },
+            },
+            {
+              // The published layer: data in, nothing of the UI.
+              from: { element: { type: 'server' } },
+              allow: {
+                to: { element: { types: { anyOf: ['server', 'entity', 'shared', 'pkg'] } } },
               },
             },
             {
@@ -157,7 +175,7 @@ const eslintConfig = [
             {
               group: ['@pkg/db', '@pkg/db/*', '@prisma/client', '@prisma/client/*'],
               message:
-                'Only src/app/api/** may reach the database. Everywhere else, go through an entity .api.ts which calls /api. Content enums live in @/shared/types/enums.',
+                'Only src/app/api/** and src/server/published may reach the database. In the browser and the dashboard, go through an entity .api.ts which calls /api; a public page reads published content through @/server/published. Content enums live in @/shared/types/enums.',
             },
           ],
         },
@@ -165,8 +183,9 @@ const eslintConfig = [
     },
   },
   {
-    // Route handlers are the sanctioned data-access layer.
-    files: ['src/app/api/**/*.ts'],
+    // Route handlers are the sanctioned data-access layer, and the published
+    // layer reads what they publish.
+    files: ['src/app/api/**/*.ts', 'src/server/**/*.ts'],
     rules: { '@typescript-eslint/no-restricted-imports': 'off' },
   },
 
@@ -191,6 +210,27 @@ const eslintConfig = [
           property: 'env',
           message:
             'Read environment variables through @pkg/config (zod-validated) so a missing or malformed value fails loudly at boot.',
+        },
+      ],
+    },
+  },
+  {
+    // The published layer only reads. A write there would run during a build
+    // or a page refresh, outside the dashboard's auth, audit and revalidation.
+    files: ['src/server/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.property.name='getSession']",
+          message:
+            'supabase.auth.getSession() does not verify the JWT signature — it trusts whatever is in the cookie. Use getUser() (or requireAdmin from @pkg/auth) instead.',
+        },
+        {
+          selector:
+            'CallExpression[callee.property.name=/^(create|createMany|createManyAndReturn|update|updateMany|updateManyAndReturn|upsert|delete|deleteMany|\\$executeRaw|\\$executeRawUnsafe|\\$queryRawUnsafe|\\$transaction)$/]',
+          message:
+            'src/server/published is read-only. Writes go through a route handler under src/app/api/admin, which checks the session, audits and revalidates.',
         },
       ],
     },

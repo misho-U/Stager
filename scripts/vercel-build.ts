@@ -39,4 +39,17 @@ if (process.env.VERCEL_ENV === 'production') {
   console.warn(`[vercel-build] ${process.env.VERCEL_ENV ?? 'local'}: migrations left alone`);
 }
 
+// The build reads the database: the public pages are prerendered from it. It
+// connects through DATABASE_URL, which must be the pooler (pkg/db/prisma.ts),
+// never the direct host: several build workers connect at once, beside the
+// live site. Said, not enforced: a wrong URL still builds.
+const databaseUrl = process.env.DATABASE_URL ?? '';
+if (databaseUrl.includes('.supabase.') && !databaseUrl.includes('pooler.supabase.com')) {
+  console.warn(
+    '[vercel-build] DATABASE_URL is not the Supabase pooler. The build prerenders the ' +
+      'public pages from it in several workers at once; use the Transaction pooler ' +
+      'string (…pooler.supabase.com:6543).',
+  );
+}
+
 run('pnpm', ['run', 'build']);

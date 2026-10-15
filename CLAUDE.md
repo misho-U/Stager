@@ -22,13 +22,16 @@ Do not add a library outside this list without raising it first.
 
 ## Ten rules that break things when broken
 
-1. **Only `src/app/api/**` may touch the database.** Everything else goes through
-   an entity `.api.ts` → `/api`. ESLint enforces this.
-2. **Imports point one way**: `app → modules → widgets → entity → shared → pkg`.
+1. **Only `src/app/api/**` and `src/server/published` may touch the database.**
+   The published layer is server-only, read-only and published-only: public
+   pages read through it at build time. The browser and the dashboard go
+   through an entity `.api.ts` → `/api`. ESLint enforces all of it.
+2. **Imports point one way**: `app → modules → widgets → server → entity → shared → pkg`.
    A module's `elements/` may never import from its parent module.
-3. **Every public read is tagged, every write revalidates.** Tags come from
-   `pkg/cache/tags.ts`, never inline strings. An untagged read cannot be
-   invalidated, and the dashboard will look broken.
+3. **Every published read is cached and tagged, every write revalidates.**
+   `'use cache'` + `cacheTag` + `cacheLife` in `src/server/published`; tags
+   come from `pkg/cache/tags.ts`, never inline strings. An untagged read cannot
+   be invalidated, and the dashboard will look broken.
 4. **`getUser()`, never `getSession()`** — the latter does not verify the JWT.
 5. **Middleware is not the auth boundary.** Prisma cannot run on Edge.
    `requireAdmin()` in the Node runtime is the real check, and every admin route
@@ -53,20 +56,30 @@ Do not add a library outside this list without raising it first.
   default export). At the repo root it is silently ignored, taking locale
   routing, CSP and session refresh with it.
 - `revalidateTag(tag, { expire: 0 })` — anything else serves stale content right
-  after an admin saves.
+  after an admin saves. Keep the second, delayed purge in `revalidateEntity()`:
+  a page that was rendering when the save landed is otherwise stored as fresh
+  and keeps the old content for an hour.
 - **A new page needs a data migration**: the dashboard cannot create pages or
   sections, and the seed never runs in production. A new `PageKey` value goes
   in a migration of its own (AGENTS.md § Version traps). Previews run before
   that migration, against the live database: a lookup by the new key must
   read "no page", not fail (`byKey`, `isUnknownEnumValue`), or every preview
   page says content failed to load.
-- **A field added to a public response can be missing from a cached copy**
-  after a deploy: the data cache outlives the code. Fill it in where it is
-  read (AGENTS.md § Caching); a projects list without `gallery` crashed the
-  home page.
+- **The public pages are built at build time (Cache Components).** No
+  `export const dynamic`/`revalidate`/`dynamicParams` (the build rejects
+  them); `generateStaticParams` never returns `[]`; no `new Date()`,
+  `Date.now()` or `Math.random()` outside a `'use cache'` function or
+  `connection()`; anything reading the request sits in Suspense. **Never set
+  `htmlLimitedBots`**: a matching visitor skips the built page, and `/.*/`
+  made every visit a full render. No catch-all page under `[locale]`: it
+  caught `/api/…` as a locale and shipped an empty 404; an address no route
+  answers gets `app/global-not-found.tsx`. AGENTS.md § Static public pages
+  lists every Suspense boundary and why.
 - **Never let a failed read fall back to content-shaped copy.** A placeholder
   that reads like the real thing turns an outage into a page that merely looks
-  fine, and hid a dead API for days. Log it and say so on the page.
+  fine, and hid a dead API for days. On a public page a failed read is not
+  caught at all: the build fails, or the last good page stays up, or the
+  error page says so. A built page must never hold the failure.
 - `NEXT_PUBLIC_SITE_URL` is **not** what the server fetches itself on — see
   `getSiteOrigin()`. It may point at a domain whose DNS has not propagated yet.
 - **Never add a jsdom-based dependency** (`isomorphic-dompurify`, `jsdom`). It
@@ -166,6 +179,7 @@ The client chose one design, "Chef's Table" (dark, `site.css`, `[data-site]`
 on every public page). The site is the home page, the team, the articles and
 each article, and a privacy policy; About, services and contact live on the
 home page. Every page beside home is a `SubpageShell` (`widgets/site-chrome`),
-and every public page moves through `widgets/site-motion`. AGENTS.md § 7
-records the decisions and what is still open (the real figures, the policy's
-text, the font licence, static rendering, the noindex).
+and every public page moves through `widgets/site-motion`. Every public page
+is built at build time and refreshed by tag on save; the dashboard renders per
+request. AGENTS.md § 7 records the decisions and what is still open (the real
+figures, the policy's text, the font licence, the noindex).

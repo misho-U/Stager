@@ -1,23 +1,20 @@
 import type { Metadata } from 'next';
 import { cache } from 'react';
 
-import type { PublicCourse } from '@/entity/course/model/course.model';
-import type { PublicInsightListItem } from '@/entity/insight/model/insight.model';
 import {
   orSamples,
   sampleCourses,
   sampleStats,
   sampleVideos,
 } from '@/modules/home-page/home-page.samples';
-import type { PublicPage } from '@/entity/page/model/page.model';
-import type { PublicProjectListItem } from '@/entity/project/model/project.model';
-import type { PublicServiceListItem } from '@/entity/service/model/service.model';
-import type { PublicStat } from '@/entity/stat/model/stat.model';
-import type { PublicVideo } from '@/entity/video/model/video.model';
-import type { ListResponse } from '@/shared/types/api';
 import type { DbLocale } from '@/shared/types/enums';
-import { collectionTag, PUBLIC_REVALIDATE_SECONDS } from '@pkg/cache/tags';
-import { serverFetch } from '@pkg/http/fetcher';
+import { listPublicCourses } from '@/server/published/courses';
+import { listPublicInsights } from '@/server/published/insights';
+import { getPublicPage } from '@/server/published/pages';
+import { listPublicProjects } from '@/server/published/projects';
+import { listPublicServices } from '@/server/published/services';
+import { listPublicStats } from '@/server/published/stats';
+import { listPublicVideos } from '@/server/published/videos';
 import { descriptionFor, pageMetadata, siteSeo } from '@/widgets/seo/seo.service';
 import {
   organizationNode,
@@ -25,142 +22,61 @@ import {
   websiteNode,
   type JsonLdNode,
 } from '@/widgets/seo/seo.utils';
-import {
-  loadSiteChrome,
-  readPage,
-  readPublic as read,
-} from '@/widgets/site-chrome/site-chrome.service';
+import { loadSiteChrome } from '@/widgets/site-chrome/site-chrome.service';
 
 /**
  * Server-side data loading for the home page.
  *
- * Every read goes through /api with an explicit cache tag. That tag is the
- * other half of `revalidateEntity()` in the admin write path — together they
- * are what makes an edit in the dashboard appear here without a redeploy, while
- * ordinary visitors still get a cached response.
+ * Every read goes through the published layer (src/server/published): cached
+ * and tagged, so the page is built once, at build time, and rebuilt when a
+ * save in the dashboard purges a tag it used (`revalidateEntity()` in the
+ * admin write path). Visitors are served the built page.
  *
- * Failures degrade rather than throw: a marketing homepage that renders without
- * its project list is far better than one that 500s. They are LOGGED, though —
- * an earlier version caught and discarded the error, so a completely dead API
- * looked exactly like a working page and stayed hidden for days. Degrading
- * quietly for the visitor is right; degrading quietly for the operator is not.
+ * A failed read is not caught: during a build the build fails, during a
+ * refresh the last good page stays up, and either way it is logged. An
+ * earlier version caught and discarded errors, so a dead API looked exactly
+ * like a working page and stayed hidden for days; a built page must never
+ * hold a failure, or it would be served to every visitor until the next save.
  */
 
-/**
- * A project list as it may come out of the data cache: one cached before
- * projects carried their gallery (the cache can outlive a deployment) has
- * none, until it is next refreshed.
- */
-type CachedProjectList = ListResponse<
-  Omit<PublicProjectListItem, 'gallery'> & Partial<Pick<PublicProjectListItem, 'gallery'>>
->;
-
-function withGalleries(list: CachedProjectList): ListResponse<PublicProjectListItem> {
-  return {
-    ...list,
-    items: list.items.map((project) => ({ ...project, gallery: project.gallery ?? [] })),
-  };
-}
+/** How many of each the page shows: the latest few, or every service. */
+const PROJECTS_SHOWN = 6;
+const INSIGHTS_SHOWN = 3;
+const VIDEOS_SHOWN = 6;
+const COURSES_SHOWN = 50;
+// Every published service, up to the API's maximum: they are the whole
+// offering, not a selection. At 12, a thirteenth service added in the
+// dashboard never appeared here.
+const SERVICES_SHOWN = 100;
 
 /**
- * Once per request (React `cache`): the page and its metadata read the same
- * data, and a failed read is logged once.
+ * Once per render (React `cache`): the page and its metadata read the same
+ * data. A course leaves its list once its start date has passed: the daily job
+ * purges the list just after Tbilisi midnight (COURSE_CACHE_LIFE).
  */
 export const loadHomePageData = cache(async (locale: DbLocale) => {
   const [chrome, page, stats, projects, services, insights, courses, videos] = await Promise.all([
     // The site's settings, and which pages beside this one have anything
     // to show (the menu and footer link only to those).
     loadSiteChrome(locale),
-
-    read<PublicPage | null>('page:HOME', readPage('HOME', locale), null),
-
-    read<ListResponse<PublicStat>>(
-      'stats',
-      serverFetch<ListResponse<PublicStat>>(`/api/public/company-stats?locale=${locale}`, {
-        tags: [collectionTag('stat')],
-        revalidate: PUBLIC_REVALIDATE_SECONDS,
-      }),
-      { items: [], total: 0 },
-    ),
-
-    read<CachedProjectList>(
-      'projects',
-      serverFetch<CachedProjectList>(`/api/public/projects?locale=${locale}&limit=6`, {
-        tags: [collectionTag('project')],
-        revalidate: PUBLIC_REVALIDATE_SECONDS,
-      }),
-      { items: [], total: 0 },
-    ),
-
-    // Every published service, up to the API's maximum: they are the whole
-    // offering, not a selection (projects and videos show the latest few).
-    // At 12, a thirteenth service added in the dashboard never appeared here.
-    read<ListResponse<PublicServiceListItem>>(
-      'services',
-      serverFetch<ListResponse<PublicServiceListItem>>(
-        `/api/public/services?locale=${locale}&limit=100`,
-        {
-          tags: [collectionTag('service')],
-          revalidate: PUBLIC_REVALIDATE_SECONDS,
-        },
-      ),
-      { items: [], total: 0 },
-    ),
-
-    read<ListResponse<PublicInsightListItem>>(
-      'insights',
-      serverFetch<ListResponse<PublicInsightListItem>>(
-        `/api/public/insights?locale=${locale}&limit=3`,
-        {
-          tags: [collectionTag('insight')],
-          revalidate: PUBLIC_REVALIDATE_SECONDS,
-        },
-      ),
-      { items: [], total: 0 },
-    ),
-
-    // A course leaves this list once its start date has passed. The API
-    // decides that per request, so a cached copy can show one for up to
-    // PUBLIC_REVALIDATE_SECONDS after Tbilisi midnight.
-    read<ListResponse<PublicCourse>>(
-      'courses',
-      serverFetch<ListResponse<PublicCourse>>(`/api/public/courses?locale=${locale}`, {
-        tags: [collectionTag('course')],
-        revalidate: PUBLIC_REVALIDATE_SECONDS,
-      }),
-      { items: [], total: 0 },
-    ),
-
-    read<ListResponse<PublicVideo>>(
-      'videos',
-      serverFetch<ListResponse<PublicVideo>>(`/api/public/videos?locale=${locale}&limit=6`, {
-        tags: [collectionTag('video')],
-        revalidate: PUBLIC_REVALIDATE_SECONDS,
-      }),
-      { items: [], total: 0 },
-    ),
+    getPublicPage('HOME', locale),
+    listPublicStats(locale),
+    listPublicProjects(locale, PROJECTS_SHOWN, 0),
+    listPublicServices(locale, SERVICES_SHOWN, 0),
+    listPublicInsights(locale, INSIGHTS_SHOWN, 0),
+    listPublicCourses(locale, COURSES_SHOWN, 0),
+    listPublicVideos(locale, VIDEOS_SHOWN, 0),
   ]);
 
   return {
     chrome,
-    page: page.data,
-    stats: orSamples(stats, () => sampleStats(locale)),
-    projects: withGalleries(projects.data),
-    services: services.data,
-    insights: insights.data,
-    courses: orSamples(courses, () => sampleCourses(locale)),
-    videos: orSamples(videos, () => sampleVideos(locale)),
-    /** True when any read failed, so the page can say so instead of
-     *  rendering placeholder copy that looks like real content. */
-    readFailed:
-      chrome.failed ||
-      page.failed ||
-      stats.failed ||
-      projects.failed ||
-      services.failed ||
-      insights.failed ||
-      courses.failed ||
-      videos.failed,
+    page,
+    stats: await orSamples(stats.items, () => sampleStats(locale)),
+    projects,
+    services,
+    insights,
+    courses: await orSamples(courses.items, () => sampleCourses(locale)),
+    videos: await orSamples(videos.items, () => sampleVideos(locale)),
   };
 });
 

@@ -10,8 +10,6 @@ import {
   type ProjectUpdateInput,
 } from '@/entity/project/model/project.model';
 
-export const dynamic = 'force-dynamic';
-
 export const { GET, PATCH, DELETE } = createItemRoutes<AdminProject, ProjectUpdateInput>({
   entity: 'project',
   entityType: 'Project',

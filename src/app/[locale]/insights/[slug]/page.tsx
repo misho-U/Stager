@@ -1,11 +1,20 @@
 import type { Metadata } from 'next';
 
 import { InsightPageModule } from '@/modules/insight-page/insight-page.module';
-import { loadInsightPageMetadata } from '@/modules/insight-page/insight-page.service';
+import {
+  builtInsightSlugs,
+  loadInsightPageMetadata,
+} from '@/modules/insight-page/insight-page.service';
 import { DEFAULT_LOCALE, isAppLocale, toDbLocale } from '@pkg/i18n/routing';
 
-/** Rendered per request, like the home page (see its page file for why). */
-export const dynamic = 'force-dynamic';
+/**
+ * Every published article is built at build time, in both languages. One
+ * published after the build is built on its first visit. Never empty: with
+ * no article at all, a placeholder address is built as a 404.
+ */
+export async function generateStaticParams() {
+  return (await builtInsightSlugs()).map((slug) => ({ slug }));
+}
 
 type Params = { params: Promise<{ locale: string; slug: string }> };
 

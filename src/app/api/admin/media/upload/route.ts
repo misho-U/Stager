@@ -7,8 +7,6 @@ import { apiFail, apiOk } from '@pkg/http/api-response';
 import { logger } from '@pkg/logger';
 import { checkRateLimit, RATE_LIMITS } from '@pkg/ratelimit/limiter';
 
-export const dynamic = 'force-dynamic';
-
 /**
  * Issues a short-lived, tightly-scoped token that lets the browser upload
  * straight to Vercel Blob.

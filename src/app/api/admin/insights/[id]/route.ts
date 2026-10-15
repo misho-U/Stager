@@ -10,8 +10,6 @@ import {
   type InsightUpdateInput,
 } from '@/entity/insight/model/insight.model';
 
-export const dynamic = 'force-dynamic';
-
 export const { GET, PATCH, DELETE } = createItemRoutes<AdminInsight, InsightUpdateInput>({
   entity: 'insight',
   entityType: 'Insight',

@@ -7,25 +7,26 @@ import type { DbLocale } from '@/shared/types/enums';
 import { toAppLocale } from '@pkg/i18n/routing';
 import { descriptionFor, pageMetadata, siteSeo, titleFor } from '@/widgets/seo/seo.service';
 import { breadcrumbNode, structuredData, type JsonLdNode } from '@/widgets/seo/seo.utils';
-import { loadSiteChrome, readPage, readPublic } from '@/widgets/site-chrome/site-chrome.service';
+import { getPublicPage } from '@/server/published/pages';
+import { loadSiteChrome } from '@/widgets/site-chrome/site-chrome.service';
 
 /**
- * The privacy policy's reads, tagged like every public read
- * (widgets/site-chrome): the dashboard's next save shows here at once.
+ * The privacy policy's reads, through the published layer (cached and
+ * tagged): the dashboard's next save rebuilds the page.
  *
- * A failed read is logged and said on the page, never covered with text that
- * reads like a policy. A missing page (a preview, sharing the live database,
- * before the migration that creates it is deployed) is not a failure: the
- * page then has no text yet, as on a fresh install. Once per request (React
- * `cache`), for the page and its metadata alike.
+ * A failed read is not caught (see widgets/site-chrome), never covered with
+ * text that reads like a policy. A missing page (a preview, sharing the live
+ * database, before the migration that creates it is deployed) is not a
+ * failure: the page then has no text yet, as on a fresh install. Once per
+ * render (React `cache`), for the page and its metadata alike.
  */
 export const loadPrivacyPageData = cache(async (locale: DbLocale) => {
   const [chrome, page] = await Promise.all([
     loadSiteChrome(locale),
-    readPublic('page:PRIVACY', readPage('PRIVACY', locale), null),
+    getPublicPage('PRIVACY', locale),
   ]);
 
-  return { chrome, page: page.data, readFailed: page.failed };
+  return { chrome, page };
 });
 
 /** The policy's heading as the page shows it: the one written for it, else its name. */

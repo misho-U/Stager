@@ -6,8 +6,6 @@ import {
   type VideoInput,
 } from '@/entity/video/model/video.model';
 
-export const dynamic = 'force-dynamic';
-
 export const { GET, POST } = createCollectionRoutes<AdminVideo, VideoInput>({
   entity: 'video',
   entityType: 'Video',

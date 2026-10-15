@@ -22,7 +22,7 @@ type PrivacyPageModuleProps = { locale: DbLocale };
  * check the same text).
  */
 export async function PrivacyPageModule({ locale }: PrivacyPageModuleProps) {
-  const [{ chrome, page, readFailed }, t] = await Promise.all([
+  const [{ chrome, page }, t] = await Promise.all([
     loadPrivacyPageData(locale),
     getTranslations(),
   ]);
@@ -33,7 +33,6 @@ export async function PrivacyPageModule({ locale }: PrivacyPageModuleProps) {
     <SubpageShell
       locale={locale}
       chrome={chrome}
-      readFailed={readFailed}
       current={`/${toAppLocale(locale)}${PRIVACY_PATH}`}
     >
       <JsonLd

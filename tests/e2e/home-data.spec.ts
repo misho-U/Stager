@@ -14,7 +14,8 @@ import {
 /**
  * The figures, the Academy and the videos read the dashboard. While a section
  * has nothing of its own the page shows samples, marked as such; the first
- * real entry replaces them; a failed read must never be dressed up as samples.
+ * real entry replaces them. A failed read never reaches `orSamples`: it is not
+ * caught (home-page.service.ts), so it can never be dressed up as samples.
  */
 
 test.describe('samples stand in only for an empty section', () => {
@@ -24,25 +25,12 @@ test.describe('samples stand in only for an empty section', () => {
     test.skip(testInfo.project.name !== 'chromium', 'Pure logic; once is enough.');
   });
 
-  test('an empty section shows the samples, marked as such', () => {
-    expect(orSamples({ data: { items: [] }, failed: false }, samples)).toEqual({
-      items: ['sample'],
-      sample: true,
-    });
+  test('an empty section shows the samples, marked as such', async () => {
+    expect(await orSamples([], samples)).toEqual({ items: ['sample'], sample: true });
   });
 
-  test('the first real entry replaces them all', () => {
-    expect(orSamples({ data: { items: ['real'] }, failed: false }, samples)).toEqual({
-      items: ['real'],
-      sample: false,
-    });
-  });
-
-  test('a failed read shows nothing, never samples', () => {
-    expect(orSamples({ data: { items: [] }, failed: true }, samples)).toEqual({
-      items: [],
-      sample: false,
-    });
+  test('the first real entry replaces them all', async () => {
+    expect(await orSamples(['real'], samples)).toEqual({ items: ['real'], sample: false });
   });
 });
 

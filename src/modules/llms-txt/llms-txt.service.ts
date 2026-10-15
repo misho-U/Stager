@@ -1,79 +1,45 @@
 import { getTranslations } from 'next-intl/server';
 
-import {
-  INSIGHTS_PATH,
-  insightPath,
-  type PublicInsightListItem,
-} from '@/entity/insight/model/insight.model';
+import { INSIGHTS_PATH, insightPath } from '@/entity/insight/model/insight.model';
 import { PRIVACY_PATH } from '@/entity/page/model/page.model';
-import type { PublicServiceListItem } from '@/entity/service/model/service.model';
-import { TEAM_PATH, type PublicTeamMember } from '@/entity/team-member/model/team-member.model';
+import { TEAM_PATH } from '@/entity/team-member/model/team-member.model';
 import { socialName } from '@/shared/components/social-links';
 import { shortText } from '@/shared/lib/content';
-import type { ListResponse } from '@/shared/types/api';
 import type { DbLocale } from '@/shared/types/enums';
-import { collectionTag, PUBLIC_REVALIDATE_SECONDS } from '@pkg/cache/tags';
-import { serverFetch } from '@pkg/http/fetcher';
 import { toAppLocale } from '@pkg/i18n/routing';
+import { listPublicInsights } from '@/server/published/insights';
+import { listPublicServices } from '@/server/published/services';
+import { listPublicTeamMembers } from '@/server/published/team';
 import { canonicalUrl, siteSeo } from '@/widgets/seo/seo.service';
-import { loadSiteChrome, readPublic } from '@/widgets/site-chrome/site-chrome.service';
+import { loadSiteChrome } from '@/widgets/site-chrome/site-chrome.service';
 
 /**
  * /llms.txt (llmstxt.org): the site in one short Markdown file, for AI
  * assistants that answer questions about STAGER. Who the company is, its
  * pages in both languages, its services, its people, its articles and how
- * to reach it, all from the dashboard, through the same tagged reads as the
- * pages, so a save there shows here at once. Never a sample entry, and a
+ * to reach it, all from the dashboard, through the same cached, tagged reads
+ * as the pages (src/server/published), so a save there shows here at once. Never a sample entry, and a
  * section with nothing in it is left out.
  */
 
 /** Long enough to say what a thing is; this is an index, not the page. */
 const SUMMARY_MAX = 240;
 
-const NONE = { items: [], total: 0 };
-
 async function digest(locale: DbLocale) {
   const [chrome, services, team, insights, t] = await Promise.all([
     loadSiteChrome(locale),
-    readPublic<ListResponse<PublicServiceListItem>>(
-      'llms:services',
-      serverFetch<ListResponse<PublicServiceListItem>>(
-        `/api/public/services?locale=${locale}&limit=100`,
-        {
-          tags: [collectionTag('service')],
-          revalidate: PUBLIC_REVALIDATE_SECONDS,
-        },
-      ),
-      NONE,
-    ),
-    readPublic<ListResponse<PublicTeamMember>>(
-      'llms:team',
-      serverFetch<ListResponse<PublicTeamMember>>(`/api/public/team?locale=${locale}&limit=100`, {
-        tags: [collectionTag('teamMember')],
-        revalidate: PUBLIC_REVALIDATE_SECONDS,
-      }),
-      NONE,
-    ),
-    readPublic<ListResponse<PublicInsightListItem>>(
-      'llms:insights',
-      serverFetch<ListResponse<PublicInsightListItem>>(
-        `/api/public/insights?locale=${locale}&limit=100`,
-        {
-          tags: [collectionTag('insight')],
-          revalidate: PUBLIC_REVALIDATE_SECONDS,
-        },
-      ),
-      NONE,
-    ),
+    listPublicServices(locale, 100, 0),
+    listPublicTeamMembers(locale, 100, 0),
+    listPublicInsights(locale, 100, 0),
     getTranslations({ locale: toAppLocale(locale) }),
   ]);
   return {
     locale,
     chrome,
     site: siteSeo(chrome.layout),
-    services: services.data.items,
-    team: team.data.items,
-    insights: insights.data.items,
+    services: services.items,
+    team: team.items,
+    insights: insights.items,
     t,
   };
 }

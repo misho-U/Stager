@@ -1,9 +1,7 @@
 import { readQuery, withPublic } from '@/app/api/_lib/route-helpers';
-import { listPublicCategories } from '@/app/api/_lib/repositories/category.repository';
+import { listPublicCategories } from '@/server/published/categories';
 import { localeQuerySchema } from '@/app/api/public/_query';
 import { apiOk } from '@pkg/http/api-response';
-
-export const dynamic = 'force-dynamic';
 
 export const GET = withPublic(async ({ request }) => {
   const query = readQuery(request, localeQuerySchema);

@@ -23,7 +23,7 @@ type TeamPageModuleProps = { locale: DbLocale };
  */
 export async function TeamPageModule({ locale }: TeamPageModuleProps) {
   const [content, t] = await Promise.all([loadTeamPageData(locale), getTranslations()]);
-  const { chrome, page, members, readFailed } = content;
+  const { chrome, page, members } = content;
   const intro = pageIntro(page);
   const title = pageName(page, t('nav.team'));
 
@@ -31,7 +31,6 @@ export async function TeamPageModule({ locale }: TeamPageModuleProps) {
     <SubpageShell
       locale={locale}
       chrome={chrome}
-      readFailed={readFailed}
       current={`/${toAppLocale(locale)}${TEAM_PATH}`}
     >
       <JsonLd
@@ -41,9 +40,7 @@ export async function TeamPageModule({ locale }: TeamPageModuleProps) {
       <div className="px-gutter pb-section">
         <div className="max-w-page mx-auto">
           {members.length === 0 ? (
-            readFailed ? null : (
-              <p className="text-body-lg text-ink-muted">{t('team.empty')}</p>
-            )
+            <p className="text-body-lg text-ink-muted">{t('team.empty')}</p>
           ) : (
             <ul
               data-testid="team-list"

@@ -1,10 +1,9 @@
 import { buildLlmsTxt } from '@/modules/llms-txt/llms-txt.service';
 
-/**
- * Per request, like the sitemap: built from the API, which is not listening
- * while `next build` runs. The reads behind it are cached and tagged.
+/*
+ * Built at build time like the pages, from the same cached, tagged reads, and
+ * rebuilt when a save purges one of them.
  */
-export const dynamic = 'force-dynamic';
 
 /** The site for AI assistants (llmstxt.org); see the module for what it holds. */
 export async function GET() {

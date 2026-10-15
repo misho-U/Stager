@@ -1,3 +1,4 @@
+import { unstable_rethrow } from 'next/navigation';
 import type { NextRequest } from 'next/server';
 import type { z } from 'zod';
 
@@ -51,6 +52,10 @@ export function withAdmin<TParams = Record<string, never>>(
 
       return await handler({ request, session, params });
     } catch (error) {
+      // Next's own control flow first: while it tries to prerender a GET at
+      // build time, the session read (cookies) stops the attempt by throwing.
+      // That is not a failure, and must reach Next rather than be logged here.
+      unstable_rethrow(error);
       return handleRouteError(error, {
         path: request.nextUrl.pathname,
         method: request.method,
@@ -68,6 +73,9 @@ export function withPublic<TParams = Record<string, never>>(
       const params = ((await context?.params) ?? {}) as TParams;
       return await handler({ request, params });
     } catch (error) {
+      // As in withAdmin: Next's control flow (reading the request stops a
+      // build-time prerender) is not an error.
+      unstable_rethrow(error);
       return handleRouteError(error, {
         path: request.nextUrl.pathname,
         method: request.method,

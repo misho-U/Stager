@@ -1,49 +1,28 @@
 import type { MetadataRoute } from 'next';
 
-import {
-  INSIGHTS_PATH,
-  insightPath,
-  type PublicInsightListItem,
-} from '@/entity/insight/model/insight.model';
+import { INSIGHTS_PATH, insightPath } from '@/entity/insight/model/insight.model';
 import { PRIVACY_PATH } from '@/entity/page/model/page.model';
 import { TEAM_PATH } from '@/entity/team-member/model/team-member.model';
-import type { ListResponse } from '@/shared/types/api';
-import { collectionTag, PUBLIC_REVALIDATE_SECONDS } from '@pkg/cache/tags';
-import { serverFetch } from '@pkg/http/fetcher';
 import { toCanonicalUrl } from '@pkg/http/site-url';
 import { DEFAULT_LOCALE, LOCALES, toDbLocale, type AppLocale } from '@pkg/i18n/routing';
-import { logger, serialiseError } from '@pkg/logger';
+import { listPublicInsights } from '@/server/published/insights';
 import { loadSiteChrome } from '@/widgets/site-chrome/site-chrome.service';
 
-/**
- * Per request, like the pages: the published articles are read from the
- * API, which is not listening while `next build` runs.
+/*
+ * Built at build time like the pages, from the same cached, tagged reads, and
+ * rebuilt when a save purges one of them.
  */
-export const dynamic = 'force-dynamic';
 
 type Entry = { path: string; locales: readonly AppLocale[]; lastModified?: string };
 
-/**
- * Every published article, with the day it last changed. A failed read is
- * logged and leaves the articles out of this one response; the pages are
- * listed regardless.
- */
+/** Every published article, with the day it last changed. */
 async function articles(): Promise<Entry[]> {
-  try {
-    const list = await serverFetch<ListResponse<PublicInsightListItem>>(
-      `/api/public/insights?locale=EN&limit=100`,
-      { tags: [collectionTag('insight')], revalidate: PUBLIC_REVALIDATE_SECONDS },
-    );
-    return list.items.map((item) => ({
-      path: insightPath(item.slug),
-      locales: LOCALES,
-      // A list cached before `updatedAt` existed has only the publication date.
-      lastModified: item.updatedAt ?? item.publishedAt ?? undefined,
-    }));
-  } catch (error) {
-    logger.error('public.read_failed', { read: 'sitemap:insights', ...serialiseError(error) });
-    return [];
-  }
+  const list = await listPublicInsights('EN', 100, 0);
+  return list.items.map((item) => ({
+    path: insightPath(item.slug),
+    locales: LOCALES,
+    lastModified: item.updatedAt ?? item.publishedAt ?? undefined,
+  }));
 }
 
 /**

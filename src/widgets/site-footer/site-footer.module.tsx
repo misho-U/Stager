@@ -1,3 +1,5 @@
+import { cacheLife } from 'next/cache';
+
 import type { PublicLayoutData } from '@/entity/site-setting/model/site-setting.model';
 import { ContactDetails } from '@/shared/components/contact-details';
 import { SocialLinks } from '@/shared/components/social-links';
@@ -6,7 +8,7 @@ import { Wordmark } from '@/shared/components/wordmark';
 type Link = { href: string; label: string };
 
 type SiteFooterProps = {
-  /** The site's settings; null when they could not be read (the page says so). */
+  /** The site's settings. */
   layout: PublicLayoutData | null;
   /** The sections to list, as the header's menu lists them. */
   links: readonly Link[];
@@ -69,7 +71,7 @@ export function SiteFooter({ layout, links, privacy, current = null, labels }: S
         </p>
         <div className="border-line text-body-sm text-ink-muted flex flex-col gap-1 border-t pt-5 sm:flex-row sm:items-center sm:justify-between">
           <p>
-            © {new Date().getFullYear()} {siteName}
+            © <CopyrightYear /> {siteName}
           </p>
           <div className="flex flex-wrap items-center gap-x-6">
             {privacy ? (
@@ -87,4 +89,16 @@ export function SiteFooter({ layout, links, privacy, current = null, labels }: S
       </div>
     </footer>
   );
+}
+
+/**
+ * This year, for the small print. Read from the clock inside a cache scope,
+ * since a page built ahead of time may not read it outside one, and
+ * refreshed daily, so the page shows the new year within a day.
+ */
+async function CopyrightYear() {
+  'use cache';
+  cacheLife('days');
+
+  return new Date().getFullYear();
 }

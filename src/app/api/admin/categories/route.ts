@@ -9,8 +9,6 @@ import {
   type CategoryInput,
 } from '@/entity/category/model/category.model';
 
-export const dynamic = 'force-dynamic';
-
 export const { GET, POST } = createCollectionRoutes<AdminCategory, CategoryInput>({
   entity: 'category',
   entityType: 'Category',

@@ -14,6 +14,12 @@ export const NEXT_RUNTIME = process.env.NEXT_RUNTIME ?? null;
 export const IS_DEVELOPMENT = NODE_ENV === 'development';
 
 /**
+ * True inside `next build`, where the public pages are prerendered from the
+ * database by several workers at once (pkg/db/prisma.ts sizes the pool for it).
+ */
+export const IS_BUILD = process.env.NEXT_PHASE === 'phase-production-build';
+
+/**
  * Host of the current Vercel deployment, without a scheme. Set automatically by
  * Vercel and absent locally. On preview deployments this differs from the
  * configured site URL, which matters when the server fetches its own API.

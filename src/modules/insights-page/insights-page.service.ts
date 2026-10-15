@@ -2,46 +2,34 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { cache } from 'react';
 
-import { INSIGHTS_PATH, type PublicInsightListItem } from '@/entity/insight/model/insight.model';
+import { INSIGHTS_PATH } from '@/entity/insight/model/insight.model';
 import { pageIntro, pageName } from '@/entity/page/model/page.model';
-import type { ListResponse } from '@/shared/types/api';
 import type { DbLocale } from '@/shared/types/enums';
-import { collectionTag, PUBLIC_REVALIDATE_SECONDS } from '@pkg/cache/tags';
-import { serverFetch } from '@pkg/http/fetcher';
 import { toAppLocale } from '@pkg/i18n/routing';
+import { listPublicInsights } from '@/server/published/insights';
+import { getPublicPage } from '@/server/published/pages';
 import { descriptionFor, pageMetadata, siteSeo, titleFor } from '@/widgets/seo/seo.service';
 import { breadcrumbNode, structuredData, type JsonLdNode } from '@/widgets/seo/seo.utils';
-import { loadSiteChrome, readPage, readPublic } from '@/widgets/site-chrome/site-chrome.service';
+import { loadSiteChrome } from '@/widgets/site-chrome/site-chrome.service';
 
 /** How many articles the page lists, newest first (the API's maximum). */
 const INSIGHTS_LIMIT = 100;
 
 /**
  * The articles page's reads: its heading and line (Page copy → Insights) and
- * every published article (dashboard → Insights), newest first. Tagged like
- * every public read (widgets/site-chrome); once per request (React `cache`),
- * for the page and its metadata alike.
+ * every published article (dashboard → Insights), newest first, through the
+ * published layer (cached and tagged; a failed read is not caught, see
+ * widgets/site-chrome). Once per render (React `cache`), for the page and its
+ * metadata alike.
  */
 export const loadInsightsPageData = cache(async (locale: DbLocale) => {
   const [chrome, page, insights] = await Promise.all([
     loadSiteChrome(locale),
-    readPublic('page:INSIGHTS', readPage('INSIGHTS', locale), null),
-    readPublic<ListResponse<PublicInsightListItem>>(
-      'insights',
-      serverFetch<ListResponse<PublicInsightListItem>>(
-        `/api/public/insights?locale=${locale}&limit=${INSIGHTS_LIMIT}`,
-        { tags: [collectionTag('insight')], revalidate: PUBLIC_REVALIDATE_SECONDS },
-      ),
-      { items: [], total: 0 },
-    ),
+    getPublicPage('INSIGHTS', locale),
+    listPublicInsights(locale, INSIGHTS_LIMIT, 0),
   ]);
 
-  return {
-    chrome,
-    page: page.data,
-    insights: insights.data.items,
-    readFailed: page.failed || insights.failed,
-  };
+  return { chrome, page, insights: insights.items };
 });
 
 /** The page's search title, description and share card; indexed once an article is published. */

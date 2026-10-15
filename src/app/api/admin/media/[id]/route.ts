@@ -5,8 +5,6 @@ import { deleteBlob } from '@pkg/blob/storage';
 import { revalidateEntity } from '@pkg/cache/revalidate';
 import { apiFail, apiNoContent, apiOk } from '@pkg/http/api-response';
 
-export const dynamic = 'force-dynamic';
-
 type Params = { id: string };
 
 export const PATCH = withAdmin<Params>(async ({ request, session, params }) => {

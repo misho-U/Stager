@@ -188,6 +188,12 @@ test.describe('content through the dashboard API', () => {
     ).json()) as { body: string };
     expectClean(detail.body);
 
+    // Published after the build, so never built: its first visit renders it
+    // on the server, text and all, for a crawler that runs no script.
+    const firstVisit = await page.request.get(`/en/insights/${run}-insight`);
+    expect(firstVisit.status()).toBe(200);
+    expect(await firstVisit.text()).toMatch(/<h1[^>]*>(?:<[^>]+>)*E2E article/);
+
     const loosened = await patch(page.request, `/api/admin/insights/${insight.id}`, {
       categoryId: '',
       authorId: '',
