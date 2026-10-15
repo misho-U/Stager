@@ -38,7 +38,7 @@ import { RichText } from '@/shared/components/rich-text';
 import { SampleBadge } from '@/shared/components/sample-badge';
 import { hasServiceIcon, ServiceIcon } from '@/shared/components/service-icon';
 import { SocialLinks } from '@/shared/components/social-links';
-import { Wordmark } from '@/shared/components/wordmark';
+import { BrandMark, siteLogo } from '@/shared/components/brand-mark';
 import { CONTENT_ID } from '@/shared/components/skip-link';
 import { SiteLink } from '@/shared/components/site-link';
 import { cn } from '@/shared/lib/cn';
@@ -290,7 +290,14 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
             aria-label={siteName}
             className="inline-flex min-h-11 shrink-0 items-center"
           >
-            <Wordmark className="text-body-lg" />
+            <BrandMark
+              logo={siteLogo(layout)}
+              name={siteName}
+              decorative
+              priority
+              className="h-8 md:h-9"
+              wordmarkClassName="text-body-lg"
+            />
           </a>
         }
         language={<LanguageSwitcher />}

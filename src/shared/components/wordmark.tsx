@@ -1,8 +1,8 @@
 import { cn } from '@/shared/lib/cn';
 
 /**
- * The STAGER wordmark, set in type until the logo artwork is added to the
- * repository (uploads refuse SVG — see AGENTS.md § Security rules). Always
+ * The STAGER wordmark, set in type: what the header and footer show while no
+ * logo is uploaded under Dashboard → Settings (`BrandMark`). Always
  * in the brand face (`font-brand`), so it is the same mark on /ka, where the
  * text around it takes another Latin.
  *
