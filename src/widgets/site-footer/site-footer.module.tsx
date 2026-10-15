@@ -3,7 +3,7 @@ import { cacheLife } from 'next/cache';
 import type { PublicLayoutData } from '@/entity/site-setting/model/site-setting.model';
 import { ContactDetails } from '@/shared/components/contact-details';
 import { SocialLinks } from '@/shared/components/social-links';
-import { Wordmark } from '@/shared/components/wordmark';
+import { BrandMark, siteLogo } from '@/shared/components/brand-mark';
 import { SiteLink } from '@/shared/components/site-link';
 
 type Link = { href: string; label: string };
@@ -33,7 +33,13 @@ export function SiteFooter({ layout, links, privacy, current = null, labels }: S
       <div className="max-w-page @container mx-auto flex flex-col gap-12 overflow-hidden">
         <div className="grid gap-10 md:grid-cols-12">
           <div className="flex flex-col gap-3 md:col-span-5">
-            <Wordmark testId="footer-wordmark" className="text-title-sm" />
+            <BrandMark
+              logo={siteLogo(layout)}
+              name={siteName}
+              className="h-10 self-start"
+              wordmarkClassName="text-title-sm"
+              testId="footer-wordmark"
+            />
             {layout?.tagline ? (
               <p className="text-body text-ink-muted max-w-sm text-pretty">{layout.tagline}</p>
             ) : null}

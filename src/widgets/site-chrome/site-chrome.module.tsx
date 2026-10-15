@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
 import { CONTENT_ID, SkipLink } from '@/shared/components/skip-link';
-import { Wordmark } from '@/shared/components/wordmark';
+import { BrandMark, siteLogo } from '@/shared/components/brand-mark';
 import { SiteLink } from '@/shared/components/site-link';
 import type { DbLocale } from '@/shared/types/enums';
 import { toAppLocale } from '@pkg/i18n/routing';
@@ -60,7 +60,14 @@ export async function SubpageShell({ locale, chrome, current, children }: Subpag
               aria-label={siteName}
               className="inline-flex min-h-11 shrink-0 items-center"
             >
-              <Wordmark className="text-body-lg" />
+              <BrandMark
+                logo={siteLogo(chrome.layout)}
+                name={siteName}
+                decorative
+                priority
+                className="h-8 md:h-9"
+                wordmarkClassName="text-body-lg"
+              />
             </SiteLink>
           }
           language={<LanguageSwitcher />}
