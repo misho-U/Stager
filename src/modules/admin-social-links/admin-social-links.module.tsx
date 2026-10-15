@@ -10,6 +10,7 @@ import { DataTable, type Column } from '@/shared/components/data-table';
 import { CheckboxField, SelectField, TextField } from '@/shared/components/field';
 import { PageHeader } from '@/shared/components/page-header';
 import { ErrorNotice, LoadFailed, Panel } from '@/shared/components/panel';
+import { TableSkeleton } from '@/shared/components/skeleton';
 import { useSocialPlatformOptions } from '@/shared/lib/use-enum-options';
 
 export function AdminSocialLinksModule() {
@@ -148,7 +149,7 @@ export function AdminSocialLinksModule() {
         {loadError ? (
           <LoadFailed message={loadError} onRetry={retry} />
         ) : isLoading ? (
-          <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
+          <TableSkeleton />
         ) : (
           <DataTable
             rows={links}

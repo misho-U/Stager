@@ -1,7 +1,6 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
 
 import { useLogout } from '@/entity/session/api/session.query';
 import { Button } from '@/shared/components/button';
@@ -17,13 +16,13 @@ import { Button } from '@/shared/components/button';
  */
 export function AdminNoAccess({ email }: { email: string | null }) {
   const t = useTranslations('admin.noAccess');
-  const router = useRouter();
   const logout = useLogout();
 
+  // A full page load, like the sidebar's sign-out: every page the router kept
+  // while the account still had access goes with it.
   const signOut = async () => {
     await logout.mutateAsync();
-    router.replace('/admin/login');
-    router.refresh();
+    window.location.replace('/admin/login');
   };
 
   return (

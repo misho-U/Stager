@@ -75,6 +75,13 @@ Do not add a library outside this list without raising it first.
   caught `/api/…` as a locale and shipped an empty 404; an address no route
   answers gets `app/global-not-found.tsx`. AGENTS.md § Static public pages
   lists every Suspense boundary and why.
+- **The dashboard keeps pages and lists for minutes, so it moves instantly**
+  (AGENTS.md § A dashboard that moves instantly). A new dashboard page gets
+  its own `loading.tsx` beside its `page.tsx` (`admin-speed.spec.ts` checks);
+  a list page lives in a `(list)` group so its skeleton never covers the edit
+  form. Never `router.refresh()` after a save: every save already marks every
+  query stale, and a refresh throws away every prefetched page. Signing out
+  is a full page load.
 - **Never let a failed read fall back to content-shaped copy.** A placeholder
   that reads like the real thing turns an outage into a page that merely looks
   fine, and hid a dead API for days. On a public page a failed read is not

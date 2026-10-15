@@ -18,6 +18,7 @@ import { Button } from '@/shared/components/button';
 import { ConfirmButton } from '@/shared/components/confirm-button';
 import { PageHeader } from '@/shared/components/page-header';
 import { EmptyState, ErrorNotice, LoadFailed, Panel, StatusBadge } from '@/shared/components/panel';
+import { TableSkeleton } from '@/shared/components/skeleton';
 import { LOCALE_NAMES } from '@/shared/constants/content';
 import { cn } from '@/shared/lib/cn';
 import { useFormErrors } from '@/shared/lib/form-errors';
@@ -106,7 +107,7 @@ export function AdminInquiriesModule() {
         <LoadFailed message={loadFailed} onRetry={() => void refetch()} />
       ) : isLoading || (isPlaceholderData && inquiries.length === 0) ? (
         <Panel>
-          <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
+          <TableSkeleton />
         </Panel>
       ) : inquiries.length === 0 ? (
         <Panel>

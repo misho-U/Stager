@@ -93,7 +93,6 @@ export function useAdminVideoForm({ videoId }: { videoId?: string }) {
           await createVideo.mutateAsync(values);
         }
         router.push('/admin/videos');
-        router.refresh();
       } catch (caught) {
         setSubmitError(formErrors.message(caught));
         for (const [field, message] of Object.entries(formErrors.fields(caught))) {

@@ -123,7 +123,6 @@ export function useAdminInsightForm({ insightId }: { insightId?: string }) {
           await createInsight.mutateAsync(values);
         }
         router.push('/admin/insights');
-        router.refresh();
       } catch (caught) {
         setSubmitError(formErrors.message(caught));
         for (const [field, message] of Object.entries(formErrors.fields(caught))) {

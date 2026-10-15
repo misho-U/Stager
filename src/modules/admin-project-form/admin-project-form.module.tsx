@@ -13,6 +13,7 @@ import {
 import { CheckboxField, SelectField, TextAreaField, TextField } from '@/shared/components/field';
 import { PageHeader } from '@/shared/components/page-header';
 import { ErrorNotice, LoadFailed, Panel } from '@/shared/components/panel';
+import { FormPageSkeleton } from '@/shared/components/skeleton';
 import { toOptionalNumber } from '@/shared/lib/form-values';
 import { useStatusOptions } from '@/shared/lib/use-enum-options';
 import type { DbLocale } from '@/shared/types/enums';
@@ -40,7 +41,7 @@ export function AdminProjectFormModule({ projectId }: { projectId?: string }) {
   useUnsavedChangesGuard(isDirty, t('common.unsavedChanges'));
 
   if (isLoading) {
-    return <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>;
+    return <FormPageSkeleton />;
   }
   // Its blank fields would be saved over the record: no form until it loads.
   if (loadError) return <LoadFailed message={loadError} onRetry={retry} />;

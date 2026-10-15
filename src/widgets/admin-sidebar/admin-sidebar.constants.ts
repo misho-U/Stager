@@ -48,3 +48,14 @@ export const ADMIN_NAV: AdminNavItem[] = [
 ];
 
 export const ADMIN_NAV_GROUPS: readonly AdminNavGroup[] = ['content', 'site', 'inbox'];
+
+/**
+ * Screens reached from another screen rather than from the menu: the menu's
+ * links prefetch their own pages, and these are prefetched after sign-in
+ * (admin-sidebar.service.ts).
+ */
+export const ADMIN_SUBPAGES: readonly string[] = [
+  '/admin/insights/categories',
+  '/admin/courses/categories',
+  '/admin/company-stats',
+];

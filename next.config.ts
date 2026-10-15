@@ -56,6 +56,16 @@ const nextConfig: NextConfig = {
     // Two root layouts (the site under /[locale], the dashboard under /admin)
     // leave no single layout for a 404 outside both: app/global-not-found.tsx.
     globalNotFound: true,
+
+    // How long the browser keeps a page it visited or prefetched before
+    // asking the server again. Only the dashboard renders per request, and
+    // its pages carry no data (each loads its own through TanStack Query,
+    // which every save marks stale), so a kept page is safe to show again:
+    // going back and forth is instant. `static` covers the menu's fully
+    // prefetched pages and the built public pages (Next's default, 5 min);
+    // `dynamic` the rest (default 0, a server round trip on every visit).
+    // Signing out reloads the page, which drops them all.
+    staleTimes: { dynamic: 300, static: 300 },
   },
 
   images: {

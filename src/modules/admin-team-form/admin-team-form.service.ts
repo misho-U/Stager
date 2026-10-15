@@ -90,7 +90,6 @@ export function useAdminTeamForm({ memberId }: { memberId?: string }) {
           await createMember.mutateAsync(values);
         }
         router.push('/admin/team');
-        router.refresh();
       } catch (caught) {
         setSubmitError(formErrors.message(caught));
         for (const [field, message] of Object.entries(formErrors.fields(caught))) {

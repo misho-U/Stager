@@ -1,35 +1,23 @@
+'use client';
+
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
-import { ErrorNotice, Panel } from '@/shared/components/panel';
 import { DASHBOARD_SHORTCUTS } from '@/modules/admin-dashboard/admin-dashboard.constants';
-
-type AdminDashboardModuleProps = {
-  name: string | null;
-  /** Null when they could not be loaded. */
-  counts: {
-    projects: number;
-    insights: number;
-    services: number;
-    courses: number;
-    videos: number;
-    teamMembers: number;
-    newInquiries: number;
-  } | null;
-};
+import { useDashboardCounts } from '@/modules/admin-dashboard/admin-dashboard.service';
+import { ErrorNotice, Panel } from '@/shared/components/panel';
+import { Bone } from '@/shared/components/skeleton';
 
 /** A count that could not be loaded reads as unknown, never as zero. */
 const UNKNOWN = '—';
 
 /**
- * Dashboard landing page.
- *
- * A server component: the counts come from the layout's already-authenticated
- * request, so there is nothing to fetch on the client and no loading state to
- * design around.
+ * Dashboard landing page: the greeting (from the page), the counts (loaded
+ * here, so they follow every save), the new inquiries and the shortcuts.
  */
-export function AdminDashboardModule({ name, counts }: AdminDashboardModuleProps) {
+export function AdminDashboardModule({ name }: { name: string | null }) {
   const t = useTranslations('admin');
+  const { counts, isLoading, failed } = useDashboardCounts();
 
   // The same words as the sidebar, so a count and its screen match.
   const stats = [
@@ -50,7 +38,7 @@ export function AdminDashboardModule({ name, counts }: AdminDashboardModuleProps
         <p className="text-body-sm text-ink-muted">{t('dashboard.intro')}</p>
       </header>
 
-      {counts ? null : <ErrorNotice message={t('dashboard.countsFailed')} />}
+      {failed ? <ErrorNotice message={t('dashboard.countsFailed')} /> : null}
 
       {counts && counts.newInquiries > 0 ? (
         <Link
@@ -64,14 +52,18 @@ export function AdminDashboardModule({ name, counts }: AdminDashboardModuleProps
         </Link>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div aria-busy={isLoading} className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {stats.map((stat) => (
           <Link
             key={stat.label}
             href={stat.href}
             className="border-line bg-surface-raised hover:border-line-strong rounded-lg border px-4 py-3 transition-colors"
           >
-            <p className="text-title text-ink font-semibold">{stat.value ?? UNKNOWN}</p>
+            {isLoading ? (
+              <Bone className="my-1 h-6 w-10" />
+            ) : (
+              <p className="text-title text-ink font-semibold">{stat.value ?? UNKNOWN}</p>
+            )}
             <p className="text-caption text-ink-subtle">{stat.label}</p>
           </Link>
         ))}

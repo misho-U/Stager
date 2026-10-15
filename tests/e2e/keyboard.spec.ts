@@ -87,7 +87,8 @@ function dashboardPages(dir = path.join('src', 'app', 'admin', '(dashboard)')): 
     const segments = path
       .relative(path.join('src', 'app', 'admin', '(dashboard)'), dir)
       .split(path.sep)
-      .filter(Boolean);
+      // A route group, (list) or (overview), is not part of the address.
+      .filter((segment) => segment && !/^\(.+\)$/.test(segment));
     return [['/admin', ...segments].join('/')];
   });
 }

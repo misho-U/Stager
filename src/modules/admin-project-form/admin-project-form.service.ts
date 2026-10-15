@@ -88,7 +88,6 @@ export function useAdminProjectForm({ projectId }: UseProjectFormOptions) {
         }
 
         router.push('/admin/projects');
-        router.refresh();
       } catch (caught) {
         setSubmitError(formErrors.message(caught));
 

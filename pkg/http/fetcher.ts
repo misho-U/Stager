@@ -1,24 +1,4 @@
-import { VERCEL_AUTOMATION_BYPASS_SECRET } from '@pkg/config/runtime';
 import { ApiError, type ApiErrorBody, type ApiErrorCode } from '@pkg/http/api-error';
-import { toAbsoluteUrl } from '@pkg/http/site-url';
-
-/**
- * How long the server waits for its own API. Past this the read fails in
- * seconds and the page says so, instead of hanging until the platform kills
- * the function. (A signal does not change how Next caches the fetch.)
- */
-const SELF_FETCH_TIMEOUT_MS = 10_000;
-
-/** Headers for the server's calls to its own deployment. */
-function selfFetchHeaders(extra?: Record<string, string>): Record<string, string> {
-  return {
-    accept: 'application/json',
-    ...(VERCEL_AUTOMATION_BYPASS_SECRET
-      ? { 'x-vercel-protection-bypass': VERCEL_AUTOMATION_BYPASS_SECRET }
-      : {}),
-    ...extra,
-  };
-}
 
 type JsonBody = Record<string, unknown> | unknown[] | null;
 
@@ -53,27 +33,6 @@ async function parse<T>(response: Response): Promise<T> {
   if (!response.ok) throw await toApiError(response);
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
-}
-
-/**
- * Read data as the signed-in admin from a server component.
- *
- * Forwards the auth cookies and never caches — admin views must show the
- * database as it is right now, including drafts.
- */
-export async function serverFetchAuthed<T>(
-  path: string,
-  cookieHeader: string,
-  options?: { headers?: Record<string, string> },
-): Promise<T> {
-  const response = await fetch(toAbsoluteUrl(path), {
-    method: 'GET',
-    headers: selfFetchHeaders({ cookie: cookieHeader, ...options?.headers }),
-    signal: AbortSignal.timeout(SELF_FETCH_TIMEOUT_MS),
-    cache: 'no-store',
-  });
-
-  return parse<T>(response);
 }
 
 /**

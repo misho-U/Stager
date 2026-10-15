@@ -19,7 +19,7 @@ type AdminSidebarProps = {
 
 export function AdminSidebar({ email, name, role }: AdminSidebarProps) {
   const t = useTranslations('admin');
-  const { isActive, signOut, isSigningOut, unreadInquiries } = useAdminSidebar();
+  const { isActive, signOut, isSigningOut, unreadInquiries, warm } = useAdminSidebar();
 
   return (
     <>
@@ -52,6 +52,9 @@ export function AdminSidebar({ email, name, role }: AdminSidebarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  // The whole page, once the page being opened has settled
+                  // (admin-sidebar.service.ts): every section then opens at once.
+                  prefetch={warm}
                   aria-current={isActive(item.href) ? 'page' : undefined}
                   className={cn(
                     // 3px on wide screens: eleven rows still fit a 1366×600

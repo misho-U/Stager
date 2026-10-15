@@ -16,11 +16,11 @@ export function AdminLoginModule() {
   const { errors } = form.formState;
 
   return (
-    <main className="flex min-h-dvh items-center justify-center px-gutter py-12">
+    <main className="px-gutter flex min-h-dvh items-center justify-center py-12">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <p className="text-title font-semibold tracking-wordmark text-ink">{BRAND.name}</p>
-          <p className="mt-1 text-caption tracking-wide text-ink-subtle uppercase">
+          <p className="text-title tracking-wordmark text-ink font-semibold">{BRAND.name}</p>
+          <p className="text-caption text-ink-subtle mt-1 tracking-wide uppercase">
             {BRAND.positioning}
           </p>
         </div>
@@ -28,7 +28,7 @@ export function AdminLoginModule() {
         <form
           onSubmit={onSubmit}
           noValidate
-          className="flex flex-col gap-4 rounded-lg border border-line bg-surface-raised p-6"
+          className="border-line bg-surface-raised flex flex-col gap-4 rounded-lg border p-6"
         >
           {/* Here as well as in the sidebar, so the language can be changed
               before signing in. */}
@@ -63,9 +63,7 @@ export function AdminLoginModule() {
           </Button>
         </form>
 
-        <p className="mt-4 text-center text-caption text-ink-subtle">
-          {t('restricted')}
-        </p>
+        <p className="text-caption text-ink-subtle mt-4 text-center">{t('restricted')}</p>
       </div>
     </main>
   );

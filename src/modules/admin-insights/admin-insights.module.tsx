@@ -12,6 +12,7 @@ import { ConfirmButton } from '@/shared/components/confirm-button';
 import { DataTable, type Column } from '@/shared/components/data-table';
 import { PageHeader } from '@/shared/components/page-header';
 import { ErrorNotice, LoadFailed, Panel, StatusBadge } from '@/shared/components/panel';
+import { TableSkeleton } from '@/shared/components/skeleton';
 import { useFormErrors } from '@/shared/lib/form-errors';
 import { useAdminFormat } from '@/shared/lib/use-admin-format';
 
@@ -114,7 +115,7 @@ export function AdminInsightsModule() {
         {loadFailed ? (
           <LoadFailed message={loadFailed} onRetry={() => void refetch()} />
         ) : isLoading ? (
-          <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
+          <TableSkeleton />
         ) : (
           <DataTable
             rows={data?.items ?? []}

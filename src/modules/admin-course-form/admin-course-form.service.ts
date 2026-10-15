@@ -107,7 +107,6 @@ export function useAdminCourseForm({ courseId }: { courseId?: string }) {
           await createCourse.mutateAsync(values);
         }
         router.push('/admin/courses');
-        router.refresh();
       } catch (caught) {
         setSubmitError(formErrors.message(caught));
         for (const [field, message] of Object.entries(formErrors.fields(caught))) {
