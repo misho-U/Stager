@@ -10,6 +10,7 @@ import { Button } from '@/shared/components/button';
 import { ConfirmButton } from '@/shared/components/confirm-button';
 import { PageHeader } from '@/shared/components/page-header';
 import { EmptyState, ErrorNotice, LoadFailed, Panel } from '@/shared/components/panel';
+import { MediaGridSkeleton } from '@/shared/components/skeleton';
 import { useFormErrors } from '@/shared/lib/form-errors';
 import { useAdminFormat } from '@/shared/lib/use-admin-format';
 import { useMediaPicker } from '@/widgets/media-picker/media-picker.service';
@@ -144,7 +145,7 @@ export function AdminMediaModule() {
         {loadError ? (
           <LoadFailed message={loadError} onRetry={retry} />
         ) : isLoading ? (
-          <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
+          <MediaGridSkeleton />
         ) : items.length === 0 ? (
           <EmptyState title={t('media.emptyTitle')} description={t('media.emptyDescription')} />
         ) : (

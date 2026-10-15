@@ -9,6 +9,7 @@ import { DataTable, type Column } from '@/shared/components/data-table';
 import { TextField } from '@/shared/components/field';
 import { PageHeader } from '@/shared/components/page-header';
 import { ErrorNotice, LoadFailed, Panel } from '@/shared/components/panel';
+import { TableSkeleton } from '@/shared/components/skeleton';
 import type { AdminCourseCategory } from '@/entity/course-category/model/course-category.model';
 
 export function AdminCourseCategoriesModule() {
@@ -146,7 +147,7 @@ export function AdminCourseCategoriesModule() {
         {loadError ? (
           <LoadFailed message={loadError} onRetry={retry} />
         ) : isLoading ? (
-          <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
+          <TableSkeleton />
         ) : (
           <DataTable
             rows={categories}

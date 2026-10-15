@@ -7,6 +7,7 @@ import type { LoginInput } from '@/entity/session/model/session.model';
 export function useLogin() {
   return useMutation({
     mutationFn: (input: LoginInput) => login(input),
+    meta: { changesData: false },
   });
 }
 
@@ -14,6 +15,7 @@ export function useLogout() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => logout(),
+    meta: { changesData: false },
     // Drop everything: the next user of this browser must not see cached
     // drafts or inquiry contents from the session that just ended.
     onSuccess: () => queryClient.clear(),

@@ -112,7 +112,6 @@ export function useAdminServiceForm({ serviceId }: { serviceId?: string }) {
           await createService.mutateAsync(values);
         }
         router.push('/admin/services');
-        router.refresh();
       } catch (caught) {
         setSubmitError(formErrors.message(caught));
         for (const [field, message] of Object.entries(formErrors.fields(caught))) {

@@ -8,6 +8,7 @@ import { adminPagesQuery } from '@/entity/page/api/page.query';
 import { ButtonLink } from '@/shared/components/button';
 import { PageHeader } from '@/shared/components/page-header';
 import { LoadFailed, Panel } from '@/shared/components/panel';
+import { TableSkeleton } from '@/shared/components/skeleton';
 import { useFormErrors } from '@/shared/lib/form-errors';
 
 export function AdminPagesModule() {
@@ -34,7 +35,7 @@ export function AdminPagesModule() {
         {loadFailed ? (
           <LoadFailed message={loadFailed} onRetry={() => void refetch()} />
         ) : isLoading ? (
-          <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
+          <TableSkeleton />
         ) : (
           <ul className="divide-line flex flex-col divide-y">
             {(data?.items ?? []).map((page) => (

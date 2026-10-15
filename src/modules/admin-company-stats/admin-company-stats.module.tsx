@@ -11,6 +11,7 @@ import { DataTable, type Column } from '@/shared/components/data-table';
 import { CheckboxField, TextField } from '@/shared/components/field';
 import { PageHeader } from '@/shared/components/page-header';
 import { ErrorNotice, LoadFailed, Panel } from '@/shared/components/panel';
+import { TableSkeleton } from '@/shared/components/skeleton';
 
 export function AdminCompanyStatsModule() {
   const t = useTranslations('admin');
@@ -154,7 +155,7 @@ export function AdminCompanyStatsModule() {
         {loadError ? (
           <LoadFailed message={loadError} onRetry={retry} />
         ) : isLoading ? (
-          <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>
+          <TableSkeleton />
         ) : (
           <DataTable
             rows={stats}

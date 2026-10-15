@@ -12,6 +12,7 @@ import {
 import { SelectField, TextAreaField, TextField } from '@/shared/components/field';
 import { PageHeader } from '@/shared/components/page-header';
 import { ErrorNotice, LoadFailed, Panel } from '@/shared/components/panel';
+import { FormPageSkeleton } from '@/shared/components/skeleton';
 import { toOptionalNumber } from '@/shared/lib/form-values';
 import { useStatusOptions, useVideoKindOptions } from '@/shared/lib/use-enum-options';
 import type { DbLocale } from '@/shared/types/enums';
@@ -36,7 +37,7 @@ export function AdminVideoFormModule({ videoId }: { videoId?: string }) {
   const { errors, submitCount, isDirty } = form.formState;
   useUnsavedChangesGuard(isDirty, t('common.unsavedChanges'));
 
-  if (isLoading) return <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>;
+  if (isLoading) return <FormPageSkeleton />;
   // Its blank fields would be saved over the record: no form until it loads.
   if (loadError) return <LoadFailed message={loadError} onRetry={retry} />;
 

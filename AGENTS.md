@@ -204,8 +204,11 @@ written. Everything else still goes through `/api`.
 
 ### Which origin the server calls itself on
 
-Only the dashboard's overview page still fetches its own API from the server
-(`serverFetchAuthed`, with the admin's cookies). `getSiteOrigin()` in
+None, any more: public pages read through `src/server/published`, and the
+dashboard's overview loads its counts in the browser like every other
+dashboard page. `getSiteOrigin()`, `INTERNAL_API_ORIGIN` and
+`VERCEL_AUTOMATION_BYPASS_SECRET` are left with no caller, to be removed.
+What they did: `getSiteOrigin()` in
 `pkg/http/site-url.ts` picks, in order: `INTERNAL_API_ORIGIN`
 → `VERCEL_URL` → `NEXT_PUBLIC_SITE_URL`. Server-side rendering therefore does
 **not** depend on the public domain resolving, which means `NEXT_PUBLIC_SITE_URL`
@@ -294,6 +297,50 @@ dashboard and the API render per request.
 - **Courses**: a course leaves the list once its start date passes. The daily
   job (20:05 UTC, just after Tbilisi midnight) purges the course list;
   `COURSE_CACHE_LIFE` expires it after a day if a run is missed.
+
+### A dashboard that moves instantly
+
+The dashboard renders per request, but moving around it never waits on the
+server once the admin is signed in. `admin-speed.spec.ts` checks each part.
+
+- **Every page loads its data in the browser** (TanStack Query, through an
+  entity `.query.ts`), the overview's counts included (`entity/dashboard`).
+  A dashboard page's server render carries no data, only the page, so the
+  browser may keep it.
+- **After sign-in, everything is warmed** (`useAdminPrefetch`,
+  `widgets/admin-sidebar`), once the opened page has been up a second and the
+  browser is idle: each menu link fetches its whole page (`prefetch={warm}`
+  on the Link), the screens reached from elsewhere (`ADMIN_SUBPAGES`) are
+  prefetched, and every list is loaded, one request at a time. Opening a page
+  from the menu then draws at once from memory, even with a slow server.
+  Waiting matters: a full load warms about fifty requests that each check the
+  session (around eighty Supabase `/user` lookups in all), so a reload or a
+  quick hop must not pay for it, and the page being opened must not be
+  slowed by it.
+- **What is kept, and for how long.** Lists count as current for five
+  minutes and stay in memory for thirty (`shared/components/query-provider`).
+  Every successful save marks every query stale, not just its own resource's
+  (a category's name shows in the articles list); what is on screen reloads,
+  the rest on its next visit. The inbox and the overview's counts change
+  without a save (a lead arrives from the site), so they always reload when
+  opened, showing the last copy first. Next keeps visited and prefetched
+  pages for five minutes (`staleTimes` in `next.config.ts`). So never call
+  `router.refresh()` after a save: it throws away every prefetched page, and
+  the save has already marked the data stale.
+- **Signing out is a full page load** (`window.location.replace`), never a
+  client navigation: it drops every kept page, as `useLogout` drops every
+  list, so Back can never show the dashboard as it was.
+- **Every dashboard page has its own `loading.tsx`**, a skeleton in its shape
+  (`shared/components/skeleton.tsx`): a list's rows, a form's fields, the
+  overview's counts. It shows on client-side navigation while the page comes
+  from the server; a full load sends nothing until the admin root layout has
+  read its cookies, and then `AdminShellPending` covers the sign-in check. A
+  section's `loading.tsx` also covers every page nested in it, so a list page
+  lives in a `(list)` route group (`projects/(list)/page.tsx`) and the
+  overview in `(overview)`: an edit form never flashes a list's skeleton.
+  The same skeletons stand in while a page's own data loads. They say
+  "Loading…" once, to a screen reader (`role="status"`, visually hidden),
+  and pulse only where the system allows motion.
 
 ### Search engines, share cards and AI crawlers (`widgets/seo`)
 

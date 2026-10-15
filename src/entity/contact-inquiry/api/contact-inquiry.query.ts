@@ -19,8 +19,17 @@ export const inquiryKeys = {
   unread: () => ['inquiries', 'unread'] as const,
 };
 
+/**
+ * The inbox. New inquiries come from the site, not from a save here, so it is
+ * never taken as current: opening the inbox shows the last list at once and
+ * asks again.
+ */
 export const inquiriesQuery = (view: InquiryView) =>
-  queryOptions({ queryKey: inquiryKeys.list(view), queryFn: () => fetchInquiries(view) });
+  queryOptions({
+    queryKey: inquiryKeys.list(view),
+    queryFn: () => fetchInquiries(view),
+    staleTime: 0,
+  });
 
 /**
  * The sidebar's count of new inquiries, so a lead shows on every dashboard

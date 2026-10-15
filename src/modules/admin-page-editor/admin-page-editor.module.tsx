@@ -15,6 +15,7 @@ import { CheckboxField, TextAreaField, TextField } from '@/shared/components/fie
 import { PageHeader } from '@/shared/components/page-header';
 import { ErrorNotice, LoadFailed, Panel, SuccessNotice } from '@/shared/components/panel';
 import { SeoFields } from '@/shared/components/seo-fields';
+import { FormPageSkeleton } from '@/shared/components/skeleton';
 import type { DbLocale, PageKey } from '@/shared/types/enums';
 import { useUnsavedChangesGuard } from '@/shared/lib/use-unsaved-changes-guard';
 import { MediaPicker } from '@/widgets/media-picker/media-picker.module';
@@ -42,7 +43,7 @@ export function AdminPageEditorModule({ pageKey }: { pageKey: PageKey }) {
   const { errors, submitCount, isDirty } = form.formState;
   useUnsavedChangesGuard(isDirty, t('common.unsavedChanges'));
 
-  if (isLoading) return <p className="text-body-sm text-ink-subtle">{t('common.loading')}</p>;
+  if (isLoading) return <FormPageSkeleton />;
   // Its blank fields would be saved over the record: no form until it loads.
   if (loadError) return <LoadFailed message={loadError} onRetry={retry} />;
 
