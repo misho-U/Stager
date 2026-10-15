@@ -53,6 +53,17 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
 
   experimental: {
+    // Build-time prerendering, which reads the live database through the
+    // Supabase transaction pooler. Next defaults to one worker per CPU less
+    // one (11 on Vercel's builders) and 8 pages at a time in each; every
+    // worker opens its own pool (pkg/db/prisma.ts: 2 connections at build).
+    // 4 × 2 keeps the build to 8 pooler connections beside the live site,
+    // and 4 pages per worker keeps each pool's queue short. The public pages
+    // take seconds to prerender, so this costs no noticeable build time.
+    // Neither setting touches the deployed functions.
+    cpus: 4,
+    staticGenerationMaxConcurrency: 4,
+
     // Two root layouts (the site under /[locale], the dashboard under /admin)
     // leave no single layout for a 404 outside both: app/global-not-found.tsx.
     globalNotFound: true,
