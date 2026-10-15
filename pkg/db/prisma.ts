@@ -51,27 +51,54 @@ export function databaseSsl(url: string): PoolConfig['ssl'] {
  * migrations). The pool is sized HERE: `connection_limit` and `pgbouncer` in
  * the URL were settings of Prisma's old engine, and node-postgres ignores them,
  * so every instance used to keep up to 10 connections and wait forever for one.
+ * Here `max` is the old `connection_limit`, and `connectionTimeoutMillis` (with
+ * the transaction `maxWait` below) the old `pool_timeout`.
+ *
+ * Build and run time differ on purpose. A function serves one request at a
+ * time and must fail fast; `next build` prerenders many pages per worker at
+ * once on a pool of two, so a query there may queue behind the others, and
+ * that wait is not an outage.
  */
+const POOL = IS_BUILD
+  ? {
+      // Workers × 2 is the build's whole share of the pooler: with
+      // `experimental.cpus` capped in next.config.ts, at most 8 connections.
+      max: 2,
+      // Queue for a free connection instead of failing the build after 5s.
+      connectionTimeoutMillis: 30_000,
+      // findUnique calls made in the same tick (the layout's site settings
+      // for ka and en, several pages' lookups) run as ONE batch inside a
+      // transaction. Prisma's defaults give it 2s to get a connection and
+      // BEGIN, and 5s in all, with each statement in it one round trip after
+      // another: a busy build worker on a far pooler missed the first and
+      // failed with P2028 ("Unable to start a transaction in the given time").
+      transactionOptions: { maxWait: 30_000, timeout: 60_000 },
+    }
+  : {
+      // A few per instance is plenty for this site, and the pooler's client
+      // limit is shared by every instance and every preview.
+      max: 5,
+      // Fail in seconds, not at the function's time limit, when the database
+      // is unreachable or the pool is exhausted: the page then says it failed.
+      connectionTimeoutMillis: 5_000,
+      // Prisma's defaults (maxWait 2s, timeout 5s), unchanged at run time.
+      transactionOptions: undefined,
+    };
+
 const createPrismaClient = () => {
   const adapter = new PrismaPg({
     connectionString: serverEnv.DATABASE_URL,
     ssl: databaseSsl(serverEnv.DATABASE_URL),
-    // A few per instance is plenty for this site, and the pooler's client
-    // limit is shared by every instance and every preview. A build prerenders
-    // the public pages in several workers at once, each with its own pool,
-    // over the same pooled URL: two each keeps a build from using up the
-    // pooler while the live site is serving.
-    max: IS_BUILD ? 2 : 5,
+    max: POOL.max,
     // Idle connections go quickly: a suspended instance should not hold any.
     idleTimeoutMillis: 10_000,
-    // Fail in seconds, not at the function's time limit, when the database is
-    // unreachable or the pool is exhausted: the page then says it failed.
-    connectionTimeoutMillis: 5_000,
+    connectionTimeoutMillis: POOL.connectionTimeoutMillis,
   });
 
   return new PrismaClient({
     adapter,
     log: isProduction ? ['error'] : ['warn', 'error'],
+    transactionOptions: POOL.transactionOptions,
   });
 };
 

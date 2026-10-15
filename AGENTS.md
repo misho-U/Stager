@@ -255,6 +255,16 @@ dashboard and the API render per request.
   on request (an article published after the build) shows the site's error
   page. A built page must never hold "content failed to load": it would be
   served to everyone until the next save.
+- **The build reads the live database through the transaction pooler, gently.**
+  `experimental.cpus: 4` and `staticGenerationMaxConcurrency: 4`
+  (`next.config.ts`) with a pool of 2 per worker keep a build to 8 pooler
+  connections (Next's default was 11 workers × 8 pages on Vercel). At build
+  only, `pkg/db/prisma.ts` lets a query queue up to 30 s for a connection and
+  gives Prisma's batch transactions (same-tick `findUnique` calls, such as the
+  layout's site settings for both languages) 30 s to start and 60 s to run:
+  Prisma's 2 s default failed builds with P2028, "Unable to start a
+  transaction in the given time". Run time keeps 5 per instance, a 5 s
+  connection timeout and Prisma's defaults.
 - **`generateStaticParams` never returns an empty array** (Cache Components
   fails the build): the locales always; the articles, or `NO_ARTICLE_SLUG`,
   an address no article can have, built as a 404, while there are none.

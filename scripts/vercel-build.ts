@@ -41,8 +41,8 @@ if (process.env.VERCEL_ENV === 'production') {
 
 // The build reads the database: the public pages are prerendered from it. It
 // connects through DATABASE_URL, which must be the pooler (pkg/db/prisma.ts),
-// never the direct host: several build workers connect at once, beside the
-// live site. Said, not enforced: a wrong URL still builds.
+// never the direct host: four build workers (next.config.ts) connect at once,
+// beside the live site. Said, not enforced: a wrong URL still builds.
 const databaseUrl = process.env.DATABASE_URL ?? '';
 if (databaseUrl.includes('.supabase.') && !databaseUrl.includes('pooler.supabase.com')) {
   console.warn(
