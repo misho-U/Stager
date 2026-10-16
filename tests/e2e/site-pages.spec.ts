@@ -109,7 +109,7 @@ test.describe('the articles', () => {
     expect((await page.goto('/en/insights/NOT%20A%20SLUG'))?.status()).toBe(404);
   });
 
-  test('the home page lists the latest, each a link, with a way to all of them', async ({
+  test('the home page shows only the latest article, with a way to all of them', async ({
     page,
     request,
   }) => {
@@ -126,9 +126,10 @@ test.describe('the articles', () => {
     }
     const section = page.locator('#insights');
     await expect(section.getByTestId('all-insights')).toHaveAttribute('href', '/en/insights');
-    for (const link of await section.getByTestId('insight-link').all()) {
-      await expect(link).toHaveAttribute('href', /^\/en\/insights\/[a-z0-9-]+$/);
-    }
+    // One article; the rest are on the articles page.
+    const links = section.getByTestId('insight-link');
+    await expect(links).toHaveCount(1);
+    await expect(links).toHaveAttribute('href', /^\/en\/insights\/[a-z0-9-]+$/);
     await expect(page.locator('footer a[href="/en/insights"]')).toHaveCount(1);
   });
 });

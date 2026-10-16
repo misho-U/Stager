@@ -1075,7 +1075,7 @@ and the privacy policy (`/[locale]/privacy`, its text written under Page copy
 → Privacy policy). Services, contact and About live on the home page, where
 "Who STAGER is" and "Why STAGER" are one section (`#about`, the reasons at
 `#why` inside it; the dashboard still edits them as two). The home page lists
-the latest three articles, each linking to its page, and links to them all.
+the latest article, linking to its page, and links to them all.
 The menu and footer link to the team and the articles only once they have
 something to show, and to the policy once it has text. Page copy offers only
 the pages the site renders (`SITE_PAGE_KEYS`: HOME, TEAM, INSIGHTS,
