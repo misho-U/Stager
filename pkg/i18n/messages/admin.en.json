@@ -430,7 +430,7 @@
       "sourcePanel": "Video",
       "source": {
         "label": "Plays from",
-        "YOUTUBE": "YouTube link",
+        "YOUTUBE": "YouTube",
         "FILE": "Uploaded file"
       },
       "youtube": {

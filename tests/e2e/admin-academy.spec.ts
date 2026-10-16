@@ -333,7 +333,7 @@ test.describe('courses and videos in the dashboard', () => {
     const youtube = page.getByLabel(labelled(videoForm.youtube.label));
     await expect(page.getByRole('radio', { name: videoForm.source.YOUTUBE })).toBeChecked();
     await expect(youtube).toBeVisible();
-    await expect(page.getByText(videoForm.poster.label)).toBeVisible();
+    await expect(page.getByText(videoForm.poster.label, { exact: true })).toBeVisible();
 
     await page.getByRole('radio', { name: videoForm.source.FILE }).check();
     await expect(youtube).toHaveCount(0);

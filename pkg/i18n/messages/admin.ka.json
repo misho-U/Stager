@@ -430,7 +430,7 @@
       "sourcePanel": "ვიდეო",
       "source": {
         "label": "საიდან ირთვება",
-        "YOUTUBE": "YouTube ბმული",
+        "YOUTUBE": "YouTube",
         "FILE": "ატვირთული ფაილი"
       },
       "youtube": {
