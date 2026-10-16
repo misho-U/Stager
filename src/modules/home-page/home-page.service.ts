@@ -41,7 +41,8 @@ import { loadSiteChrome } from '@/widgets/site-chrome/site-chrome.service';
 
 /** How many of each the page shows: the latest few, or every service. */
 const PROJECTS_SHOWN = 6;
-const INSIGHTS_SHOWN = 3;
+// The latest article only; the rest are on the articles page.
+const INSIGHTS_SHOWN = 1;
 const VIDEOS_SHOWN = 6;
 const COURSES_SHOWN = 50;
 // Every published service, up to the API's maximum: they are the whole

@@ -841,7 +841,7 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
           </section>
         ) : null}
 
-        {/* --- Insights: the latest few, each opening its own page --- */}
+        {/* --- Insights: the latest one, opening its own page --- */}
         {showInsights ? (
           <section
             id="insights"
