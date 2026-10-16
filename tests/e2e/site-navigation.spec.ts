@@ -54,6 +54,31 @@ async function publishedArticles(request: APIRequestContext) {
   return ((await response.json()) as { items: Array<{ slug: string; title: string }> }).items;
 }
 
+test.describe('a reload', () => {
+  const SECTION = `${HOME}#inquiry`;
+
+  test('starts at the top, wherever the page was scrolled to', async ({ page }) => {
+    await open(page, HOME);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight / 2));
+    await expect.poll(() => scrollY(page)).toBeGreaterThan(100);
+
+    await page.reload();
+    await expect(byTestId(page, 'hero-heading')).toBeVisible();
+    await expect.poll(() => scrollY(page)).toBeLessThan(2);
+  });
+
+  test('drops a section from the address and starts at the top', async ({ page }) => {
+    await open(page, SECTION);
+    // Opened fresh, the address still lands on its section.
+    await expect.poll(() => scrollY(page)).toBeGreaterThan(100);
+
+    await page.reload();
+    await expect(byTestId(page, 'hero-heading')).toBeVisible();
+    await expect(page).toHaveURL(HOME);
+    await expect.poll(() => scrollY(page)).toBeLessThan(2);
+  });
+});
+
 test.describe('a link to another page of the site', () => {
   test('opens it without a reload, at its top, and Back and Forward follow', async ({ page }) => {
     // From the foot of the page, so arriving at the top of the next is
