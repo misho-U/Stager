@@ -21,6 +21,7 @@ import {
   EMPTY_PROJECT,
   toFormValues,
 } from '@/modules/admin-project-form/admin-project-form.constants';
+import { startFresh } from '@/shared/components/fresh-form';
 import { useFormErrors } from '@/shared/lib/form-errors';
 import { useSlugAutofill } from '@/shared/lib/use-slug-autofill';
 import { useValidationErrorMap } from '@/shared/lib/use-validation-error-map';
@@ -85,6 +86,7 @@ export function useAdminProjectForm({ projectId }: UseProjectFormOptions) {
           await updateProject.mutateAsync({ id: projectId, input: values });
         } else {
           await createProject.mutateAsync(values);
+          startFresh('project');
         }
 
         router.push('/admin/projects');

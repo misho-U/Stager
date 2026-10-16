@@ -18,6 +18,7 @@ import {
   type CourseFormValues,
   type CourseInput,
 } from '@/entity/course/model/course.model';
+import { startFresh } from '@/shared/components/fresh-form';
 import { useFormErrors } from '@/shared/lib/form-errors';
 import { useSlugAutofill } from '@/shared/lib/use-slug-autofill';
 import { useValidationErrorMap } from '@/shared/lib/use-validation-error-map';
@@ -109,6 +110,7 @@ export function useAdminCourseForm({ courseId }: { courseId?: string }) {
           await updateCourse.mutateAsync({ id: courseId, input: values });
         } else {
           await createCourse.mutateAsync(values);
+          startFresh('course');
         }
         router.push('/admin/courses');
       } catch (caught) {

@@ -17,6 +17,7 @@ import {
   type ServiceFormValues,
   type ServiceInput,
 } from '@/entity/service/model/service.model';
+import { startFresh } from '@/shared/components/fresh-form';
 import { useFormErrors } from '@/shared/lib/form-errors';
 import { useSlugAutofill } from '@/shared/lib/use-slug-autofill';
 import { useValidationErrorMap } from '@/shared/lib/use-validation-error-map';
@@ -110,6 +111,7 @@ export function useAdminServiceForm({ serviceId }: { serviceId?: string }) {
           await updateService.mutateAsync({ id: serviceId, input: values });
         } else {
           await createService.mutateAsync(values);
+          startFresh('service');
         }
         router.push('/admin/services');
       } catch (caught) {
