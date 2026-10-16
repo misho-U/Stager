@@ -115,6 +115,7 @@
     "validationFailed": "Some fields need attention.",
     "tooLarge": "The file is too large.",
     "unsupportedType": "Only JPEG, PNG, WebP and AVIF images can be uploaded.",
+    "unsupportedVideoType": "An MP4 or WebM video can be uploaded. Export a phone's .mov as MP4 first.",
     "badRequest": "The request could not be processed. Reload the page and try again.",
     "network": "Could not reach the server. Check the connection and try again.",
     "unexpected": "Something went wrong. Please try again.",
@@ -410,10 +411,10 @@
   },
   "videos": {
     "title": "Videos",
-    "description": "Videos from STAGER's YouTube channel, newest first.",
+    "description": "Videos from STAGER's YouTube channel or uploaded here, newest first.",
     "new": "New video",
     "emptyTitle": "No videos yet",
-    "noLink": "No link yet",
+    "noLink": "No video yet",
     "columns": {
       "video": "Video",
       "date": "Date",
@@ -426,10 +427,28 @@
         "label": "Short description",
         "hint": "Shown with the video on the site."
       },
+      "sourcePanel": "Video",
+      "source": {
+        "label": "Plays from",
+        "YOUTUBE": "YouTube link",
+        "FILE": "Uploaded file"
+      },
       "youtube": {
         "label": "YouTube link",
         "placeholder": "https://www.youtube.com/watch?v=…",
         "hint": "The video plays from YouTube. You can save it without a link and add one later."
+      },
+      "file": {
+        "label": "Video file",
+        "hint": "MP4 or WebM, up to {max} MB. Export a phone's .mov as MP4 first. Every view downloads the file from the site's storage, so keep long films on YouTube.",
+        "none": "No file yet.",
+        "upload": "Upload video",
+        "replace": "Replace video"
+      },
+      "poster": {
+        "label": "Cover image",
+        "hintFile": "Shown before Play. Without one, the video's first frame is shown, which is often dark.",
+        "hintYoutube": "Optional. Shown before Play instead of YouTube's own thumbnail."
       },
       "kind": {
         "label": "Kind",

@@ -29,14 +29,24 @@ function conflictResponse(conflict: Conflict) {
   });
 }
 
-type CollectionConfig<TRecord, TInput> = {
+/**
+ * A check a write needs beyond its schema, run before the database is
+ * touched: one that asks another service (the blob store, for an uploaded
+ * file). It hands the repository what it should write, or a response to send
+ * instead.
+ */
+export type Prepared<TWrite> = { ok: true; data: TWrite } | { ok: false; response: Response };
+
+type CollectionConfig<TRecord, TInput, TWrite = TInput> = {
   /** Cache-tag entity name — see pkg/cache/tags. */
   entity: ContentEntity;
   /** Human-readable type recorded in the audit log. */
   entityType: string;
   inputSchema: z.ZodType<TInput>;
   list: () => Promise<ListResponse<TRecord>>;
-  create: (input: TInput) => Promise<TRecord>;
+  /** Optional; without it the parsed input is written as it is. */
+  prepare?: (input: TInput) => Promise<Prepared<TWrite>>;
+  create: (input: TWrite) => Promise<TRecord>;
   /** Detail cache key (usually the slug); null when the entity has no detail page. */
   cacheKeyOf: (record: TRecord) => string | null;
   /** Small, non-sensitive summary stored in the audit diff. */
@@ -45,15 +55,22 @@ type CollectionConfig<TRecord, TInput> = {
   conflict?: Conflict;
 };
 
-export function createCollectionRoutes<TRecord, TInput>(config: CollectionConfig<TRecord, TInput>) {
+export function createCollectionRoutes<TRecord, TInput, TWrite = TInput>(
+  config: CollectionConfig<TRecord, TInput, TWrite>,
+) {
   const GET = withAdmin(async () => apiOk(await config.list()));
 
   const POST = withAdmin(async ({ request, session }) => {
     const parsed = await readJson(request, config.inputSchema);
     if (!parsed.ok) return parsed.response;
 
+    const prepared = config.prepare
+      ? await config.prepare(parsed.data)
+      : { ok: true as const, data: parsed.data as unknown as TWrite };
+    if (!prepared.ok) return prepared.response;
+
     try {
-      const record = await config.create(parsed.data);
+      const record = await config.create(prepared.data);
 
       await recordAudit({
         request,
@@ -81,12 +98,14 @@ export function createCollectionRoutes<TRecord, TInput>(config: CollectionConfig
   return { GET, POST };
 }
 
-type ItemConfig<TRecord, TUpdate> = {
+type ItemConfig<TRecord, TUpdate, TWrite = TUpdate> = {
   entity: ContentEntity;
   entityType: string;
   updateSchema: z.ZodType<TUpdate>;
   get: (id: string) => Promise<TRecord | null>;
-  update: (id: string, input: TUpdate) => Promise<TRecord | null>;
+  /** Optional; without it the parsed input is written as it is. */
+  prepare?: (input: TUpdate) => Promise<Prepared<TWrite>>;
+  update: (id: string, input: TWrite) => Promise<TRecord | null>;
   remove: (id: string) => Promise<boolean>;
   cacheKeyOf: (record: TRecord) => string | null;
   auditSummary: (record: TRecord) => Record<string, unknown>;
@@ -94,7 +113,9 @@ type ItemConfig<TRecord, TUpdate> = {
   conflict?: Conflict;
 };
 
-export function createItemRoutes<TRecord, TUpdate>(config: ItemConfig<TRecord, TUpdate>) {
+export function createItemRoutes<TRecord, TUpdate, TWrite = TUpdate>(
+  config: ItemConfig<TRecord, TUpdate, TWrite>,
+) {
   type Params = { id: string };
 
   const GET = withAdmin<Params>(async ({ params }) => {
@@ -110,8 +131,13 @@ export function createItemRoutes<TRecord, TUpdate>(config: ItemConfig<TRecord, T
     const before = await config.get(params.id);
     if (!before) return apiFail('NOT_FOUND', config.notFoundMessage);
 
+    const prepared = config.prepare
+      ? await config.prepare(parsed.data)
+      : { ok: true as const, data: parsed.data as unknown as TWrite };
+    if (!prepared.ok) return prepared.response;
+
     try {
-      const record = await config.update(params.id, parsed.data);
+      const record = await config.update(params.id, prepared.data);
       if (!record) return apiFail('NOT_FOUND', config.notFoundMessage);
 
       await recordAudit({

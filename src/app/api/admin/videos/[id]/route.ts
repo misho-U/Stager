@@ -4,17 +4,23 @@ import {
   getAdminVideo,
   updateVideo,
 } from '@/app/api/_lib/repositories/video.repository';
+import { prepareVideoWrite, type VideoWrite } from '@/app/api/_lib/uploaded-video';
 import {
   videoUpdateInputSchema,
   type AdminVideo,
   type VideoUpdateInput,
 } from '@/entity/video/model/video.model';
 
-export const { GET, PATCH, DELETE } = createItemRoutes<AdminVideo, VideoUpdateInput>({
+export const { GET, PATCH, DELETE } = createItemRoutes<
+  AdminVideo,
+  VideoUpdateInput,
+  VideoWrite<VideoUpdateInput>
+>({
   entity: 'video',
   entityType: 'Video',
   updateSchema: videoUpdateInputSchema,
   get: getAdminVideo,
+  prepare: prepareVideoWrite,
   update: updateVideo,
   remove: deleteVideo,
   cacheKeyOf: (video) => video.slug,

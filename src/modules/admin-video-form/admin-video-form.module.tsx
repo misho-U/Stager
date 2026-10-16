@@ -1,8 +1,12 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { Controller } from 'react-hook-form';
 
-import { useAdminVideoForm } from '@/modules/admin-video-form/admin-video-form.service';
+import {
+  useAdminVideoForm,
+  type VideoSource,
+} from '@/modules/admin-video-form/admin-video-form.service';
 import { Button, ButtonLink } from '@/shared/components/button';
 import {
   ContentLocaleProvider,
@@ -17,6 +21,11 @@ import { toOptionalNumber } from '@/shared/lib/form-values';
 import { useStatusOptions, useVideoKindOptions } from '@/shared/lib/use-enum-options';
 import type { DbLocale } from '@/shared/types/enums';
 import { useUnsavedChangesGuard } from '@/shared/lib/use-unsaved-changes-guard';
+import { MediaPicker } from '@/widgets/media-picker/media-picker.module';
+import { VideoUpload } from '@/widgets/video-upload/video-upload.module';
+import { MAX_VIDEO_UPLOAD_BYTES } from '@pkg/blob/constraints';
+
+const SOURCES: readonly VideoSource[] = ['YOUTUBE', 'FILE'];
 
 export function AdminVideoFormModule({ videoId }: { videoId?: string }) {
   const t = useTranslations('admin');
@@ -32,6 +41,10 @@ export function AdminVideoFormModule({ videoId }: { videoId?: string }) {
     isSubmitting,
     submitError,
     slugAutofill,
+    source,
+    setSource,
+    file,
+    setFile,
   } = useAdminVideoForm({ videoId });
 
   const { errors, submitCount, isDirty } = form.formState;
@@ -86,9 +99,35 @@ export function AdminVideoFormModule({ videoId }: { videoId?: string }) {
           </TranslatedFields>
         </Panel>
 
-        <Panel title={t('fields.detailsPanel')}>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
+        <Panel title={t('videos.form.sourcePanel')}>
+          <div className="flex flex-col gap-5">
+            {/* Native radios: arrow keys move between them, and a screen
+                reader names the group. */}
+            <fieldset className="flex flex-col gap-2">
+              <legend className="text-caption text-ink-muted mb-2 font-medium">
+                {t('videos.form.source.label')}
+              </legend>
+              <div className="flex flex-wrap gap-2">
+                {SOURCES.map((option) => (
+                  <label
+                    key={option}
+                    className="border-line-input has-checked:border-primary has-checked:bg-surface-muted text-body-sm text-ink inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-md border px-4"
+                  >
+                    <input
+                      type="radio"
+                      name="video-source"
+                      value={option}
+                      checked={source === option}
+                      onChange={() => setSource(option)}
+                      className="accent-primary"
+                    />
+                    {t(`videos.form.source.${option}`)}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            {source === 'YOUTUBE' ? (
               <TextField
                 label={t('videos.form.youtube.label')}
                 placeholder={t('videos.form.youtube.placeholder')}
@@ -96,7 +135,39 @@ export function AdminVideoFormModule({ videoId }: { videoId?: string }) {
                 error={errors.youtubeUrl?.message}
                 {...form.register('youtubeUrl')}
               />
-            </div>
+            ) : (
+              <VideoUpload
+                label={t('videos.form.file.label')}
+                hint={t('videos.form.file.hint', {
+                  max: MAX_VIDEO_UPLOAD_BYTES / (1024 * 1024),
+                })}
+                value={file}
+                onChange={setFile}
+                error={errors.fileUrl?.message}
+              />
+            )}
+
+            <Controller
+              control={form.control}
+              name="posterMediaId"
+              render={({ field }) => (
+                <MediaPicker
+                  label={t('videos.form.poster.label')}
+                  hint={
+                    source === 'FILE'
+                      ? t('videos.form.poster.hintFile')
+                      : t('videos.form.poster.hintYoutube')
+                  }
+                  value={field.value ?? null}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+          </div>
+        </Panel>
+
+        <Panel title={t('fields.detailsPanel')}>
+          <div className="grid gap-4 sm:grid-cols-2">
             <TextField
               label={t('videos.form.publishedAt.label')}
               type="date"

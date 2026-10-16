@@ -24,7 +24,7 @@ rather than adding a dependency.
 | Database | **Supabase Postgres** via **Prisma 7** |
 | Auth | **Supabase Auth** (email + password) + an `AdminUser` allowlist |
 | Images | **Vercel Blob** |
-| Video | **YouTube embeds** — never self-hosted video files |
+| Video | **YouTube embeds**, or MP4/WebM files uploaded from the dashboard to Vercel Blob (≤ 200 MB, under `media/videos/`) |
 | Email | **Resend** |
 | Rich-text sanitising | **sanitize-html** — DOM-free. Never a jsdom-based sanitizer (see below) |
 | Icons | **@phosphor-icons/react** — per-icon imports: `…/dist/csr/<Name>` in client components, `…/dist/ssr/<Name>` in server components (the root re-exports ~1,500 icons) |
@@ -62,7 +62,10 @@ rather than adding a dependency.
   (`course_modules`) is read on its own in `server/published/courses.ts`,
   and `isMissingTable` reads a missing table as no syllabus, so a preview
   lists its courses without the button. Only for an addition the site can
-  do without.
+  do without. A new column is the same again (P2022): the uploaded-video
+  columns are read with a fallback to the old ones in
+  `server/published/videos.ts` (`isMissingColumn`), so a preview lists
+  YouTube videos only.
 - **The middleware file is `src/proxy.ts`.** Next 16 renamed the convention from
   `middleware.ts` to `proxy.ts` (default export, not a named `middleware`
   export). It must sit next to `src/app`; at the repo root it is silently
@@ -484,7 +487,12 @@ Non-negotiable. Each exists because of a specific failure mode.
 10. **Never log** a request body, a token, or a raw IP. Inquiries and rate limits
     store a salted hash.
 11. **Uploads**: admin-only, server-issued Blob tokens, mime allowlist, size cap,
-    random suffix. No SVG — it is an executable document.
+    random suffix. No SVG — it is an executable document. The folder sets the
+    rules: `media/videos/` takes MP4/WebM up to 200 MB (a token valid an hour,
+    for a multipart upload), anywhere else under `media/` images up to 12 MB.
+    A video's file is checked like a Media row (rule 17) when the video is
+    saved (`app/api/_lib/uploaded-video.ts`), and deleted from the store when
+    replaced, removed or its video deleted.
 12. **Audit every mutation** via `recordAudit`.
 13. **Only the live site delivers contact submissions.** Every deployment
     shares one database and inbox, so a test sent from a Vercel preview

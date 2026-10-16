@@ -72,3 +72,13 @@ export function isUnknownEnumValue(error: unknown): boolean {
 export function isMissingTable(error: unknown): boolean {
   return describeDbError(error)?.code === 'P2021';
 }
+
+/**
+ * A column the query reads does not exist (P2022): one a new migration adds,
+ * read by a Vercel preview before the migration has run on the live
+ * database (see isMissingTable). Same rule: only to fall back to what the
+ * site showed before the addition, never to hide a column it needs.
+ */
+export function isMissingColumn(error: unknown): boolean {
+  return describeDbError(error)?.code === 'P2022';
+}

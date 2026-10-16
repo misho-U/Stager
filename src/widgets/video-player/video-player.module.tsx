@@ -11,9 +11,10 @@ import { youtubeEmbed, youtubeId, youtubeThumbnail } from '@/shared/lib/youtube'
 /**
  * The pieces every design's video player is built from. How a video opens
  * (in place, in a full-screen dialog) is the design's choice; what plays is
- * always the privacy-preserving YouTube player, loaded only on a click, so a
- * visitor who never presses Play never contacts YouTube for more than the
- * poster image.
+ * the privacy-preserving YouTube player, or a file uploaded from the
+ * dashboard, either loaded only on a click, so a visitor who never presses
+ * Play never contacts YouTube for more than the poster image, nor downloads
+ * the film.
  */
 
 /** The YouTube player, filling its frame. Render it only after a click. */
@@ -31,8 +32,36 @@ export function VideoEmbed({ id, title }: { id: string; title: string }) {
   );
 }
 
+/**
+ * An uploaded file, playing in its frame with the browser's own controls.
+ * Render it only after a click, like the embed: it starts at once.
+ */
+export function VideoFile({ src, title }: { src: string; title: string }) {
+  return (
+    // No captions file: an uploaded film carries its words in its picture, as
+    // the YouTube ones do. The title names it to a screen reader.
+    <video
+      src={src}
+      aria-label={title}
+      controls
+      autoPlay
+      playsInline
+      preload="auto"
+      className="absolute inset-0 size-full bg-black object-contain"
+    />
+  );
+}
+
+type PosterImage = { url: string; width: number | null; height: number | null };
+
 type VideoPosterProps = {
   youtubeUrl: string | null;
+  /** An uploaded file; without a cover, its first frame is the poster. */
+  fileUrl?: string | null;
+  /** The cover chosen in the dashboard, which wins over anything else. */
+  poster?: PosterImage | null;
+  /** Passed to next/image for a cover: how wide the frame is drawn. */
+  sizes?: string;
   priority?: boolean;
   /** The design's own placeholder, drawn when the entry has no link yet. */
   placeholder: ReactNode;
@@ -40,9 +69,14 @@ type VideoPosterProps = {
 };
 
 /**
- * What a video's frame shows before it plays: the YouTube poster frame, or
- * the design's placeholder for an entry without a link. Decorative either
+ * What a video's frame shows before it plays, first of: the cover chosen in
+ * the dashboard, YouTube's poster frame, an uploaded file's first frame, or
+ * the design's placeholder for an entry with nothing yet. Decorative every
  * way (the title is always written next to it), so it has no alt text.
+ *
+ * A file's first frame costs a small download per visitor (its header and
+ * first frame, not the film): a cover image is lighter, and the dashboard
+ * suggests one.
  *
  * The poster loads straight from YouTube, not through the image optimizer:
  * the optimizer would take any video id, so anyone could spend the site's
@@ -50,6 +84,9 @@ type VideoPosterProps = {
  */
 export function VideoPoster({
   youtubeUrl,
+  fileUrl = null,
+  poster = null,
+  sizes = '(min-width: 1024px) 66vw, 100vw',
   priority = false,
   placeholder,
   className,
@@ -57,7 +94,16 @@ export function VideoPoster({
   const id = youtubeId(youtubeUrl);
   return (
     <div className={cn('absolute inset-0', className)}>
-      {id ? (
+      {poster ? (
+        <Image
+          src={poster.url}
+          alt=""
+          fill
+          sizes={sizes}
+          priority={priority}
+          className="object-cover"
+        />
+      ) : id ? (
         <Image
           src={youtubeThumbnail(id)}
           alt=""
@@ -65,6 +111,18 @@ export function VideoPoster({
           unoptimized
           priority={priority}
           className="object-cover"
+        />
+      ) : fileUrl ? (
+        // `#t=0.1`: the frame a tenth of a second in, which a phone draws
+        // where it would leave the very first one black.
+        <video
+          src={`${fileUrl}#t=0.1`}
+          aria-hidden
+          tabIndex={-1}
+          muted
+          playsInline
+          preload="metadata"
+          className="absolute inset-0 size-full object-cover"
         />
       ) : (
         placeholder

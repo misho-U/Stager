@@ -6,12 +6,7 @@
 // SVG is deliberately excluded. An SVG is an executable document — it can carry
 // <script> — and next/image refuses to optimise one anyway unless
 // `dangerouslyAllowSVG` is turned on. Logos go up as PNG or WebP.
-export const ALLOWED_IMAGE_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/avif',
-] as const;
+export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'] as const;
 
 export type AllowedImageType = (typeof ALLOWED_IMAGE_TYPES)[number];
 
@@ -23,11 +18,32 @@ export function isAllowedImageType(contentType: string): contentType is AllowedI
 }
 
 /**
+ * Video files, played on the site in place of a YouTube link. MP4 (H.264) and
+ * WebM play in every current browser; a phone's .mov often does not, so it is
+ * refused rather than shown as a black frame: export it as MP4 first.
+ */
+export const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm'] as const;
+
+/**
+ * 200 MB: a few minutes of good-quality video. Every view downloads the file
+ * from the blob store, which is billed by the byte, so long films belong on
+ * YouTube.
+ */
+export const MAX_VIDEO_UPLOAD_BYTES = 200 * 1024 * 1024;
+
+export function isAllowedVideoType(contentType: string): boolean {
+  return (ALLOWED_VIDEO_TYPES as readonly string[]).includes(contentType);
+}
+
+/**
  * Folder prefix inside the blob store. Uploads always get a random suffix, so a
  * caller cannot overwrite an existing object by guessing its name, and cannot
  * escape this prefix.
  */
 export const BLOB_PATH_PREFIX = 'media';
+
+/** Where video files go, inside the media prefix; the upload token's rules follow the folder. */
+export const VIDEO_PATH_PREFIX = `${BLOB_PATH_PREFIX}/videos`;
 
 /** Strips directory traversal and anything that is not a safe filename. */
 export function sanitizeFilename(filename: string): string {

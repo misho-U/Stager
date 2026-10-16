@@ -295,6 +295,61 @@ test.describe('courses and videos in the dashboard', () => {
     await expect(page.locator('#videos')).toContainText(video.ka);
   });
 
+  test("a video file is only taken from this site's store, and never with a link too", async ({
+    page,
+  }) => {
+    const base = {
+      slug: `e2e-file-${stamp}`,
+      publishedAt: todayInTbilisi(),
+      translations: { KA: { title: video.ka }, EN: { title: video.en } },
+    };
+    // Any Vercel customer's store has the same domain: only this project's counts.
+    const elsewhere = await page.request.post('/api/admin/videos', {
+      data: {
+        ...base,
+        fileUrl: 'https://someone-else.public.blob.vercel-storage.com/media/videos/a.mp4',
+      },
+    });
+    expect(elsewhere.status()).toBe(400);
+
+    const both = await page.request.post('/api/admin/videos', {
+      data: {
+        ...base,
+        youtubeUrl: 'https://youtu.be/dQw4w9WgXcQ',
+        fileUrl: 'https://someone-else.public.blob.vercel-storage.com/media/videos/a.mp4',
+      },
+    });
+    expect(both.status()).toBe(400);
+  });
+
+  test('the video form switches between a YouTube link and an uploaded file', async ({ page }) => {
+    const videoForm = adminEn.videos.form;
+    await page.goto('/admin/videos');
+    await page.getByRole('link', { name: video.ka }).click();
+    await expect(page.locator('[data-content-locale="KA"]').getByLabel(/^Title/)).toHaveValue(
+      video.ka,
+    );
+
+    const youtube = page.getByLabel(labelled(videoForm.youtube.label));
+    await expect(page.getByRole('radio', { name: videoForm.source.YOUTUBE })).toBeChecked();
+    await expect(youtube).toBeVisible();
+    await expect(page.getByText(videoForm.poster.label)).toBeVisible();
+
+    await page.getByRole('radio', { name: videoForm.source.FILE }).check();
+    await expect(youtube).toHaveCount(0);
+    const upload = page.getByTestId('video-upload');
+    await expect(upload.getByText(videoForm.file.none)).toBeVisible();
+    await expect(upload.getByRole('button', { name: videoForm.file.upload })).toBeVisible();
+    await expect(upload.locator('input[type="file"]')).toHaveAttribute(
+      'accept',
+      'video/mp4,video/webm',
+    );
+
+    // Back to YouTube: the link field returns; nothing was saved.
+    await page.getByRole('radio', { name: videoForm.source.YOUTUBE }).check();
+    await expect(youtube).toBeVisible();
+  });
+
   test("a video's YouTube link can be added, and removed again", async ({ page }) => {
     const youtube = page.getByLabel(labelled(adminEn.videos.form.youtube.label));
     const openVideo = async () => {

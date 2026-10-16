@@ -126,6 +126,7 @@ export async function deleteMedia(
           pageSectionMedia: true,
           siteSettingLogos: true,
           siteSettingLogosLight: true,
+          videoPosters: true,
           // As a share (OG) image. These relations clear themselves on
           // delete (SetNull), so uncounted they lost their image silently.
           projectOgImages: true,

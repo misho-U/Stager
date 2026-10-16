@@ -1,7 +1,14 @@
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 
 import { withAdmin } from '@/app/api/_lib/route-helpers';
-import { ALLOWED_IMAGE_TYPES, BLOB_PATH_PREFIX, MAX_UPLOAD_BYTES } from '@pkg/blob/constraints';
+import {
+  ALLOWED_IMAGE_TYPES,
+  ALLOWED_VIDEO_TYPES,
+  BLOB_PATH_PREFIX,
+  MAX_UPLOAD_BYTES,
+  MAX_VIDEO_UPLOAD_BYTES,
+  VIDEO_PATH_PREFIX,
+} from '@pkg/blob/constraints';
 import { serverEnv } from '@pkg/config/env.server';
 import { apiFail, apiOk } from '@pkg/http/api-response';
 import { logger } from '@pkg/logger';
@@ -55,13 +62,20 @@ export const POST = withAdmin(async ({ request, session }) => {
     onBeforeGenerateToken: async (pathname) => {
       logger.info('blob.token_issued', { adminUserId: session.adminUserId, pathname });
 
+      // The folder decides the rules: a video file under media/videos/, an
+      // image anywhere else under media/. A token for one never lets the
+      // other kind through.
+      const video = pathname.startsWith(`${VIDEO_PATH_PREFIX}/`);
+
       return {
         // Enforced by Vercel Blob itself, not just by our UI.
-        allowedContentTypes: [...ALLOWED_IMAGE_TYPES],
-        maximumSizeInBytes: MAX_UPLOAD_BYTES,
+        allowedContentTypes: video ? [...ALLOWED_VIDEO_TYPES] : [...ALLOWED_IMAGE_TYPES],
+        maximumSizeInBytes: video ? MAX_VIDEO_UPLOAD_BYTES : MAX_UPLOAD_BYTES,
         // Prevents one upload from overwriting another by guessing its name.
         addRandomSuffix: true,
-        validUntil: Date.now() + 60_000,
+        // A large video goes up in parts, each sent with this token, and on a
+        // slow connection that takes many minutes: an hour, not a minute.
+        validUntil: Date.now() + (video ? 60 * 60_000 : 60_000),
       };
     },
 

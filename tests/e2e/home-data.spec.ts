@@ -92,6 +92,75 @@ test.describe('a video added in the dashboard', () => {
   });
 });
 
+test.describe('a video uploaded as a file', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(!DB_WRITES_ALLOWED, DB_WRITES_SKIP_REASON);
+    test.skip(
+      testInfo.project.name !== 'chromium',
+      'Writes a shared row; runs once, under chromium.',
+    );
+  });
+
+  test.afterAll(disconnectTestPrisma);
+
+  test('shows its first frame, and Play opens the file, not YouTube', async ({ page, request }) => {
+    const prisma = testPrisma();
+    const slug = `e2e-file-video-${Date.now()}`;
+    const title = `E2E file video ${slug}`;
+    // Never fetched successfully in the test: only where the player points.
+    const fileUrl = `https://e2e.public.blob.vercel-storage.com/media/videos/${slug}.mp4`;
+    const revalidate = () =>
+      request.post('/api/dev/revalidate-probe', {
+        data: { entity: 'video' },
+        headers: { 'sec-fetch-site': 'same-origin' },
+      });
+
+    const video = await prisma.video.create({
+      data: {
+        slug,
+        status: 'PUBLISHED',
+        publishedAt: new Date(),
+        fileUrl,
+        filePathname: `media/videos/${slug}.mp4`,
+        fileContentType: 'video/mp4',
+        fileSize: 1024,
+        translations: {
+          create: [
+            { locale: 'EN', title, summary: '' },
+            { locale: 'KA', title, summary: '' },
+          ],
+        },
+      },
+    });
+
+    try {
+      expect((await revalidate()).ok()).toBeTruthy();
+
+      await page.goto('/en');
+      const section = page.locator('#videos');
+      await expect(section).toContainText(title);
+      // No cover chosen: the poster is the file's own first frame, a muted
+      // video that only loads its header until Play.
+      const firstFrame = section.locator(`video[src="${fileUrl}#t=0.1"]`).first();
+      await expect(firstFrame).toBeAttached();
+      await expect(firstFrame).toHaveAttribute('preload', 'metadata');
+      // Nothing to watch on YouTube.
+      const card = section.locator('[data-video-card]', {
+        has: page.locator(`[data-play="${video.id}"]`),
+      });
+      await expect(card.getByRole('link', { name: /YouTube/ })).toHaveCount(0);
+
+      await section.locator(`[data-play="${video.id}"]`).first().click();
+      const player = page.locator('dialog[open]');
+      await expect(player.locator(`video[src="${fileUrl}"][controls]`)).toBeAttached();
+      await expect(player.locator('iframe')).toHaveCount(0);
+    } finally {
+      await prisma.video.delete({ where: { id: video.id } });
+      await revalidate();
+    }
+  });
+});
+
 test.describe('services added in the dashboard', () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(!DB_WRITES_ALLOWED, DB_WRITES_SKIP_REASON);

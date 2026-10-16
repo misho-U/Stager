@@ -17,6 +17,10 @@ import { todayInTbilisi } from '@/shared/lib/calendar-date';
 import { useFormErrors } from '@/shared/lib/form-errors';
 import { useSlugAutofill } from '@/shared/lib/use-slug-autofill';
 import { useValidationErrorMap } from '@/shared/lib/use-validation-error-map';
+import type { UploadedVideo } from '@/widgets/video-upload/video-upload.service';
+
+/** Where a video plays from: a YouTube link or a file uploaded here. */
+export type VideoSource = 'YOUTUBE' | 'FILE';
 
 const EMPTY_TRANSLATION = { title: '', summary: '' };
 
@@ -25,6 +29,8 @@ function emptyVideo(): VideoFormValues {
   return {
     slug: '',
     youtubeUrl: '',
+    fileUrl: null,
+    posterMediaId: null,
     kind: '',
     publishedAt: todayInTbilisi(),
     durationMinutes: null,
@@ -37,6 +43,8 @@ function toFormValues(video: AdminVideo): VideoFormValues {
   return {
     slug: video.slug,
     youtubeUrl: video.youtubeUrl ?? '',
+    fileUrl: video.file?.url ?? null,
+    posterMediaId: video.posterMediaId,
     kind: video.kind ?? '',
     publishedAt: video.publishedAt,
     durationMinutes: video.durationMinutes,
@@ -79,9 +87,41 @@ export function useAdminVideoForm({ videoId }: { videoId?: string }) {
 
   const { reset } = form;
 
+  // The switch, and the file shown under it. The file is kept while the
+  // switch is on YouTube, so switching back does not lose an upload; only
+  // the chosen source is ever in the form, so a save sends one or the other.
+  const [source, setSourceState] = useState<VideoSource>('YOUTUBE');
+  const [file, setFileState] = useState<UploadedVideo | null>(null);
+
   useEffect(() => {
     if (videoQuery.data) reset(toFormValues(videoQuery.data));
   }, [videoQuery.data, reset]);
+
+  // Taken from each loaded record while rendering, the way React derives
+  // state from a changed value (no effect: a second render pass for nothing).
+  const [loaded, setLoaded] = useState<AdminVideo | undefined>(undefined);
+  if (videoQuery.data !== loaded) {
+    setLoaded(videoQuery.data);
+    if (videoQuery.data) {
+      setFileState(videoQuery.data.file);
+      setSourceState(videoQuery.data.file ? 'FILE' : 'YOUTUBE');
+    }
+  }
+
+  const setFile = (next: UploadedVideo | null) => {
+    setFileState(next);
+    form.setValue('fileUrl', next?.url ?? null, { shouldDirty: true });
+  };
+
+  const setSource = (next: VideoSource) => {
+    setSourceState(next);
+    if (next === 'FILE') {
+      form.setValue('youtubeUrl', '', { shouldDirty: true });
+      form.setValue('fileUrl', file?.url ?? null, { shouldDirty: true });
+    } else {
+      form.setValue('fileUrl', null, { shouldDirty: true });
+    }
+  };
 
   const onSubmit = form.handleSubmit(
     async (values) => {
@@ -119,5 +159,9 @@ export function useAdminVideoForm({ videoId }: { videoId?: string }) {
     retry: () => void videoQuery.refetch(),
     isSubmitting: createVideo.isPending || updateVideo.isPending,
     submitError,
+    source,
+    setSource,
+    file,
+    setFile,
   };
 }

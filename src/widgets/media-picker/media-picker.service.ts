@@ -1,11 +1,11 @@
 'use client';
 
-import { upload } from '@vercel/blob/client';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { mediaListQuery, useRegisterMedia } from '@/entity/media/api/media.query';
+import { uploadToBlob, UploadStalledError } from '@/shared/lib/blob-upload';
 import { useFormErrors } from '@/shared/lib/form-errors';
 import { prepareImage } from '@/widgets/media-picker/media-picker.utils';
 import {
@@ -14,29 +14,6 @@ import {
   MAX_UPLOAD_BYTES,
   sanitizeFilename,
 } from '@pkg/blob/constraints';
-
-/**
- * How long an upload may take to get its first bytes out before it is stopped.
- *
- * When the browser cannot reach Blob at all (the upload is blocked, or the
- * connection is down), the Blob client retries ten times with growing waits,
- * about seventeen minutes in all, and the dashboard showed "Uploading…" for
- * that whole time with no explanation. Nothing is sent in that case, so a short
- * limit catches it without any risk to an upload that works.
- */
-const UPLOAD_START_MS = 30_000;
-
-/**
- * How long an upload that has started may then go without reporting progress.
- *
- * Far longer, because silence is normal once bytes are moving: Chrome reads
- * the file up to about 2 MB ahead of what the network has sent and reports
- * nothing while that drains, which on a slow connection takes well over 30
- * seconds. A 30-second limit here cancelled working uploads.
- */
-const UPLOAD_SILENCE_MS = 120_000;
-
-class UploadStalledError extends Error {}
 
 export function useMediaPicker() {
   const t = useTranslations('admin.errors');
@@ -69,26 +46,6 @@ export function useMediaPicker() {
     setIsUploading(true);
     setUploadProgress(0);
 
-    // Stops the upload, and reports it, once no progress has arrived within
-    // the current limit. Re-armed by every progress event.
-    const controller = new AbortController();
-    let watchdog: ReturnType<typeof setTimeout> | undefined;
-    let bytesAreMoving = false;
-    let reportStall: (error: UploadStalledError) => void = () => {};
-    const stalled = new Promise<never>((_, reject) => {
-      reportStall = reject;
-    });
-    const rearmWatchdog = () => {
-      clearTimeout(watchdog);
-      watchdog = setTimeout(
-        () => {
-          controller.abort();
-          reportStall(new UploadStalledError());
-        },
-        bytesAreMoving ? UPLOAD_SILENCE_MS : UPLOAD_START_MS,
-      );
-    };
-
     try {
       // A smaller copy where one helps (see prepareImage), so the size limit
       // applies to what is actually sent: a large camera photo now fits.
@@ -99,25 +56,9 @@ export function useMediaPicker() {
         return null;
       }
 
-      rearmWatchdog();
-      const blob = await Promise.race([
-        upload(`${BLOB_PATH_PREFIX}/${sanitizeFilename(file.name)}`, file, {
-          access: 'public',
-          handleUploadUrl: '/api/admin/media/upload',
-          contentType: file.type,
-          abortSignal: controller.signal,
-          onUploadProgress: ({ loaded, percentage }) => {
-            bytesAreMoving ||= loaded > 0;
-            // Held at 99 until the upload finishes: in Chrome the figure runs
-            // up to 2 MB ahead of the network, so "100%" could otherwise sit
-            // on screen for as long as the real upload takes.
-            setUploadProgress(Math.min(99, Math.floor(percentage)));
-            rearmWatchdog();
-          },
-        }),
-        stalled,
-      ]);
-      clearTimeout(watchdog);
+      const blob = await uploadToBlob(`${BLOB_PATH_PREFIX}/${sanitizeFilename(file.name)}`, file, {
+        onProgress: setUploadProgress,
+      });
 
       return await registerMedia.mutateAsync({
         url: blob.url,
@@ -135,7 +76,6 @@ export function useMediaPicker() {
       );
       return null;
     } finally {
-      clearTimeout(watchdog);
       setIsUploading(false);
       setUploadProgress(null);
     }
