@@ -60,6 +60,20 @@ test.describe('admin content flow', () => {
 
     await expect(page).toHaveURL(/\/admin\/projects$/);
     await expect(page.getByRole('link', { name: titleKa })).toBeVisible();
+
+    // The next new project starts empty. Next keeps the form just saved
+    // mounted, hidden, with everything typed into it, and the next "New
+    // project" showed the saved project's text, in English.
+    await page.getByRole('link', { name: 'New project' }).click();
+    await expect(page).toHaveURL(/\/admin\/projects\/new$/);
+    await expect(editing.getByRole('button', { name: 'ქართული' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(georgian.getByLabel(/^Title/)).toHaveValue('');
+    await expect(georgian.getByLabel('Summary')).toHaveValue('');
+    await expect(english.getByLabel(/^Title/)).toHaveValue('');
+    await expect(page.getByLabel('Slug')).toHaveValue('');
   });
 
   test('the new project appears on the public site without a redeploy', async ({ page }) => {

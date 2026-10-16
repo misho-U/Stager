@@ -14,6 +14,7 @@ import {
   type VideoInput,
 } from '@/entity/video/model/video.model';
 import { todayInTbilisi } from '@/shared/lib/calendar-date';
+import { startFresh } from '@/shared/components/fresh-form';
 import { useFormErrors } from '@/shared/lib/form-errors';
 import { useSlugAutofill } from '@/shared/lib/use-slug-autofill';
 import { useValidationErrorMap } from '@/shared/lib/use-validation-error-map';
@@ -131,6 +132,7 @@ export function useAdminVideoForm({ videoId }: { videoId?: string }) {
           await updateVideo.mutateAsync({ id: videoId, input: values });
         } else {
           await createVideo.mutateAsync(values);
+          startFresh('video');
         }
         router.push('/admin/videos');
       } catch (caught) {

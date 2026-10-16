@@ -19,6 +19,7 @@ import {
   type InsightInput,
 } from '@/entity/insight/model/insight.model';
 import { adminTeamMembersQuery } from '@/entity/team-member/api/team-member.query';
+import { startFresh } from '@/shared/components/fresh-form';
 import { useFormErrors } from '@/shared/lib/form-errors';
 import { useSlugAutofill } from '@/shared/lib/use-slug-autofill';
 import { useValidationErrorMap } from '@/shared/lib/use-validation-error-map';
@@ -121,6 +122,7 @@ export function useAdminInsightForm({ insightId }: { insightId?: string }) {
           await updateInsight.mutateAsync({ id: insightId, input: values });
         } else {
           await createInsight.mutateAsync(values);
+          startFresh('insight');
         }
         router.push('/admin/insights');
       } catch (caught) {

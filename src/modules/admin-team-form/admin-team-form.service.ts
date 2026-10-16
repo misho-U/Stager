@@ -17,6 +17,7 @@ import {
   type TeamMemberFormValues,
   type TeamMemberInput,
 } from '@/entity/team-member/model/team-member.model';
+import { startFresh } from '@/shared/components/fresh-form';
 import { useFormErrors } from '@/shared/lib/form-errors';
 import { useSlugAutofill } from '@/shared/lib/use-slug-autofill';
 import { useValidationErrorMap } from '@/shared/lib/use-validation-error-map';
@@ -88,6 +89,7 @@ export function useAdminTeamForm({ memberId }: { memberId?: string }) {
           await updateMember.mutateAsync({ id: memberId, input: values });
         } else {
           await createMember.mutateAsync(values);
+          startFresh('team');
         }
         router.push('/admin/team');
       } catch (caught) {
