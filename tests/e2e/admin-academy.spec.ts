@@ -9,6 +9,7 @@ import {
 } from '@/entity/course/model/course.model';
 import { todayInTbilisi } from '@/shared/lib/calendar-date';
 import { describeIssue } from '@/shared/lib/validation-message';
+import { storeHostFromToken } from '@pkg/blob/store-host';
 import adminEn from '@pkg/i18n/messages/admin.en.json';
 import siteEn from '@pkg/i18n/messages/en.json';
 
@@ -320,6 +321,16 @@ test.describe('courses and videos in the dashboard', () => {
       },
     });
     expect(both.status()).toBe(400);
+
+    // This project's own store, but its download address: the file would be
+    // sent as an attachment and saved, not played. Refused before the store
+    // is even asked.
+    const store = storeHostFromToken(process.env.BLOB_READ_WRITE_TOKEN);
+    test.skip(!store, 'Needs a store host from BLOB_READ_WRITE_TOKEN.');
+    const download = await page.request.post('/api/admin/videos', {
+      data: { ...base, fileUrl: `https://${store}/media/videos/a.mp4?download=1` },
+    });
+    expect(download.status()).toBe(400);
   });
 
   test('the video form switches between a YouTube link and an uploaded file', async ({ page }) => {

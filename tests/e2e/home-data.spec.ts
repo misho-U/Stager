@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 
 import { splitStatValue } from '@/entity/stat/model/stat.model';
 import { orSamples } from '@/modules/home-page/home-page.samples';
@@ -103,12 +105,32 @@ test.describe('a video uploaded as a file', () => {
 
   test.afterAll(disconnectTestPrisma);
 
-  test('shows its first frame, and Play opens the file, not YouTube', async ({ page, request }) => {
+  test('plays in the page on Play: nothing fetched before, nothing downloaded', async ({
+    page,
+    request,
+  }) => {
     const prisma = testPrisma();
     const slug = `e2e-file-video-${Date.now()}`;
     const title = `E2E file video ${slug}`;
-    // Never fetched successfully in the test: only where the player points.
-    const fileUrl = `https://e2e.public.blob.vercel-storage.com/media/videos/${slug}.mp4`;
+    // The store's own address. The test serves it, as the store does: the
+    // file itself, inline. WebM, which Playwright's Chromium decodes.
+    const fileUrl = `https://e2e.public.blob.vercel-storage.com/media/videos/${slug}.webm`;
+    const fixture = readFileSync(path.join(__dirname, 'fixtures', 'video.webm'));
+    const fetched: string[] = [];
+    await page.route(`${fileUrl}*`, async (route) => {
+      fetched.push(route.request().url());
+      await route.fulfill({
+        status: 200,
+        body: fixture,
+        headers: {
+          'content-type': 'video/webm',
+          'content-disposition': `inline; filename="${slug}.webm"`,
+        },
+      });
+    });
+    const downloads: string[] = [];
+    page.on('download', (download) => downloads.push(download.url()));
+
     const revalidate = () =>
       request.post('/api/dev/revalidate-probe', {
         data: { entity: 'video' },
@@ -121,9 +143,9 @@ test.describe('a video uploaded as a file', () => {
         status: 'PUBLISHED',
         publishedAt: new Date(),
         fileUrl,
-        filePathname: `media/videos/${slug}.mp4`,
-        fileContentType: 'video/mp4',
-        fileSize: 1024,
+        filePathname: `media/videos/${slug}.webm`,
+        fileContentType: 'video/webm',
+        fileSize: fixture.length,
         translations: {
           create: [
             { locale: 'EN', title, summary: '' },
@@ -139,21 +161,41 @@ test.describe('a video uploaded as a file', () => {
       await page.goto('/en');
       const section = page.locator('#videos');
       await expect(section).toContainText(title);
-      // No cover chosen: the poster is the file's own first frame, a muted
-      // video that only loads its header until Play.
-      const firstFrame = section.locator(`video[src="${fileUrl}#t=0.1"]`).first();
-      await expect(firstFrame).toBeAttached();
-      await expect(firstFrame).toHaveAttribute('preload', 'metadata');
-      // Nothing to watch on YouTube.
-      const card = section.locator('[data-video-card]', {
-        has: page.locator(`[data-play="${video.id}"]`),
-      });
+
+      // Before Play the page holds no player for it and has fetched nothing
+      // of the file, and nothing anywhere links to it.
+      await expect(page.locator('video[data-video-file]')).toHaveCount(0);
+      await expect(page.locator(`a[href^="${fileUrl}"]`)).toHaveCount(0);
+      expect(fetched).toEqual([]);
+
+      // Play is a button that opens the player, not a link to the file.
+      const play = section.locator(`[data-play="${video.id}"]`).first();
+      expect(await play.evaluate((element) => element.tagName)).toBe('BUTTON');
+      await expect(play).not.toHaveAttribute('href');
+      const card = section.locator('[data-video-card]', { has: play });
       await expect(card.getByRole('link', { name: /YouTube/ })).toHaveCount(0);
 
-      await section.locator(`[data-play="${video.id}"]`).first().click();
-      const player = page.locator('dialog[open]');
-      await expect(player.locator(`video[src="${fileUrl}"][controls]`)).toBeAttached();
-      await expect(player.locator('iframe')).toHaveCount(0);
+      await play.click();
+      const player = page.locator('dialog[open] video[data-video-file]');
+      await expect(player).toHaveAttribute('src', fileUrl);
+      await expect(player).toHaveAttribute('preload', 'none');
+      await expect(player).toHaveAttribute('controlslist', /nodownload/);
+      await expect(page.locator('dialog[open] iframe')).toHaveCount(0);
+
+      // It plays, in the page.
+      await expect
+        .poll(() =>
+          player.evaluate(
+            (element: HTMLVideoElement) => !element.paused && element.currentTime > 0,
+          ),
+        )
+        .toBe(true);
+
+      // The file came from its own address, never `?download=1`, and no
+      // download began.
+      expect(fetched.length).toBeGreaterThan(0);
+      expect(fetched.every((url) => !url.includes('download'))).toBe(true);
+      expect(downloads).toEqual([]);
     } finally {
       await prisma.video.delete({ where: { id: video.id } });
       await revalidate();

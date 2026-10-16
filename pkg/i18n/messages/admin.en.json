@@ -447,7 +447,7 @@
       },
       "poster": {
         "label": "Cover image",
-        "hintFile": "Shown before Play. Without one, the video's first frame is shown, which is often dark.",
+        "hintFile": "Shown before Play. Without one the card shows a plain placeholder: the file itself is only loaded when Play is pressed.",
         "hintYoutube": "Optional. Shown before Play instead of YouTube's own thumbnail."
       },
       "kind": {

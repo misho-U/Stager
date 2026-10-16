@@ -3,7 +3,7 @@
 import { InfoIcon } from '@phosphor-icons/react/dist/csr/Info';
 import { YoutubeLogoIcon } from '@phosphor-icons/react/dist/csr/YoutubeLogo';
 import Image from 'next/image';
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 
 import { cn } from '@/shared/lib/cn';
 import { youtubeEmbed, youtubeId, youtubeThumbnail } from '@/shared/lib/youtube';
@@ -33,20 +33,37 @@ export function VideoEmbed({ id, title }: { id: string; title: string }) {
 }
 
 /**
- * An uploaded file, playing in its frame with the browser's own controls.
- * Render it only after a click, like the embed: it starts at once.
+ * An uploaded file, played in its frame by the page's own <video> with the
+ * browser's controls: never a link to the file, so Play can never start a
+ * download. Render it only after Play is pressed, like the embed.
+ *
+ * `preload="none"` until then: nothing of the file is fetched until the
+ * element is told to play, which happens once it is mounted, from the
+ * visitor's own Play. `controlsList="nodownload"` takes Download out of the
+ * controls' menu. `src` is the store's `url`, which serves the file inline;
+ * its `downloadUrl` would serve it as an attachment (uploaded-video.ts).
  */
 export function VideoFile({ src, title }: { src: string; title: string }) {
+  const video = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    // A refused start (a browser that wants another click) leaves the
+    // controls on screen for the visitor to press; nothing else to do.
+    video.current?.play().catch(() => {});
+  }, [src]);
+
   return (
     // No captions file: an uploaded film carries its words in its picture, as
     // the YouTube ones do. The title names it to a screen reader.
     <video
+      ref={video}
       src={src}
       aria-label={title}
       controls
-      autoPlay
+      controlsList="nodownload"
       playsInline
-      preload="auto"
+      preload="none"
+      data-video-file
       className="absolute inset-0 size-full bg-black object-contain"
     />
   );
@@ -56,8 +73,6 @@ type PosterImage = { url: string; width: number | null; height: number | null };
 
 type VideoPosterProps = {
   youtubeUrl: string | null;
-  /** An uploaded file; without a cover, its first frame is the poster. */
-  fileUrl?: string | null;
   /** The cover chosen in the dashboard, which wins over anything else. */
   poster?: PosterImage | null;
   /** Passed to next/image for a cover: how wide the frame is drawn. */
@@ -70,13 +85,10 @@ type VideoPosterProps = {
 
 /**
  * What a video's frame shows before it plays, first of: the cover chosen in
- * the dashboard, YouTube's poster frame, an uploaded file's first frame, or
- * the design's placeholder for an entry with nothing yet. Decorative every
- * way (the title is always written next to it), so it has no alt text.
- *
- * A file's first frame costs a small download per visitor (its header and
- * first frame, not the film): a cover image is lighter, and the dashboard
- * suggests one.
+ * the dashboard, YouTube's poster frame, or the design's placeholder.
+ * Decorative every way (the title is always written next to it), so it has
+ * no alt text. An uploaded file is never touched before Play, so one without
+ * a cover shows the placeholder: the dashboard asks for a cover.
  *
  * The poster loads straight from YouTube, not through the image optimizer:
  * the optimizer would take any video id, so anyone could spend the site's
@@ -84,7 +96,6 @@ type VideoPosterProps = {
  */
 export function VideoPoster({
   youtubeUrl,
-  fileUrl = null,
   poster = null,
   sizes = '(min-width: 1024px) 66vw, 100vw',
   priority = false,
@@ -111,18 +122,6 @@ export function VideoPoster({
           unoptimized
           priority={priority}
           className="object-cover"
-        />
-      ) : fileUrl ? (
-        // `#t=0.1`: the frame a tenth of a second in, which a phone draws
-        // where it would leave the very first one black.
-        <video
-          src={`${fileUrl}#t=0.1`}
-          aria-hidden
-          tabIndex={-1}
-          muted
-          playsInline
-          preload="metadata"
-          className="absolute inset-0 size-full object-cover"
         />
       ) : (
         placeholder

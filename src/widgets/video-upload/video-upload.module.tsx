@@ -41,7 +41,8 @@ export function VideoUpload({ label, hint, value, onChange, error }: VideoUpload
           <video
             src={value.url}
             controls
-            preload="metadata"
+            controlsList="nodownload"
+            preload="none"
             playsInline
             aria-label={label}
             className="border-line bg-surface-muted aspect-video w-full max-w-md rounded-md border"

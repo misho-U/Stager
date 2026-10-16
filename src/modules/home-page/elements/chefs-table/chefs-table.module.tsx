@@ -750,7 +750,6 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                   <div data-poster className="absolute inset-0">
                     <VideoPoster
                       youtubeUrl={newest.youtubeUrl}
-                      fileUrl={newest.fileUrl}
                       poster={newest.poster}
                       sizes="(min-width: 1024px) 66vw, 100vw"
                       placeholder={<PosterPlaceholder kind={newest.kind} />}
@@ -806,7 +805,6 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                           <div data-poster className="absolute inset-0">
                             <VideoPoster
                               youtubeUrl={video.youtubeUrl}
-                              fileUrl={video.fileUrl}
                               poster={video.poster}
                               sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 80vw"
                               placeholder={<PosterPlaceholder kind={video.kind} />}
