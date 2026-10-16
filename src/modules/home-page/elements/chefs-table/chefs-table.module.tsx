@@ -750,6 +750,8 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                   <div data-poster className="absolute inset-0">
                     <VideoPoster
                       youtubeUrl={newest.youtubeUrl}
+                      poster={newest.poster}
+                      sizes="(min-width: 1024px) 66vw, 100vw"
                       placeholder={<PosterPlaceholder kind={newest.kind} />}
                     />
                   </div>
@@ -803,6 +805,8 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                           <div data-poster className="absolute inset-0">
                             <VideoPoster
                               youtubeUrl={video.youtubeUrl}
+                              poster={video.poster}
+                              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 80vw"
                               placeholder={<PosterPlaceholder kind={video.kind} />}
                             />
                           </div>
@@ -932,6 +936,7 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
           meta: joinMeta([videoMeta(video), longDate(video.publishedAt)]),
           summary: video.summary,
           youtubeId: youtubeId(video.youtubeUrl),
+          fileUrl: video.fileUrl,
         }))}
         labels={{ close: t('videos.close'), unavailable: t('videos.unavailable') }}
       />

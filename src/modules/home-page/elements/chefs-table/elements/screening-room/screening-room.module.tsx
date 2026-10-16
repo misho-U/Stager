@@ -8,7 +8,11 @@ import {
   useScreeningPlayer,
 } from '@/modules/home-page/elements/chefs-table/elements/screening-room/screening-room.service';
 import { cn } from '@/shared/lib/cn';
-import { VideoEmbed, VideoUnavailable } from '@/widgets/video-player/video-player.module';
+import {
+  VideoEmbed,
+  VideoFile,
+  VideoUnavailable,
+} from '@/widgets/video-player/video-player.module';
 
 /** A Play that opens a video full screen, growing out of `growFrom` (or itself). */
 export function PlayButton({
@@ -49,12 +53,15 @@ type PlayerVideo = {
   meta: string;
   summary: string;
   youtubeId: string | null;
+  /** An uploaded file, played instead of YouTube. */
+  fileUrl: string | null;
 };
 
 /**
  * The full-screen player: the screen darkens, the video's frame grows out of
- * the poster that was pressed, and only then does YouTube's player load. A
- * sample entry without a link says so in the frame. One per page.
+ * the poster that was pressed, and only then does the film load: an uploaded
+ * file in the browser's own player, or YouTube's. A sample entry without
+ * either says so in the frame. One per page.
  */
 export function ScreeningPlayer({
   videos,
@@ -90,7 +97,9 @@ export function ScreeningPlayer({
           className="bg-surface-raised relative aspect-video w-full overflow-hidden rounded-lg"
         >
           {video && playing ? (
-            video.youtubeId ? (
+            video.fileUrl ? (
+              <VideoFile src={video.fileUrl} title={video.title} />
+            ) : video.youtubeId ? (
               <VideoEmbed id={video.youtubeId} title={video.title} />
             ) : (
               <VideoUnavailable message={labels.unavailable} />

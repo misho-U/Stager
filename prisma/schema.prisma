@@ -211,6 +211,7 @@ model Media {
   siteSettingLogos      SiteSetting[]            @relation("SiteSettingLogo")
   siteSettingLogosLight SiteSetting[]            @relation("SiteSettingLogoLight")
   siteSettingOgImages   SiteSettingTranslation[] @relation("SiteSettingTranslationOg")
+  videoPosters          Video[]                  @relation("VideoPoster")
 
   @@index([createdAt])
   @@map("media")
@@ -625,8 +626,21 @@ model Video {
   id   String @id @default(cuid())
   slug String @unique
 
-  /// Null for an entry still waiting for its link.
+  /// Null for an entry still waiting for its link, or one played from a file.
   youtubeUrl String?
+
+  /// An uploaded file, played on the site instead of YouTube (a video has one
+  /// or the other). Under media/videos/ in this project's blob store; its
+  /// type and size are read from the store, never taken from the browser.
+  fileUrl         String? @db.Text
+  /// Blob pathname, needed to delete the file.
+  filePathname    String? @unique
+  fileContentType String?
+  fileSize        Int?
+
+  /// What the card shows before Play; a file without one shows its first frame.
+  posterMediaId String?
+  posterMedia   Media?  @relation("VideoPoster", fields: [posterMediaId], references: [id], onDelete: SetNull)
 
   kind VideoKind?
 

@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 
 import { splitStatValue } from '@/entity/stat/model/stat.model';
 import { orSamples } from '@/modules/home-page/home-page.samples';
@@ -85,6 +87,115 @@ test.describe('a video added in the dashboard', () => {
         section.locator('img[src="https://i.ytimg.com/vi/e2eE2Ee2E2e/hqdefault.jpg"]').first(),
       ).toBeAttached();
       await expect(section.locator('img[src*="/_next/image"][src*="ytimg"]')).toHaveCount(0);
+    } finally {
+      await prisma.video.delete({ where: { id: video.id } });
+      await revalidate();
+    }
+  });
+});
+
+test.describe('a video uploaded as a file', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(!DB_WRITES_ALLOWED, DB_WRITES_SKIP_REASON);
+    test.skip(
+      testInfo.project.name !== 'chromium',
+      'Writes a shared row; runs once, under chromium.',
+    );
+  });
+
+  test.afterAll(disconnectTestPrisma);
+
+  test('plays in the page on Play: nothing fetched before, nothing downloaded', async ({
+    page,
+    request,
+  }) => {
+    const prisma = testPrisma();
+    const slug = `e2e-file-video-${Date.now()}`;
+    const title = `E2E file video ${slug}`;
+    // The store's own address. The test serves it, as the store does: the
+    // file itself, inline. WebM, which Playwright's Chromium decodes.
+    const fileUrl = `https://e2e.public.blob.vercel-storage.com/media/videos/${slug}.webm`;
+    const fixture = readFileSync(path.join(__dirname, 'fixtures', 'video.webm'));
+    const fetched: string[] = [];
+    await page.route(`${fileUrl}*`, async (route) => {
+      fetched.push(route.request().url());
+      await route.fulfill({
+        status: 200,
+        body: fixture,
+        headers: {
+          'content-type': 'video/webm',
+          'content-disposition': `inline; filename="${slug}.webm"`,
+        },
+      });
+    });
+    const downloads: string[] = [];
+    page.on('download', (download) => downloads.push(download.url()));
+
+    const revalidate = () =>
+      request.post('/api/dev/revalidate-probe', {
+        data: { entity: 'video' },
+        headers: { 'sec-fetch-site': 'same-origin' },
+      });
+
+    const video = await prisma.video.create({
+      data: {
+        slug,
+        status: 'PUBLISHED',
+        publishedAt: new Date(),
+        fileUrl,
+        filePathname: `media/videos/${slug}.webm`,
+        fileContentType: 'video/webm',
+        fileSize: fixture.length,
+        translations: {
+          create: [
+            { locale: 'EN', title, summary: '' },
+            { locale: 'KA', title, summary: '' },
+          ],
+        },
+      },
+    });
+
+    try {
+      expect((await revalidate()).ok()).toBeTruthy();
+
+      await page.goto('/en');
+      const section = page.locator('#videos');
+      await expect(section).toContainText(title);
+
+      // Before Play the page holds no player for it and has fetched nothing
+      // of the file, and nothing anywhere links to it.
+      await expect(page.locator('video[data-video-file]')).toHaveCount(0);
+      await expect(page.locator(`a[href^="${fileUrl}"]`)).toHaveCount(0);
+      expect(fetched).toEqual([]);
+
+      // Play is a button that opens the player, not a link to the file.
+      const play = section.locator(`[data-play="${video.id}"]`).first();
+      expect(await play.evaluate((element) => element.tagName)).toBe('BUTTON');
+      await expect(play).not.toHaveAttribute('href');
+      const card = section.locator('[data-video-card]', { has: play });
+      await expect(card.getByRole('link', { name: /YouTube/ })).toHaveCount(0);
+
+      await play.click();
+      const player = page.locator('dialog[open] video[data-video-file]');
+      await expect(player).toHaveAttribute('src', fileUrl);
+      await expect(player).toHaveAttribute('preload', 'none');
+      await expect(player).toHaveAttribute('controlslist', /nodownload/);
+      await expect(page.locator('dialog[open] iframe')).toHaveCount(0);
+
+      // It plays, in the page.
+      await expect
+        .poll(() =>
+          player.evaluate(
+            (element: HTMLVideoElement) => !element.paused && element.currentTime > 0,
+          ),
+        )
+        .toBe(true);
+
+      // The file came from its own address, never `?download=1`, and no
+      // download began.
+      expect(fetched.length).toBeGreaterThan(0);
+      expect(fetched.every((url) => !url.includes('download'))).toBe(true);
+      expect(downloads).toEqual([]);
     } finally {
       await prisma.video.delete({ where: { id: video.id } });
       await revalidate();

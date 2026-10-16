@@ -236,7 +236,7 @@ const COURSES: ReadonlyArray<
 ];
 
 const VIDEOS: ReadonlyArray<
-  Omit<PublicVideo, keyof VideoText | 'publishedAt' | 'youtubeUrl'> & {
+  Omit<PublicVideo, keyof VideoText | 'publishedAt' | 'youtubeUrl' | 'fileUrl' | 'poster'> & {
     daysAgo: number;
     text: Localised<VideoText>;
   }
@@ -368,6 +368,8 @@ export async function sampleVideos(locale: DbLocale): Promise<PublicVideo[]> {
     ...text[locale],
     publishedAt: dayFromToday(-daysAgo),
     youtubeUrl: null,
+    fileUrl: null,
+    poster: null,
   }));
 }
 

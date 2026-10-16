@@ -47,7 +47,7 @@ export function AdminVideosModule() {
           >
             {video.translations.KA.title || video.translations.EN.title || video.slug}
           </Link>
-          {video.youtubeUrl ? null : (
+          {video.youtubeUrl || video.file ? null : (
             <span className="text-caption text-ink-subtle">{t('videos.noLink')}</span>
           )}
         </span>
