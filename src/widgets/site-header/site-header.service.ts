@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
 
-import { SITE_MENU_MOTION } from '@/widgets/site-header/site-header.constants';
+import { isInPageLink, SITE_MENU_MOTION } from '@/widgets/site-header/site-header.constants';
 import { gsap } from '@/shared/lib/motion/gsap';
 import { getSmoothScroll, glideTo } from '@/widgets/smooth-scroll/smooth-scroll.service';
 
@@ -28,12 +28,11 @@ export function useScrolled() {
   return { marker, scrolled };
 }
 
-/** Puts the menu under its button, right edges level (site.css, .ct-menu). */
+/** Puts the menu just under the header's bar, centred on the page (site.css, .ct-menu). */
 function placeMenu(menu: HTMLDialogElement | null, button: HTMLElement | null) {
   if (!menu || !button) return;
   const box = button.getBoundingClientRect();
   menu.style.setProperty('--menu-top', `${box.bottom}px`);
-  menu.style.setProperty('--menu-right', `${window.innerWidth - box.right}px`);
 }
 
 /**
@@ -75,12 +74,32 @@ export function useMenu() {
   const onClose = () => getSmoothScroll()?.start();
 
   /**
+   * Any link in the menu closes it, whoever drew the link: the sections, the
+   * call to action, and the Academy's next course, which once opened its
+   * section with the menu left standing over it. A link to a section of this
+   * page glides there; one to another page is followed as it is. A link
+   * whose own handler already took the click (a section in the list, the
+   * language switch's slide) is left to it.
+   *
    * A click on the backdrop reaches the dialog itself, as does one on its
    * padding: only one outside the panel's box closes it.
    */
   const onDialogClick = (event: MouseEvent<HTMLDialogElement>) => {
     const element = dialog.current;
-    if (!element || event.target !== element) return;
+    if (!element) return;
+    const link = (event.target as Element).closest('a[href]');
+    if (link && element.contains(link)) {
+      if (event.defaultPrevented) return;
+      const href = link.getAttribute('href') ?? '';
+      if (isInPageLink(href)) {
+        event.preventDefault();
+        follow(href);
+      } else {
+        close();
+      }
+      return;
+    }
+    if (event.target !== element) return;
     const box = element.getBoundingClientRect();
     const inside =
       event.clientX >= box.left &&

@@ -327,3 +327,34 @@ test('the header holds its menu button on a narrow phone, logo and all', async (
   }
   await context.close();
 });
+
+test.describe('the menu', () => {
+  const openMenu = async (page: Page) => {
+    await shown(page.locator('[data-ct-header] button[aria-haspopup="dialog"]')).click();
+    const menu = page.locator('dialog[open]');
+    await expect(menu).toBeVisible();
+    return menu;
+  };
+
+  test('opens centred on the screen', async ({ page }) => {
+    await open(page, HOME);
+    const menu = await openMenu(page);
+    const box = await menu.boundingBox();
+    const width = page.viewportSize()?.width ?? 0;
+    expect(box, 'the open menu has a box').toBeTruthy();
+    expect(Math.abs(box!.x + box!.width / 2 - width / 2)).toBeLessThanOrEqual(1);
+  });
+
+  test('closes on any link it holds, the Academy’s next course too', async ({ page }) => {
+    // The next course is drawn by the home page, not the menu's own list,
+    // and once opened its section with the menu left standing over it.
+    await open(page, HOME);
+    const menu = await openMenu(page);
+    // The card, not the menu's own "Academy" link to the same section.
+    const course = menu.locator('a[href="#academy"]:not([data-menu-link])');
+    test.skip((await course.count()) === 0, 'no upcoming course to show in the menu');
+    await course.click();
+    await expect(page.locator('dialog[open]')).toHaveCount(0);
+    await expect(page.locator('#academy')).toBeInViewport();
+  });
+});
