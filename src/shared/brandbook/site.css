@@ -145,9 +145,21 @@
   --ct-hero-h: 78svh;
   --ct-hero-measure: 14em; /* the headline's longest line, in its own size */
   --ct-header-h: 4.5rem;
-  --ct-menu-w: 22rem; /* the menu's panel */
+  --ct-menu-w: 24rem; /* the menu's panel */
   --ct-menu-gap: 0.5rem; /* between the menu button and its panel */
   --ct-pill-h: 3.75rem; /* the header once it has become a pill */
+  --ct-pill-w: 48rem; /* the pill's width on a wide screen */
+  /* On a phone the bar is already as narrow as the pill: it draws in from
+     each edge by this much, so the change still reads as a pill forming. */
+  --ct-pill-inset: 0.75rem;
+  /* The bar gathering into the pill (and back): slow enough to be seen, even
+     from start to end, so it reads as one movement and not a snap. */
+  --ct-header-duration: 700ms;
+  --ct-header-ease: cubic-bezier(0.65, 0, 0.35, 1);
+  /* The language switch: the gap round its two halves, and how long the
+     fill takes to slide from one language to the other. */
+  --ct-lang-pad: 0.125rem;
+  --ct-lang-duration: 350ms;
   /* The services' journey: a stage's marker, and the gap between stages
      (the line from one marker to the next spans it). */
   --ct-node: 3.5rem;
@@ -234,10 +246,14 @@
     }
   }
 
-  /* The language switch as a two-part pill: the current language filled. */
+  /* The language switch as a two-part pill: the current language filled.
+     The parts are equal, so the fill (the thumb) moves by its own width. */
   [data-site] .ct-lang nav {
-    gap: 0.125rem;
-    padding: 0.125rem;
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    gap: var(--ct-lang-pad);
+    padding: var(--ct-lang-pad);
     border-radius: 9999px;
     background-color: color-mix(in oklab, var(--color-brand-cream) 10%, transparent);
   }
@@ -395,6 +411,78 @@
       }
     }
   }
+  /* The menu's sections: numbered like the home page's, each a wide row
+     whose arrow slides in under the pointer (or on the page being shown).
+     They arrive one after another as the menu opens. */
+  [data-site] .ct-menu-links {
+    display: flex;
+    flex-direction: column;
+  }
+  [data-site] .ct-menu-links li {
+    transition:
+      opacity var(--duration-entrance) var(--ease-brand),
+      translate var(--duration-entrance) var(--ease-brand);
+    transition-delay: calc(var(--i, 0) * var(--stagger-step));
+  }
+  @starting-style {
+    [data-site] .ct-menu[open] .ct-menu-links li {
+      opacity: 0;
+      translate: 0 var(--rise-distance);
+    }
+  }
+  [data-site] .ct-menu-links a {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    min-height: 3.25rem;
+    padding-block: 0.625rem;
+    padding-inline: 0.75rem;
+    margin-inline: -0.75rem;
+    border-radius: var(--radius-lg);
+    transition: background-color var(--duration-base) var(--ease-brand);
+  }
+  [data-site] .ct-menu-links a:hover,
+  [data-site] .ct-menu-links a:focus-visible {
+    background-color: color-mix(in oklab, var(--color-brand-cream) 6%, transparent);
+  }
+  [data-site] .ct-menu-index {
+    min-width: 1.5rem;
+    color: var(--color-accent);
+    font-size: var(--text-caption);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+  }
+  [data-site] .ct-menu-label {
+    flex: 1;
+    font-size: var(--text-title-sm);
+    font-weight: var(--font-weight-heading);
+    line-height: var(--text-title-sm--line-height);
+    transition: translate var(--duration-base) var(--ease-brand);
+    @media (min-width: 40rem) {
+      font-size: var(--text-title);
+      line-height: var(--text-title--line-height);
+    }
+  }
+  [data-site] .ct-menu-arrow {
+    align-self: center;
+    color: var(--color-accent);
+    opacity: 0;
+    translate: -0.5rem 0;
+    transition:
+      opacity var(--duration-base) var(--ease-brand),
+      translate var(--duration-base) var(--ease-brand);
+  }
+  [data-site] .ct-menu-links a:is(:hover, :focus-visible, [aria-current='page']) .ct-menu-arrow {
+    opacity: 1;
+    translate: 0 0;
+  }
+  [data-site] .ct-menu-links a:is(:hover, :focus-visible) .ct-menu-label {
+    translate: 0.25rem 0;
+  }
+  [data-site] .ct-menu-links a[aria-current='page'] .ct-menu-label {
+    color: var(--color-accent);
+  }
+
   @media (prefers-reduced-transparency: reduce) {
     [data-site] .ct-menu {
       background-color: var(--ct-raised);
@@ -722,10 +810,6 @@
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-  }
-  [data-site] .ct-photos-track::-webkit-scrollbar {
-    display: none;
   }
   [data-site] .ct-photos-slide {
     flex: 0 0 100%;
@@ -953,7 +1037,37 @@
   color: var(--color-ink-muted);
   letter-spacing: 0;
 }
-[data-site] .ct-lang nav a[aria-current='true'] {
+[data-site] .ct-lang nav > span,
+[data-site] .ct-lang nav a {
+  position: relative;
+  justify-content: center;
+}
+/* The chosen language carries its own cream fill. Choosing the other hands
+   the fill to a thumb that slides across (--lang-at, set by the switcher);
+   the page changes once it lands. The thumb is there all along, unseen, so
+   it starts the slide from where the fill was. */
+[data-site] .ct-lang nav a[data-on] {
   background-color: var(--color-brand-cream-light);
   color: var(--color-brand-teal);
+}
+[data-site] .ct-lang nav[data-going] a[data-on] {
+  background-color: transparent;
+}
+[data-site] .ct-lang [data-lang-thumb] {
+  display: block;
+  position: absolute;
+  inset-block: var(--ct-lang-pad);
+  left: var(--ct-lang-pad);
+  width: calc((100% - 3 * var(--ct-lang-pad)) / 2);
+  border-radius: 9999px;
+  background-color: var(--color-brand-cream-light);
+  opacity: 0;
+  translate: calc(var(--lang-at, 0) * (100% + var(--ct-lang-pad))) 0;
+  transition: translate var(--ct-lang-duration) var(--ct-header-ease);
+}
+[data-site] .ct-lang nav[data-going] [data-lang-thumb] {
+  opacity: 1;
+}
+[data-lang-thumb] {
+  display: none;
 }

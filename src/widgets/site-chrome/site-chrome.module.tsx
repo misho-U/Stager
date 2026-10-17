@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { CONTENT_ID, SkipLink } from '@/shared/components/skip-link';
 import { BrandMark, siteLogo } from '@/shared/components/brand-mark';
 import { SiteLink } from '@/shared/components/site-link';
+import { cn } from '@/shared/lib/cn';
 import type { DbLocale } from '@/shared/types/enums';
 import { toAppLocale } from '@pkg/i18n/routing';
 import { INQUIRY_ANCHOR } from '@/widgets/inquiry-form/inquiry-form.constants';
@@ -98,6 +99,11 @@ type PageHeroProps = {
   testId?: string;
   /** Under the lead: a way back, a call to action. */
   children?: ReactNode;
+  /**
+   * Set in the reading column, centred on the page, for a page that is one
+   * long text (an article): its title then lines up with the text under it.
+   */
+  reading?: boolean;
 };
 
 /**
@@ -106,14 +112,19 @@ type PageHeroProps = {
  * hero (`data-enter`, never waiting for the script) and is the page's one
  * <h1>; the page's sections follow it inside <main>.
  */
-export function PageHero({ title, lead, meta, testId, children }: PageHeroProps) {
+export function PageHero({ title, lead, meta, testId, children, reading = false }: PageHeroProps) {
   return (
     <section
       aria-labelledby="page-title"
       className="px-gutter relative isolate pt-36 pb-12 lg:pt-44 lg:pb-16"
     >
       <StageDecor light="right" floor="right" />
-      <div className="max-w-page mx-auto flex flex-col gap-6">
+      <div
+        className={cn(
+          'mx-auto flex flex-col gap-6',
+          reading ? 'max-w-(--ct-measure)' : 'max-w-page',
+        )}
+      >
         {meta ? (
           <div data-enter className="text-body-sm text-ink-muted">
             {meta}
