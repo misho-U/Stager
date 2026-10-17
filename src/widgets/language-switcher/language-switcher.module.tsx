@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useSearchParams } from 'next/navigation';
-import { Suspense, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
+import { Suspense, useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
 
 import { cn } from '@/shared/lib/cn';
 import { Link, usePathname, useRouter } from '@pkg/i18n/navigation';
@@ -45,7 +45,16 @@ function LocaleLinks({ query }: { query: Record<string, string> | undefined }) {
   const router = useRouter();
   const current = params.locale as AppLocale | undefined;
   const href = query ? { pathname, query } : pathname;
-  const [going, setGoing] = useState<AppLocale | null>(null);
+  // Where the highlight is sliding, and from which language: once the page's
+  // language is no longer the one it left, the slide is over. (Kept as a bare
+  // target, the second switch found the first one's still standing and lit
+  // the wrong language.)
+  const [slide, setSlide] = useState<{ from: AppLocale | undefined; to: AppLocale } | null>(null);
+  const going = slide && slide.from === current ? slide.to : null;
+  // Next keeps the page just left, hidden, and shows it again on the way
+  // back: hiding it runs this cleanup, so the page that comes back has no
+  // slide left over from the switch that left it.
+  useEffect(() => () => setSlide(null), []);
   const thumb = useRef<HTMLSpanElement>(null);
   const active = going ?? current;
 
@@ -53,7 +62,7 @@ function LocaleLinks({ query }: { query: Record<string, string> | undefined }) {
     const modified = event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
     if (locale === current || modified || event.button !== 0 || going) return;
     event.preventDefault();
-    setGoing(locale);
+    setSlide({ from: current, to: locale });
     // The page changes once the highlight has landed: at the end of its
     // slide, or at once where nothing slides (reduced motion, no highlight
     // drawn). The timer is the backstop if no transition ever ends.

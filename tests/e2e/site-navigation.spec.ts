@@ -261,3 +261,67 @@ test('the language switch opens the page in the other language, lang and all', a
   await expect(page.locator('dialog[open]')).toHaveCount(0);
   expect(await notReloaded(page)).toBe(true);
 });
+
+test('switching language twice lights the language the page is in, each time', async ({ page }) => {
+  // The header stays across a change of language, and the first switch's
+  // slide once outlived it: on the second, the language just left stayed lit.
+  await open(page, ARTICLES);
+  const bar = shown(page.locator('[data-ct-header] nav[aria-label="Language"]'));
+  const lit = (locale: string) => bar.locator(`a[hreflang="${locale}"]`);
+
+  for (const [to, from] of [
+    ['ka', 'en'],
+    ['en', 'ka'],
+    ['ka', 'en'],
+  ] as const) {
+    await lit(to).click();
+    await expect(page).toHaveURL(`/${to}/insights`);
+    await expect(lit(to)).toHaveAttribute('data-on');
+    await expect(lit(from)).not.toHaveAttribute('data-on');
+    await expect(bar).not.toHaveAttribute('data-going');
+  }
+});
+
+test('the header holds its menu button on a narrow phone, logo and all', async ({ browser }) => {
+  // The owner's logo is about three times as wide as it is tall: wider than
+  // the type wordmark, and once it pushed the menu button out of the pill.
+  const context = await browser.newContext({
+    viewport: { width: 320, height: 640 },
+    hasTouch: true,
+    isMobile: true,
+  });
+  const phone = await context.newPage();
+  await phone.goto(HOME);
+  const header = phone.locator('[data-ct-header]');
+  await header
+    .locator('a[href="#top"], a[href="/en"]')
+    .first()
+    .evaluate((link) => {
+      const logo = document.createElement('img');
+      logo.src =
+        'data:image/svg+xml,' +
+        encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100"/>');
+      logo.width = 300;
+      logo.height = 100;
+      logo.className = 'block w-auto max-w-none h-7 sm:h-8 md:h-9';
+      link.replaceChildren(logo);
+    });
+
+  for (const scrolled of [false, true]) {
+    if (scrolled) {
+      await phone.evaluate(() => window.scrollTo(0, 400));
+      await expect(header).toHaveAttribute('data-scrolled', '');
+      // Let the bar finish gathering into the pill.
+      await phone.waitForTimeout(1000);
+    }
+    const [bar, menu] = await Promise.all([
+      header.locator(':scope > div').boundingBox(),
+      header.locator('button[aria-haspopup="dialog"]').boundingBox(),
+    ]);
+    expect(bar && menu, 'the bar and its menu button are on screen').toBeTruthy();
+    expect(menu!.x + menu!.width, `scrolled: ${scrolled}`).toBeLessThanOrEqual(
+      bar!.x + bar!.width + 0.5,
+    );
+  }
+  await context.close();
+});
