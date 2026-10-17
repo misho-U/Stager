@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { expect, test } from '@playwright/test';
+import { expect, test, type Browser } from '@playwright/test';
 
 /**
  * A phone's address bar hides as the visitor scrolls down and comes back as
@@ -28,4 +28,38 @@ test('no public page sizes itself in dvh', () => {
     .filter((file) => file.endsWith('.tsx') && !file.includes('admin'))
     .filter((file) => /\d+dvh|-dvh\b|h-dvh/.test(read(path.join('src', file))));
   expect(files).toEqual([]);
+});
+
+/**
+ * Content slid up into place as it was scrolled to, which under a finger
+ * read as the page shifting (the owner, on an iPhone). With a mouse it still
+ * does; on a touch screen the page is already in place when it is reached.
+ */
+const DEVICES = {
+  phone: { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true },
+  desktop: { viewport: { width: 1280, height: 800 } },
+};
+
+/** The first element below the fold that slides in with a mouse. */
+async function belowTheFold(device: keyof typeof DEVICES, browser: Browser) {
+  const context = await browser.newContext({ ...DEVICES[device], reducedMotion: 'no-preference' });
+  const page = await context.newPage();
+  await page.goto('/en');
+  await expect(page.locator('[data-site][data-motion="on"]')).toHaveCount(1);
+  const item = page.locator('[data-reveal]').last();
+  await expect(item).not.toBeInViewport();
+  return { context, item };
+}
+
+test('on a touch screen, content is in place before it is scrolled to', async ({ browser }) => {
+  const { context, item } = await belowTheFold('phone', browser);
+  await expect(item).toHaveCSS('opacity', '1');
+  await expect(item).toHaveCSS('transform', 'none');
+  await context.close();
+});
+
+test('with a mouse, content still slides in as it is scrolled to', async ({ browser }) => {
+  const { context, item } = await belowTheFold('desktop', browser);
+  await expect(item).toHaveCSS('opacity', '0');
+  await context.close();
 });

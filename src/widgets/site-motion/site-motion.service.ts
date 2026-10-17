@@ -29,12 +29,17 @@ export function useSiteMotion(scope: RefObject<HTMLElement | null>) {
     cleanups.push(countUp(root, entrance));
     readAlong(root);
     cleanups.push(drawJourney(root));
-    riseHeadings(root);
     drawRules(root);
     drift(root);
-    reveal(root);
     openIris(root);
-    riseFooter(root);
+    // Content that slides up into place as it is scrolled to, only where
+    // there is a pointer. Under a finger it read as the page shifting while
+    // being scrolled (the owner, on a phone), so there it is simply in place.
+    if (finePointer) {
+      riseHeadings(root);
+      reveal(root);
+      riseFooter(root);
+    }
     if (finePointer) {
       cleanups.push(spotlights(root));
       const pulled = [
