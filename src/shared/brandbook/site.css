@@ -404,9 +404,11 @@
     }
   }
 
-  /* The menu: a compact panel dropped just under the header (--menu-top,
-     set as it opens), centred on the page and never wider than the screen
-     allows. It fades and settles into place; the page behind dims a little. */
+  /* The menu: a compact panel dropped just under the header (--menu-top
+     and --menu-right, set as it opens), never wider than the screen allows.
+     Centred on a phone; on a wider screen its right edge is level with the
+     button's (the owner's choice for each). It fades and settles into
+     place; the page behind dims a little. */
   [data-site] .ct-menu {
     position: fixed;
     inset: calc(var(--menu-top, var(--ct-header-h)) + var(--ct-menu-gap)) 0 auto;
@@ -429,6 +431,13 @@
     transition:
       opacity var(--duration-base) var(--ease-brand),
       translate var(--duration-base) var(--ease-brand);
+
+    @media (min-width: 40rem) {
+      right: var(--menu-right, var(--spacing-gutter));
+      left: auto;
+      margin-inline: 0;
+      transform-origin: top right;
+    }
 
     &::backdrop {
       background-color: color-mix(in oklab, var(--ct-night) 45%, transparent);

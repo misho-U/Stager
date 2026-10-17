@@ -28,11 +28,15 @@ export function useScrolled() {
   return { marker, scrolled };
 }
 
-/** Puts the menu just under the header's bar, centred on the page (site.css, .ct-menu). */
+/**
+ * Puts the menu just under the header's bar: centred on a phone, its right
+ * edge level with the button's on a wider screen (site.css, .ct-menu).
+ */
 function placeMenu(menu: HTMLDialogElement | null, button: HTMLElement | null) {
   if (!menu || !button) return;
   const box = button.getBoundingClientRect();
   menu.style.setProperty('--menu-top', `${box.bottom}px`);
+  menu.style.setProperty('--menu-right', `${window.innerWidth - box.right}px`);
 }
 
 /**

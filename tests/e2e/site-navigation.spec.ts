@@ -336,13 +336,20 @@ test.describe('the menu', () => {
     return menu;
   };
 
-  test('opens centred on the screen', async ({ page }) => {
+  test('opens centred on a phone, under its button on a wider screen', async ({ page }) => {
+    // The owner's choice for each: centred where the screen is narrow, its
+    // right edge level with the button's from 640px up (site.css).
     await open(page, HOME);
+    const button = shown(page.locator('[data-ct-header] button[aria-haspopup="dialog"]'));
     const menu = await openMenu(page);
-    const box = await menu.boundingBox();
+    const [box, trigger] = await Promise.all([menu.boundingBox(), button.boundingBox()]);
     const width = page.viewportSize()?.width ?? 0;
-    expect(box, 'the open menu has a box').toBeTruthy();
-    expect(Math.abs(box!.x + box!.width / 2 - width / 2)).toBeLessThanOrEqual(1);
+    expect(box && trigger, 'the open menu and its button have boxes').toBeTruthy();
+    if (width < 640) {
+      expect(Math.abs(box!.x + box!.width / 2 - width / 2)).toBeLessThanOrEqual(1);
+    } else {
+      expect(Math.abs(box!.x + box!.width - (trigger!.x + trigger!.width))).toBeLessThan(2);
+    }
   });
 
   test('closes on any link it holds, the Academy’s next course too', async ({ page }) => {
