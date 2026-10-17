@@ -78,6 +78,7 @@ function LocaleLinks({ query }: { query: Record<string, string> | undefined }) {
     <nav
       aria-label="Language"
       className="text-body-sm relative flex items-center"
+      data-going={going ? '' : undefined}
       style={{ '--lang-at': Math.max(0, LOCALES.indexOf(active ?? LOCALES[0])) } as CSSProperties}
     >
       <span ref={thumb} aria-hidden data-lang-thumb />

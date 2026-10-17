@@ -1042,11 +1042,17 @@
   position: relative;
   justify-content: center;
 }
+/* The chosen language carries its own cream fill. Choosing the other hands
+   the fill to a thumb that slides across (--lang-at, set by the switcher);
+   the page changes once it lands. The thumb is there all along, unseen, so
+   it starts the slide from where the fill was. */
 [data-site] .ct-lang nav a[data-on] {
+  background-color: var(--color-brand-cream-light);
   color: var(--color-brand-teal);
 }
-/* The fill under the chosen language. Choosing the other slides it across
-   (--lang-at, set by the switcher), and the page changes once it lands. */
+[data-site] .ct-lang nav[data-going] a[data-on] {
+  background-color: transparent;
+}
 [data-site] .ct-lang [data-lang-thumb] {
   display: block;
   position: absolute;
@@ -1055,8 +1061,12 @@
   width: calc((100% - 3 * var(--ct-lang-pad)) / 2);
   border-radius: 9999px;
   background-color: var(--color-brand-cream-light);
+  opacity: 0;
   translate: calc(var(--lang-at, 0) * (100% + var(--ct-lang-pad))) 0;
   transition: translate var(--ct-lang-duration) var(--ct-header-ease);
+}
+[data-site] .ct-lang nav[data-going] [data-lang-thumb] {
+  opacity: 1;
 }
 [data-lang-thumb] {
   display: none;
