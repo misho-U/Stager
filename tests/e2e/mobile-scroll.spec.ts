@@ -37,7 +37,9 @@ test('no public page sizes itself in dvh', () => {
  */
 const DEVICES = {
   phone: { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true },
-  desktop: { viewport: { width: 1280, height: 800 } },
+  // Said in full: under the `mobile` project, Playwright gives every new
+  // context that project's touch screen unless told otherwise.
+  desktop: { viewport: { width: 1280, height: 800 }, hasTouch: false, isMobile: false },
 };
 
 /** The first element below the fold that slides in with a mouse. */
