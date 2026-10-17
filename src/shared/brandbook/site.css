@@ -154,8 +154,8 @@
   --ct-pill-inset: 0.5rem;
   /* The bar gathering into the pill (and back): slow enough to be seen, even
      from start to end, so it reads as one movement and not a snap. */
-  --ct-header-duration: 700ms;
-  --ct-header-ease: cubic-bezier(0.65, 0, 0.35, 1);
+  --ct-header-duration: 800ms;
+  --ct-header-ease: cubic-bezier(0.45, 0, 0.25, 1);
   /* The language switch: the gap round its two halves, and how long the
      fill takes to slide from one language to the other. */
   --ct-lang-pad: 0.125rem;
@@ -235,12 +235,36 @@
 
 @layer components {
   /* The header: clear over the hero, a dark glass pill once the page moves. */
-  [data-site] .ct-glass {
-    background-color: color-mix(in oklab, var(--ct-raised) 78%, transparent);
-    backdrop-filter: blur(18px) saturate(140%);
+  /* The header's bar. Its size and padding change as it gathers into the
+     pill; its dark glass is a layer of its own that only fades in. Fading
+     costs the browser almost nothing, where changing a blur redraws it on
+     every frame: animated with the rest, it made the movement stutter. */
+  [data-site] .ct-bar {
+    position: relative;
+    isolation: isolate;
+    transition-property: max-width, height, padding;
+    transition-duration: var(--ct-header-duration);
+    transition-timing-function: var(--ct-header-ease);
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      border-radius: inherit;
+      background-color: color-mix(in oklab, var(--ct-raised) 78%, transparent);
+      backdrop-filter: blur(18px) saturate(140%);
+      box-shadow: var(--shadow-card);
+      opacity: 0;
+      transition: opacity var(--ct-header-duration) var(--ct-header-ease);
+      pointer-events: none;
+    }
+  }
+  [data-site] [data-scrolled] .ct-bar::before {
+    opacity: 1;
   }
   @media (prefers-reduced-transparency: reduce) {
-    [data-site] .ct-glass {
+    [data-site] .ct-bar::before {
       background-color: var(--ct-raised);
       backdrop-filter: none;
     }
@@ -308,8 +332,14 @@
     transition: opacity var(--duration-base) var(--ease-brand);
     pointer-events: none;
   }
-  [data-site] .ct-spot:hover::before {
-    opacity: 1;
+  /* Hover styles here are for a mouse only: a phone keeps a tapped element
+     "hovered" until the next tap elsewhere, which left a photo arrow lit
+     after it had been pressed. Tailwind's own hover: variants already wait
+     for (hover: hover). */
+  @media (hover: hover) {
+    [data-site] .ct-spot:hover::before {
+      opacity: 1;
+    }
   }
 
   /* An Academy ticket: a body and a stub, torn along a dashed line with a
@@ -553,8 +583,10 @@
     font-size: var(--text-body-sm);
     font-weight: 500;
 
-    &:hover {
-      background-color: var(--ct-night);
+    @media (hover: hover) {
+      &:hover {
+        background-color: var(--ct-night);
+      }
     }
   }
   [data-site] .ct-youtube-quiet {
@@ -565,8 +597,10 @@
     color: var(--color-ink-muted);
     font-size: var(--text-body-sm);
 
-    &:hover {
-      color: var(--color-ink);
+    @media (hover: hover) {
+      &:hover {
+        color: var(--color-ink);
+      }
     }
   }
 
@@ -726,17 +760,19 @@
     color: var(--color-accent);
   }
   /* The stage under the pointer steps forward, its marker lit. */
-  [data-site] .ct-step:hover .ct-step-card {
-    box-shadow:
-      0 0 0 1px var(--color-line-strong),
-      var(--shadow-card);
-    translate: 0 -0.25rem;
-  }
-  [data-site] .ct-step:hover .ct-step-node {
-    background-color: var(--color-accent);
-    box-shadow: 0 0 0 2px var(--color-accent);
-    color: var(--color-on-primary);
-    scale: 1.06;
+  @media (hover: hover) {
+    [data-site] .ct-step:hover .ct-step-card {
+      box-shadow:
+        0 0 0 1px var(--color-line-strong),
+        var(--shadow-card);
+      translate: 0 -0.25rem;
+    }
+    [data-site] .ct-step:hover .ct-step-node {
+      background-color: var(--color-accent);
+      box-shadow: 0 0 0 2px var(--color-accent);
+      color: var(--color-on-primary);
+      scale: 1.06;
+    }
   }
 
   /* A project's card: its photos, its name and details under them, and
@@ -831,10 +867,17 @@
     color: var(--color-on-primary);
     transition:
       opacity var(--duration-base) var(--ease-brand),
-      background-color var(--duration-base) var(--ease-brand);
+      background-color var(--duration-base) var(--ease-brand),
+      scale var(--duration-fast) var(--ease-brand);
 
-    &:hover {
-      background-color: var(--color-primary-hover);
+    @media (hover: hover) {
+      &:hover {
+        background-color: var(--color-primary-hover);
+      }
+    }
+    /* A tap shows as a short press, and lets go with the finger. */
+    &:active {
+      scale: 0.92;
     }
   }
   /* Side by side at the right: next at the corner, previous before it. */

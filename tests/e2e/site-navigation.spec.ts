@@ -283,8 +283,10 @@ test('switching language twice lights the language the page is in, each time', a
 });
 
 test('the header holds its menu button on a narrow phone, logo and all', async ({ browser }) => {
-  // The owner's logo is about three times as wide as it is tall: wider than
-  // the type wordmark, and once it pushed the menu button out of the pill.
+  // The owner's logo is about four and a half times as wide as it is tall:
+  // wider than the type wordmark, and it pushed the menu button out of the
+  // pill. A logo gives way now (BrandMark), whatever its shape; this one is
+  // wider still, to leave a margin.
   const context = await browser.newContext({
     viewport: { width: 320, height: 640 },
     hasTouch: true,
@@ -300,10 +302,10 @@ test('the header holds its menu button on a narrow phone, logo and all', async (
       const logo = document.createElement('img');
       logo.src =
         'data:image/svg+xml,' +
-        encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100"/>');
-      logo.width = 300;
+        encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="500" height="100"/>');
+      logo.width = 500;
       logo.height = 100;
-      logo.className = 'block w-auto max-w-none h-7 sm:h-8 md:h-9';
+      logo.className = 'block w-auto max-w-full object-contain object-left h-7 sm:h-8 md:h-9';
       link.replaceChildren(logo);
     });
 
