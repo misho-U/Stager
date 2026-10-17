@@ -138,7 +138,11 @@
   --radius-xl: 2.5rem;
 
   /* --- Sizes the site alone uses --- */
-  --ct-hero-h: 78dvh; /* the hero: the figures below it show on arrival */
+  /* The hero: the figures below it show on arrival. In svh, the screen with
+     a phone's address bar showing, which never changes: in dvh the hero grew
+     and shrank as the bar hid and came back, moving the whole page under the
+     visitor's finger, and every scroll animation was measured again. */
+  --ct-hero-h: 78svh;
   --ct-hero-measure: 14em; /* the headline's longest line, in its own size */
   --ct-header-h: 4.5rem;
   --ct-menu-w: 22rem; /* the menu's panel */

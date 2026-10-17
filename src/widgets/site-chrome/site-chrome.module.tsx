@@ -49,7 +49,7 @@ export async function SubpageShell({ locale, chrome, current, children }: Subpag
     // `overflow-x-clip`: nothing that moves may widen the page (see the home page).
     <div data-site className="bg-surface text-ink overflow-x-clip">
       <SkipLink label={t('common.skipToContent')} />
-      <SiteMotion className="flex min-h-dvh flex-col">
+      <SiteMotion className="flex min-h-svh flex-col">
         <SiteHeader
           links={links}
           current={current}

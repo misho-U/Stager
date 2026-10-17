@@ -823,6 +823,11 @@ Lenis. The dashboard has none.
   request): over a scrim, receding once a mouse has rested on the frame
   (`.video-caption` in globals.css), gone once it plays. Touch keeps it, so
   nothing on a timer may hide it: on a phone it is the only copy.
+- **The page is sized in `svh`, never `dvh`.** `dvh` follows a phone's
+  address bar as it hides and returns while scrolling: a 78dvh hero moved
+  the whole page under the visitor's finger, and every scroll animation was
+  measured again. `dvh` is for layers over the page only (the menu, a
+  drawer, the full-screen player). `mobile-scroll.spec.ts` checks.
 
 ### Theme
 

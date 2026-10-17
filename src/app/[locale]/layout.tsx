@@ -81,7 +81,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   // same depth. Kept so that can never come back.
   return (
     <html lang={locale} data-scroll-behavior="smooth" suppressHydrationWarning>
-      <body className="bg-surface text-ink min-h-dvh antialiased">
+      <body className="bg-surface text-ink min-h-svh antialiased">
         <script dangerouslySetInnerHTML={{ __html: RELOAD_AT_TOP }} />
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>

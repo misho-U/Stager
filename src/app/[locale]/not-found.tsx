@@ -11,7 +11,7 @@ export default async function NotFound() {
 
   return (
     <div data-site className="bg-surface text-ink">
-      <main className="px-gutter mx-auto flex min-h-dvh max-w-2xl flex-col items-center justify-center gap-4 text-center">
+      <main className="px-gutter mx-auto flex min-h-svh max-w-2xl flex-col items-center justify-center gap-4 text-center">
         <p className="text-caption tracking-label text-ink-subtle uppercase">404</p>
         <h1 className="text-title font-semibold">{t('notFound')}</h1>
         <Link

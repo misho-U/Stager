@@ -42,9 +42,9 @@ export default function GlobalError({
 
   return (
     <html lang="ka">
-      <body className="bg-surface text-ink min-h-dvh antialiased">
+      <body className="bg-surface text-ink min-h-svh antialiased">
         <title>STAGER</title>
-        <main className="px-gutter mx-auto flex min-h-dvh max-w-2xl flex-col items-center justify-center gap-8 text-center">
+        <main className="px-gutter mx-auto flex min-h-svh max-w-2xl flex-col items-center justify-center gap-8 text-center">
           {COPY.map((copy) => (
             <div key={copy.lang} lang={copy.lang} className="flex flex-col gap-2">
               <h1 className="text-title font-semibold">{copy.title}</h1>

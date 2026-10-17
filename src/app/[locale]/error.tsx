@@ -29,7 +29,7 @@ export default function PublicError({
     <div data-site className="bg-surface text-ink">
       <main
         data-testid="page-error"
-        className="px-gutter mx-auto flex min-h-dvh max-w-2xl flex-col items-center justify-center gap-4 text-center"
+        className="px-gutter mx-auto flex min-h-svh max-w-2xl flex-col items-center justify-center gap-4 text-center"
       >
         <h1 className="text-title font-semibold">{t('error')}</h1>
         <p className="text-body text-ink-muted text-pretty">{t('errorBody')}</p>
