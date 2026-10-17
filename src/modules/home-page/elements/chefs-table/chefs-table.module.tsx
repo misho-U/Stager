@@ -302,7 +302,7 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
               name={siteName}
               decorative
               priority
-              className="h-8 md:h-9"
+              className="h-7 sm:h-8 md:h-9"
               wordmarkClassName="text-body-lg"
             />
           </a>

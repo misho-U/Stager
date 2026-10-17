@@ -83,16 +83,16 @@ export function SiteHeader({
       >
         <div
           className={cn(
-            'pointer-events-auto mx-auto flex items-center justify-between gap-3 rounded-full transition-[max-width,height,padding,background-color,box-shadow,backdrop-filter] duration-(--ct-header-duration) ease-(--ct-header-ease)',
+            'pointer-events-auto mx-auto flex items-center justify-between gap-2 rounded-full transition-[max-width,height,padding,background-color,box-shadow,backdrop-filter] duration-(--ct-header-duration) ease-(--ct-header-ease) sm:gap-3',
             scrolled
-              ? 'ct-glass shadow-card h-(--ct-pill-h) max-w-[min(var(--ct-pill-w),100%-2*var(--ct-pill-inset))] pr-2 pl-6'
+              ? 'ct-glass shadow-card h-(--ct-pill-h) max-w-[min(var(--ct-pill-w),100%-2*var(--ct-pill-inset))] pr-2 pl-4 sm:pl-6'
               : // Capped at the bar's own width, so a phone's bar shrinks
                 // through the whole transition, not only at its very end.
                 'h-(--ct-header-h) max-w-[min(var(--container-page),100%)]',
           )}
         >
           {brand}
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <div className="ct-lang">{language}</div>
             <SiteLink
               href={cta.href}

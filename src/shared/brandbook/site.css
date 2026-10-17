@@ -151,7 +151,7 @@
   --ct-pill-w: 48rem; /* the pill's width on a wide screen */
   /* On a phone the bar is already as narrow as the pill: it draws in from
      each edge by this much, so the change still reads as a pill forming. */
-  --ct-pill-inset: 0.75rem;
+  --ct-pill-inset: 0.5rem;
   /* The bar gathering into the pill (and back): slow enough to be seen, even
      from start to end, so it reads as one movement and not a snap. */
   --ct-header-duration: 700ms;
@@ -1033,7 +1033,12 @@
 [data-site] .ct-lang nav a {
   min-width: 2.75rem;
   border-radius: 9999px;
-  padding-inline: 0.75rem;
+  /* Narrower on a phone, so the header's pill holds the logo, the switch
+     and the menu button side by side. */
+  padding-inline: 0.5rem;
+  @media (min-width: 40rem) {
+    padding-inline: 0.75rem;
+  }
   color: var(--color-ink-muted);
   letter-spacing: 0;
 }

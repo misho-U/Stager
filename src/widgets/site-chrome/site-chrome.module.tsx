@@ -66,7 +66,7 @@ export async function SubpageShell({ locale, chrome, current, children }: Subpag
                 name={siteName}
                 decorative
                 priority
-                className="h-8 md:h-9"
+                className="h-7 sm:h-8 md:h-9"
                 wordmarkClassName="text-body-lg"
               />
             </SiteLink>
