@@ -828,6 +828,12 @@ Lenis. The dashboard has none.
   the whole page under the visitor's finger, and every scroll animation was
   measured again. `dvh` is for layers over the page only (the menu, a
   drawer, the full-screen player). `mobile-scroll.spec.ts` checks.
+- **Nothing slides into place under a finger.** Sections, cards, headings
+  and the footer's wordmark rise into view only with a mouse
+  (`finePointer`): on the owner's iPhone, content moving up as it was
+  scrolled to read as the page shifting. On a touch screen it is already in
+  place. The hero's entrance on arrival, the counting figures, the drawn
+  lines and the light behind sections still run.
 
 ### Theme
 
