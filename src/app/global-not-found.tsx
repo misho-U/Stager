@@ -48,8 +48,8 @@ export default function GlobalNotFound() {
     // KEEP_ADDRESS_LANGUAGE changes lang, and `hidden` and `data-shown`
     // below, before React hydrates.
     <html lang={routing.defaultLocale} suppressHydrationWarning>
-      <body className="bg-surface text-ink min-h-dvh antialiased">
-        <main className="px-gutter mx-auto flex min-h-dvh max-w-2xl flex-col items-center justify-center gap-8 text-center">
+      <body className="bg-surface text-ink min-h-svh antialiased">
+        <main className="px-gutter mx-auto flex min-h-svh max-w-2xl flex-col items-center justify-center gap-8 text-center">
           <p className="text-caption tracking-label text-ink-subtle uppercase">404</p>
           <style dangerouslySetInnerHTML={{ __html: HOLD_COPY }} />
           {COPY.map(({ lang, messages }) => (
