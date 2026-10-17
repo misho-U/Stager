@@ -418,15 +418,17 @@ test.describe('the tickets, the screening room and the menu', () => {
     await expect(page.locator('#academy-title')).toBeInViewport();
   });
 
-  test('the menu is a panel under its button, and a click outside closes it', async ({ page }) => {
+  test('the menu is a panel under its button, centred, and a click outside closes it', async ({
+    page,
+  }) => {
     await openHome(page, 'en');
     const button = page.locator('[data-ct-header] button[aria-haspopup="dialog"]');
     await button.click();
     const menu = page.locator('dialog[open]');
     await expect(menu).toBeVisible();
 
-    // Compact, not the whole screen: under the button, its right edge level
-    // with the button's, narrower than the page on a wide screen.
+    // Compact, not the whole screen: under the button, centred on the page
+    // (the owner's choice), narrower than the page on a wide screen.
     const [panel, trigger, viewport] = await Promise.all([
       menu.boundingBox(),
       button.boundingBox(),
@@ -434,7 +436,7 @@ test.describe('the tickets, the screening room and the menu', () => {
     ]);
     expect(panel && trigger && viewport).toBeTruthy();
     expect(panel!.y).toBeGreaterThanOrEqual(trigger!.y + trigger!.height);
-    expect(Math.abs(panel!.x + panel!.width - (trigger!.x + trigger!.width))).toBeLessThan(2);
+    expect(Math.abs(panel!.x + panel!.width / 2 - viewport!.width / 2)).toBeLessThan(2);
     expect(panel!.height).toBeLessThan(viewport!.height);
     if (viewport!.width >= 768) expect(panel!.width).toBeLessThan(viewport!.width / 2);
 
