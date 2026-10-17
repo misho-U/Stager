@@ -11,7 +11,7 @@ import type {
   TeamMemberUpdateInput,
 } from '@/entity/team-member/model/team-member.model';
 import { prisma } from '@pkg/db/prisma';
-import { sanitizeRichText } from '@pkg/security/sanitize';
+import { sanitizePlainText } from '@pkg/security/sanitize';
 
 // How many articles name them as author: the delete confirmation says so.
 const adminInclude = {
@@ -52,10 +52,17 @@ function toAdminTeamMember(row: AdminRow): AdminTeamMember {
   };
 }
 
+/**
+ * A bio is plain text: the team page prints it as text, line breaks and all.
+ * It once went through the rich-text cleaner, which wraps text in <p> and
+ * turns a line break into <br />, and the page then showed those tags. The
+ * schema has already turned any pasted HTML into text (plainTextInput); this
+ * drops whatever markup is left.
+ */
 function sanitized(translations: TeamMemberInput['translations']) {
   return {
-    KA: { ...translations.KA, bio: sanitizeRichText(translations.KA.bio ?? '') },
-    EN: { ...translations.EN, bio: sanitizeRichText(translations.EN.bio ?? '') },
+    KA: { ...translations.KA, bio: sanitizePlainText(translations.KA.bio ?? '') },
+    EN: { ...translations.EN, bio: sanitizePlainText(translations.EN.bio ?? '') },
   };
 }
 

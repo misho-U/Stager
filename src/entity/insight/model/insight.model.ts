@@ -11,6 +11,7 @@ import {
   seoFieldsSchema,
   seoInputSchema,
   slugSchema,
+  plainTextInput,
 } from '@/shared/types/api';
 import { contentStatusSchema } from '@/shared/types/enums';
 
@@ -83,7 +84,7 @@ export function insightPath(slug: string): string {
 
 export const insightTranslationInputSchema = seoInputSchema.extend({
   title: z.string().trim().min(1).max(200),
-  excerpt: z.string().trim().max(600).default(''),
+  excerpt: plainTextInput(600).default(''),
   body: z.string().trim().max(200_000).default(''),
 });
 

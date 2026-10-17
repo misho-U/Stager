@@ -11,6 +11,7 @@ import {
   optionalChoice,
   partialUpdate,
   slugSchema,
+  plainTextInput,
 } from '@/shared/types/api';
 import { contentStatusSchema, courseFormatSchema } from '@/shared/types/enums';
 
@@ -107,7 +108,7 @@ export const FEW_SEATS = 5;
 
 export const courseTranslationInputSchema = z.object({
   title: z.string().trim().min(1).max(200),
-  summary: z.string().trim().max(600).default(''),
+  summary: plainTextInput(600).default(''),
   duration: z.string().trim().max(60).default(''),
   location: z.string().trim().max(160).default(''),
 });

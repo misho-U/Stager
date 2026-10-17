@@ -12,6 +12,7 @@ import {
   seoFieldsSchema,
   seoInputSchema,
   slugSchema,
+  plainTextInput,
 } from '@/shared/types/api';
 import { contentStatusSchema } from '@/shared/types/enums';
 
@@ -90,7 +91,7 @@ export const publicProjectListResponseSchema = listResponseSchema(publicProjectL
 
 export const projectTranslationInputSchema = seoInputSchema.extend({
   title: z.string().trim().min(1).max(200),
-  summary: z.string().trim().max(600).default(''),
+  summary: plainTextInput(600).default(''),
   /** Sanitized server-side before it is stored — see pkg/security/sanitize. */
   body: z.string().trim().max(80_000).default(''),
 });
