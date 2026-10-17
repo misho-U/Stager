@@ -49,6 +49,7 @@ export async function InsightPageModule({ locale, slug }: InsightPageModuleProps
             title={article.title}
             lead={article.excerpt}
             testId="insight-title"
+            reading
             meta={
               <div className="flex flex-col items-start gap-6">
                 <SiteLink
@@ -89,10 +90,10 @@ export async function InsightPageModule({ locale, slug }: InsightPageModuleProps
                 </div>
               ) : null}
               {isBlankHtml(article.body) ? null : (
-                <RichText html={article.body} className="ct-prose" />
+                <RichText html={article.body} className="ct-prose mx-auto w-full" />
               )}
               {article.author ? (
-                <p className="text-body text-ink-muted border-line max-w-(--ct-measure) border-t pt-6">
+                <p className="text-body text-ink-muted border-line mx-auto w-full max-w-(--ct-measure) border-t pt-6">
                   {t('insights.by', { name: article.author.name })}
                 </p>
               ) : null}

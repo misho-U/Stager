@@ -30,7 +30,7 @@ export function AdminSidebar({ email, name, role }: AdminSidebarProps) {
           scroll, with a thin bar, in a window too short for it. */}
       <nav
         aria-label={t('sidebar.label')}
-        className="scrollbar-subtle border-line bg-surface-raised flex shrink-0 flex-col gap-6 border-b p-4 lg:sticky lg:top-0 lg:h-dvh lg:w-60 lg:gap-4 lg:overflow-y-auto lg:border-r lg:border-b-0 lg:py-3"
+        className="border-line bg-surface-raised flex shrink-0 flex-col gap-6 border-b p-4 lg:sticky lg:top-0 lg:h-dvh lg:w-60 lg:gap-4 lg:overflow-y-auto lg:border-r lg:border-b-0 lg:py-3"
       >
         <div className="flex items-center justify-between gap-2">
           <Link href="/admin" className="px-2">

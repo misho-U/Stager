@@ -1,8 +1,9 @@
 'use client';
 
+import { ArrowRightIcon } from '@phosphor-icons/react/dist/csr/ArrowRight';
 import { ListIcon } from '@phosphor-icons/react/dist/csr/List';
 import { XIcon } from '@phosphor-icons/react/dist/csr/X';
-import type { MouseEvent, ReactNode } from 'react';
+import type { CSSProperties, MouseEvent, ReactNode } from 'react';
 
 import { SiteLink } from '@/shared/components/site-link';
 import { cn } from '@/shared/lib/cn';
@@ -54,6 +55,9 @@ export function SiteHeader({
   const { marker, scrolled } = useScrolled();
   const { dialog, trigger, open, close, onClose, onDialogClick, follow } = useMenu();
   const hasMenu = links.length > 0;
+  // The call to action is the button at the menu's foot; listed again among
+  // the sections it was the same thing twice.
+  const listed = links.filter((link) => link.href !== cta.href);
   /**
    * A link to a section of this page glides there. Any other is followed
    * without a reload (SiteLink), so the menu closes first: the page it sits
@@ -79,10 +83,12 @@ export function SiteHeader({
       >
         <div
           className={cn(
-            'ease-brand pointer-events-auto mx-auto flex items-center justify-between gap-3 rounded-full transition-all duration-500',
+            'pointer-events-auto mx-auto flex items-center justify-between gap-3 rounded-full transition-[max-width,height,padding,background-color,box-shadow,backdrop-filter] duration-(--ct-header-duration) ease-(--ct-header-ease)',
             scrolled
-              ? 'ct-glass shadow-card h-(--ct-pill-h) max-w-3xl pr-2 pl-6'
-              : 'max-w-page h-(--ct-header-h)',
+              ? 'ct-glass shadow-card h-(--ct-pill-h) max-w-[min(var(--ct-pill-w),100%-2*var(--ct-pill-inset))] pr-2 pl-6'
+              : // Capped at the bar's own width, so a phone's bar shrinks
+                // through the whole transition, not only at its very end.
+                'h-(--ct-header-h) max-w-[min(var(--container-page),100%)]',
           )}
         >
           {brand}
@@ -120,46 +126,50 @@ export function SiteHeader({
           data-lenis-prevent
           className="ct-menu"
         >
-          <div className="flex flex-col gap-5 p-5 sm:p-6">
-            <div className="flex items-center justify-between gap-4">
-              <p id="ct-menu-title" className="text-body-sm text-ink-muted font-medium">
+          <div className="flex flex-col gap-4 p-4 sm:gap-5 sm:p-5">
+            <div className="flex items-center justify-end gap-4">
+              <h2 id="ct-menu-title" className="sr-only">
                 {labels.menu}
-              </p>
+              </h2>
               <button
                 type="button"
                 onClick={close}
                 aria-label={labels.close}
-                className="hover:bg-surface-muted -mr-2 inline-flex size-11 items-center justify-center rounded-full transition-colors"
+                className="hover:bg-surface-muted -mr-1 inline-flex size-11 items-center justify-center rounded-full transition-colors"
               >
                 <XIcon aria-hidden weight="bold" />
               </button>
             </div>
             <nav aria-label={labels.nav}>
-              <ul className="border-line flex flex-col border-t">
-                {links.map((link) => (
-                  <li key={link.href} className="border-line overflow-hidden border-b">
+              <ol className="ct-menu-links">
+                {listed.map((link, index) => (
+                  <li key={link.href} style={{ '--i': index } as CSSProperties}>
                     <SiteLink
                       href={link.href}
                       data-menu-link
                       aria-current={link.href === current ? 'page' : undefined}
                       onClick={onMenuLink(link.href)}
-                      className="text-title-sm font-heading hover:text-accent flex min-h-12 items-center py-2 transition-colors"
                     >
-                      {link.label}
+                      <span aria-hidden className="ct-menu-index">
+                        {String(index + 1).padStart(2, '0')}
+                      </span>
+                      <span className="ct-menu-label">{link.label}</span>
+                      <ArrowRightIcon aria-hidden className="ct-menu-arrow" />
                     </SiteLink>
                   </li>
                 ))}
-              </ul>
+              </ol>
             </nav>
             {teaser}
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
               <div className="ct-lang">{menuLanguage}</div>
               <SiteLink
                 href={cta.href}
                 onClick={onMenuLink(cta.href)}
-                className="bg-primary text-on-primary hover:bg-primary-hover text-body-sm inline-flex min-h-11 items-center rounded-full px-5 font-medium whitespace-nowrap transition-colors"
+                className="bg-primary text-on-primary hover:bg-primary-hover text-body-sm inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full px-5 font-medium whitespace-nowrap transition-colors"
               >
                 {cta.label}
+                <ArrowRightIcon aria-hidden />
               </SiteLink>
             </div>
           </div>
