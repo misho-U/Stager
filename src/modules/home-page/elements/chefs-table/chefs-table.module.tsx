@@ -295,7 +295,7 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
           <a
             href="#top"
             aria-label={siteName}
-            className="inline-flex min-h-11 shrink-0 items-center"
+            className="inline-flex min-h-11 min-w-0 items-center"
           >
             <BrandMark
               logo={siteLogo(layout)}

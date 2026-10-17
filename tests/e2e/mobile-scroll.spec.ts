@@ -65,3 +65,33 @@ test('with a mouse, content still slides in as it is scrolled to', async ({ brow
   await expect(item).toHaveCSS('opacity', '0');
   await context.close();
 });
+
+test('on a touch screen, a tapped photo arrow does not stay lit', async ({ browser }) => {
+  // A phone keeps a tapped element "hovered" until the next tap elsewhere,
+  // and the arrow stayed green after it had moved the photo (the owner, on a
+  // phone). Hover colours are for a mouse only.
+  const context = await browser.newContext({ ...DEVICES.phone, reducedMotion: 'reduce' });
+  const page = await context.newPage();
+  await page.goto('/en');
+  await page.locator('[data-site] main').evaluate((main) => {
+    for (const id of ['tapped', 'untouched']) {
+      const arrow = document.createElement('button');
+      arrow.type = 'button';
+      arrow.id = id;
+      arrow.className = 'ct-photos-arrow ct-photos-next';
+      arrow.textContent = '>';
+      const frame = document.createElement('div');
+      frame.style.position = 'relative';
+      frame.style.height = '5rem';
+      frame.append(arrow);
+      main.prepend(frame);
+    }
+  });
+  const tapped = page.locator('#tapped');
+  await tapped.scrollIntoViewIfNeeded();
+  await tapped.tap();
+  const background = (id: string) =>
+    page.locator(`#${id}`).evaluate((arrow) => getComputedStyle(arrow).backgroundColor);
+  await expect.poll(() => background('tapped')).toBe(await background('untouched'));
+  await context.close();
+});

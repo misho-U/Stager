@@ -58,7 +58,9 @@ export function BrandMark({
       // Shown at most ~200 CSS px wide; 2× for sharp edges on a dense screen.
       sizes="200px"
       priority={priority}
-      className={cn('block w-auto max-w-none', className)}
+      // Never wider than the space it is given: in a phone's header a wide
+      // logo scales down rather than push the menu button out of the bar.
+      className={cn('block w-auto max-w-full object-contain object-left', className)}
       data-testid="brand-logo"
     />
   );
