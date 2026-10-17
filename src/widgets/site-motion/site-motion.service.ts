@@ -39,8 +39,6 @@ export function useSiteMotion(scope: RefObject<HTMLElement | null>) {
       riseHeadings(root);
       reveal(root);
       riseFooter(root);
-    }
-    if (finePointer) {
       cleanups.push(spotlights(root));
       const pulled = [
         ...root.querySelectorAll<HTMLElement>('[data-magnetic]'),
