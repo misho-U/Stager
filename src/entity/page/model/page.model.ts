@@ -7,6 +7,7 @@ import {
   mediaIdSchema,
   seoFieldsSchema,
   seoInputSchema,
+  plainTextInput,
 } from '@/shared/types/api';
 import { isBlankHtml } from '@/shared/lib/content';
 import { pageKeySchema, type PageKey } from '@/shared/types/enums';
@@ -100,7 +101,7 @@ export const pageSectionInputSchema = z.object({
   translations: bothLocales(
     z.object({
       heading: z.string().trim().max(300).default(''),
-      subheading: z.string().trim().max(1000).default(''),
+      subheading: plainTextInput(1000).default(''),
       body: z.string().trim().max(40_000).default(''),
       ctaLabel: z.string().trim().max(80).default(''),
       ctaHref: pageSectionLinkInput().default(''),

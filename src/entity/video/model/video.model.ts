@@ -11,6 +11,7 @@ import {
   optionalYoutubeUrlInput,
   partialUpdate,
   slugSchema,
+  plainTextInput,
 } from '@/shared/types/api';
 import { contentStatusSchema, videoKindSchema } from '@/shared/types/enums';
 
@@ -82,7 +83,7 @@ export const publicVideoListResponseSchema = listResponseSchema(publicVideoSchem
 
 export const videoTranslationInputSchema = z.object({
   title: z.string().trim().min(1).max(200),
-  summary: z.string().trim().max(600).default(''),
+  summary: plainTextInput(600).default(''),
 });
 
 export const videoInputSchema = z.object({

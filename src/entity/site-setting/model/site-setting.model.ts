@@ -8,6 +8,7 @@ import {
   optionalEmailInput,
   seoFieldsSchema,
   seoInputSchema,
+  plainTextInput,
 } from '@/shared/types/api';
 
 export const siteSettingTranslationSchema = seoFieldsSchema.extend({
@@ -62,9 +63,9 @@ export const siteSettingUpdateInputSchema = z.object({
   translations: bothLocales(
     seoInputSchema.extend({
       siteName: z.string().trim().min(1).max(120).default('STAGER'),
-      tagline: z.string().trim().max(300).default(''),
+      tagline: plainTextInput(300).default(''),
       address: z.string().trim().max(300).default(''),
-      footerText: z.string().trim().max(2000).default(''),
+      footerText: plainTextInput(2000).default(''),
     }),
   ).optional(),
 });

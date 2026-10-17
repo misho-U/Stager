@@ -116,9 +116,16 @@ test.describe('content through the dashboard API', () => {
       linkedinUrl: 'https://www.linkedin.com/in/e2e',
       status: 'PUBLISHED',
       order: 7,
-      translations: both({ name: 'E2E Member' }),
+      translations: both({
+        name: 'E2E Member',
+        bio: 'First line.\nSecond line, 10 < 20 & more.',
+      }),
     });
     ids.member = member.id;
+    // A bio is plain text, stored as typed: once it was wrapped in <p> and
+    // its line breaks turned into <br />, which the team page then showed.
+    const translations = member.translations as Record<'EN', { bio: string }>;
+    expect(translations.EN.bio).toBe('First line.\nSecond line, 10 < 20 & more.');
 
     const cleared = await patch(page.request, `/api/admin/team/${member.id}`, {
       linkedinUrl: '',

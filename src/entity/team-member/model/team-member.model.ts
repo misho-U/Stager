@@ -10,6 +10,7 @@ import {
   optionalUrlInput,
   partialUpdate,
   slugSchema,
+  plainTextInput,
 } from '@/shared/types/api';
 import { contentStatusSchema } from '@/shared/types/enums';
 
@@ -61,8 +62,8 @@ export const TEAM_PATH = '/team';
 export const teamMemberTranslationInputSchema = z.object({
   name: z.string().trim().min(1).max(160),
   position: z.string().trim().max(160).default(''),
-  bio: z.string().trim().max(4000).default(''),
-  expertise: z.string().trim().max(600).default(''),
+  bio: plainTextInput(4000).default(''),
+  expertise: plainTextInput(600).default(''),
 });
 
 export const teamMemberInputSchema = z.object({

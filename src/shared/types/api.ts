@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { htmlToPlainText } from '@/shared/lib/plain-text';
+
 import { dbLocaleSchema, type DbLocale } from '@/shared/types/enums';
 
 /** Envelope for every list endpoint, so pagination can be added without a breaking change. */
@@ -48,6 +50,14 @@ const EMAIL_MAX = 254;
 export const emailInput = (message?: string) =>
   z.string().trim().max(EMAIL_MAX).pipe(z.email(message));
 
+/**
+ * A plain-text field (a bio, a summary, an excerpt): HTML pasted into it is
+ * turned back into the text it shows before it is trimmed and measured, so
+ * the site never prints "<p>" or "<br />" (htmlToPlainText).
+ */
+export const plainTextInput = (max: number) =>
+  z.string().transform(htmlToPlainText).pipe(z.string().trim().max(max));
+
 /** May be left blank; "   " is treated as blank rather than as an invalid address. */
 export const optionalEmailInput = () =>
   z
@@ -85,8 +95,8 @@ export const seoFieldsSchema = z.object({
 });
 
 export const seoInputSchema = z.object({
-  metaTitle: z.string().trim().max(70).nullish(),
-  metaDescription: z.string().trim().max(180).nullish(),
+  metaTitle: plainTextInput(70).nullish(),
+  metaDescription: plainTextInput(180).nullish(),
   ogMediaId: z.string().min(1).nullish(),
 });
 

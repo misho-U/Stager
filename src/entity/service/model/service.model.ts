@@ -10,6 +10,7 @@ import {
   seoFieldsSchema,
   seoInputSchema,
   slugSchema,
+  plainTextInput,
 } from '@/shared/types/api';
 import { contentStatusSchema } from '@/shared/types/enums';
 
@@ -61,7 +62,7 @@ export const publicServiceListResponseSchema = listResponseSchema(publicServiceL
 
 export const serviceTranslationInputSchema = seoInputSchema.extend({
   title: z.string().trim().min(1).max(200),
-  shortDescription: z.string().trim().max(600).default(''),
+  shortDescription: plainTextInput(600).default(''),
   body: z.string().trim().max(80_000).default(''),
 });
 
