@@ -237,7 +237,7 @@ Before launch:
     (until they exist the page shows marked samples), and optionally each
     page's own search title and description (Page copy; without them the
     site's are used).
-13. **Launch**: set `OPEN_TO_SEARCH` to true
+13. **Launch** (done, October 2026): set `OPEN_TO_SEARCH` to true
     (`src/widgets/seo/seo.constants.ts`, one line) and deploy. Then verify
     stager.ge in Google Search Console and Bing Webmaster Tools (Bing's
     index also feeds Microsoft Copilot) and submit `/sitemap.xml` to both; create a

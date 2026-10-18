@@ -153,9 +153,11 @@ Do not add a library outside this list without raising it first.
   split only through `splitReveal` (or a screen reader hears nothing), and the
   hero never waits for the script. AGENTS.md § Motion has the rules and the
   traps behind them.
-- **Search engines see nothing until `OPEN_TO_SEARCH` is true**
-  (`widgets/seo/seo.constants.ts`): the launch commit flips it, and only on
-  the owner's word. Every public page builds its metadata with
+- **The site is open to search engines: `OPEN_TO_SEARCH` is true**
+  (`widgets/seo/seo.constants.ts`), flipped at launch on the owner's word;
+  only they may turn it off again. Previews and local servers stay
+  `noindex` regardless. A sample shown in an empty section is now indexed
+  like real content, so a section should never stand empty. Every public page builds its metadata with
   `pageMetadata()` and its JSON-LD from dashboard data only, never a sample. A
   new public page also goes in the sitemap's `pages()` and in `/llms.txt`
   (AGENTS.md § Search engines).
@@ -199,4 +201,4 @@ home page. Every page beside home is a `SubpageShell` (`widgets/site-chrome`),
 and every public page moves through `widgets/site-motion`. Every public page
 is built at build time and refreshed by tag on save; the dashboard renders per
 request. AGENTS.md § 7 records the decisions and what is still open (the real
-figures, the policy's text, the font licence, the noindex).
+figures, the policy's text, the font licence).

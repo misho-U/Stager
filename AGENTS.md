@@ -407,10 +407,10 @@ checks each part, and the keyboard spec the skip link after a page change.
 
 ### Search engines, share cards and AI crawlers (`widgets/seo`)
 
-- **`OPEN_TO_SEARCH` (`seo.constants.ts`) is the launch switch.** False until
-  the owner launches: every page says `noindex`. True, and the production
-  deployment is indexed; a preview or a local server never is, and
-  `robots.txt` keeps crawlers off everything but production.
+- **`OPEN_TO_SEARCH` (`seo.constants.ts`) is the launch switch.** True since
+  the owner launched (October 2026): the production deployment is indexed;
+  a preview or a local server never is, and `robots.txt` keeps crawlers off
+  everything but production. False takes every page back to `noindex`.
 - **Every public page's `generateMetadata` calls its module's
   `load…Metadata()`**, which builds `pageMetadata()`: the title and
   description in the page's language, from the dashboard (the page's own
@@ -1096,8 +1096,9 @@ database, unused.
 
 Still open: the real figures (the samples are placeholders, marked); the
 policy's text (the client's lawyer); the BPG Nino Mtavruli licence; the logo
-artwork for the favicon and share card (set in type until then); and the
-noindex, which stays until launch (`OPEN_TO_SEARCH`, § Search engines). The
+artwork for the favicon and share card (set in type until then). The site
+is open to search engines since the launch (`OPEN_TO_SEARCH`, § Search
+engines). The
 public pages are built at build time (§ Static public pages); keep the
 data-loading pattern in `home-page.service.ts`.
 
