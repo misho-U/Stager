@@ -1,9 +1,12 @@
+import type { PublicCourse } from '@/entity/course/model/course.model';
 import type { PublicInsightDetail } from '@/entity/insight/model/insight.model';
 import type { MediaSummary } from '@/entity/media/model/media.model';
 import type { PublicServiceListItem } from '@/entity/service/model/service.model';
 import type { PublicLayoutData } from '@/entity/site-setting/model/site-setting.model';
 import { TEAM_PATH, type PublicTeamMember } from '@/entity/team-member/model/team-member.model';
+import type { PublicVideo } from '@/entity/video/model/video.model';
 import { shortText } from '@/shared/lib/content';
+import { youtubeId, youtubeThumbnail } from '@/shared/lib/youtube';
 import type { DbLocale } from '@/shared/types/enums';
 import { toCanonicalUrl } from '@pkg/http/site-url';
 import { toAppLocale } from '@pkg/i18n/routing';
@@ -211,6 +214,101 @@ export function articleNode({
     author: article.author
       ? { '@type': 'Person', name: article.author.name }
       : organizationRef(site, layout),
+    publisher: organizationRef(site, layout),
+  };
+}
+
+/**
+ * A course at the Academy: what it teaches, who runs it, when and where it
+ * next takes place, and what it costs. Search engines show courses on their
+ * own, and AI answers name them when asked where to learn; a course with
+ * no date, place or price simply says less, never a guess.
+ */
+export function courseNode({
+  course,
+  locale,
+  site,
+  layout,
+}: {
+  course: PublicCourse;
+  locale: DbLocale;
+  site: SiteSeo;
+  layout: PublicLayoutData | null;
+}): JsonLdNode {
+  const academy = `${canonicalUrl(locale, '')}#academy`;
+  const location = text(course.location);
+  return {
+    '@type': 'Course',
+    '@id': `${canonicalUrl(locale, '')}#course-${course.slug}`,
+    name: course.title,
+    // Required of a course: its summary, else its name.
+    description: text(course.summary) ?? course.title,
+    url: academy,
+    inLanguage: toAppLocale(locale),
+    image: course.cover?.url,
+    provider: organizationRef(site, layout),
+    hasCourseInstance: {
+      '@type': 'CourseInstance',
+      courseMode: course.format === 'ONLINE' ? 'online' : 'onsite',
+      startDate: course.startsAt ?? undefined,
+      courseWorkload: text(course.duration),
+      location: location ? { '@type': 'Place', name: location, address: location } : undefined,
+    },
+    offers:
+      course.priceGel === null
+        ? undefined
+        : {
+            '@type': 'Offer',
+            category: course.priceGel === 0 ? 'Free' : 'Paid',
+            price: course.priceGel,
+            priceCurrency: 'GEL',
+            availability:
+              course.seatsLeft === 0 ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
+            url: academy,
+          },
+    syllabusSections: list(
+      course.syllabus.map((module) => ({
+        '@type': 'Syllabus',
+        name: module.title,
+        description: text(module.description),
+        timeRequired: text(module.duration),
+      })),
+    ),
+  };
+}
+
+/**
+ * A video: its title, summary, poster, date and length, and where it plays
+ * (YouTube's player, or the file itself). One with no picture to show is
+ * left out: search engines do not list a video without one.
+ */
+export function videoNode({
+  video,
+  locale,
+  site,
+  layout,
+}: {
+  video: PublicVideo;
+  locale: DbLocale;
+  site: SiteSeo;
+  layout: PublicLayoutData | null;
+}): JsonLdNode | null {
+  const youtube = youtubeId(video.youtubeUrl);
+  const thumbnail = video.poster?.url ?? (youtube ? youtubeThumbnail(youtube) : null);
+  if (!thumbnail || (!youtube && !video.fileUrl)) return null;
+  return {
+    '@type': 'VideoObject',
+    '@id': `${canonicalUrl(locale, '')}#video-${video.slug}`,
+    name: video.title,
+    // Required of a video: its summary, else its name.
+    description: text(video.summary) ?? video.title,
+    thumbnailUrl: [thumbnail],
+    uploadDate: video.publishedAt,
+    duration: video.durationMinutes ? `PT${video.durationMinutes}M` : undefined,
+    inLanguage: toAppLocale(locale),
+    embedUrl: youtube ? `https://www.youtube.com/embed/${youtube}` : undefined,
+    contentUrl: youtube ? undefined : (video.fileUrl ?? undefined),
+    url: `${canonicalUrl(locale, '')}#videos`,
     publisher: organizationRef(site, layout),
   };
 }

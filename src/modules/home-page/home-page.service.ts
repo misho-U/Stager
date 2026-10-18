@@ -17,8 +17,10 @@ import { listPublicStats } from '@/server/published/stats';
 import { listPublicVideos } from '@/server/published/videos';
 import { descriptionFor, pageMetadata, siteSeo } from '@/widgets/seo/seo.service';
 import {
+  courseNode,
   organizationNode,
   structuredData,
+  videoNode,
   websiteNode,
   type JsonLdNode,
 } from '@/widgets/seo/seo.utils';
@@ -107,19 +109,22 @@ export async function loadHomePageMetadata(locale: DbLocale): Promise<Metadata> 
  * for empty sections never reach it.
  */
 export function homeStructuredData(
-  { chrome, services }: HomePageData,
+  { chrome, services, courses, videos }: HomePageData,
   locale: DbLocale,
   servicesName: string,
 ): JsonLdNode {
   const site = siteSeo(chrome.layout);
+  const layout = chrome.layout;
   return structuredData([
-    organizationNode({
-      site,
-      layout: chrome.layout,
-      locale,
-      services: services.items,
-      servicesName,
-    }),
+    organizationNode({ site, layout, locale, services: services.items, servicesName }),
     websiteNode(site, locale),
+    // The Academy's courses and the videos, only those written in the
+    // dashboard: the samples an empty section shows are never described.
+    ...(courses.sample
+      ? []
+      : courses.items.map((course) => courseNode({ course, locale, site, layout }))),
+    ...(videos.sample
+      ? []
+      : videos.items.map((video) => videoNode({ video, locale, site, layout }))),
   ]);
 }
