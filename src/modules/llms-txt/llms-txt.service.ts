@@ -7,6 +7,7 @@ import { socialName } from '@/shared/components/social-links';
 import { shortText } from '@/shared/lib/content';
 import type { DbLocale } from '@/shared/types/enums';
 import { toAppLocale } from '@pkg/i18n/routing';
+import { listPublicCourses } from '@/server/published/courses';
 import { listPublicInsights } from '@/server/published/insights';
 import { listPublicServices } from '@/server/published/services';
 import { listPublicTeamMembers } from '@/server/published/team';
@@ -16,7 +17,7 @@ import { loadSiteChrome } from '@/widgets/site-chrome/site-chrome.service';
 /**
  * /llms.txt (llmstxt.org): the site in one short Markdown file, for AI
  * assistants that answer questions about STAGER. Who the company is, its
- * pages in both languages, its services, its people, its articles and how
+ * pages in both languages, its services, its courses, its people, its articles and how
  * to reach it, all from the dashboard, through the same cached, tagged reads
  * as the pages (src/server/published), so a save there shows here at once. Never a sample entry, and a
  * section with nothing in it is left out.
@@ -26,11 +27,12 @@ import { loadSiteChrome } from '@/widgets/site-chrome/site-chrome.service';
 const SUMMARY_MAX = 240;
 
 async function digest(locale: DbLocale) {
-  const [chrome, services, team, insights, t] = await Promise.all([
+  const [chrome, services, team, insights, courses, t] = await Promise.all([
     loadSiteChrome(locale),
     listPublicServices(locale, 100, 0),
     listPublicTeamMembers(locale, 100, 0),
     listPublicInsights(locale, 100, 0),
+    listPublicCourses(locale, 50, 0),
     getTranslations({ locale: toAppLocale(locale) }),
   ]);
   return {
@@ -40,6 +42,7 @@ async function digest(locale: DbLocale) {
     services: services.items,
     team: team.items,
     insights: insights.items,
+    courses: courses.items,
     t,
   };
 }
@@ -71,6 +74,28 @@ function pages(digests: readonly Digest[]): string[] {
       ? [item(link(t('privacy.title'), canonicalUrl(locale, PRIVACY_PATH)))]
       : []),
   ]);
+}
+
+/**
+ * What an assistant needs to answer "when, where and how much" about a
+ * course: its format, its next date, its place and its price. A detail not
+ * set in the dashboard is left out.
+ */
+function courseFacts(course: Digest['courses'][number], t: Digest['t']): string {
+  return [
+    t(`academy.formats.${course.format}`),
+    course.startsAt ? t('academy.starts', { date: course.startsAt }) : null,
+    course.location?.trim() || null,
+    course.duration.trim() || null,
+    course.priceGel === null
+      ? null
+      : course.priceGel === 0
+        ? t('academy.free')
+        : `${course.priceGel} GEL`,
+    course.seatsLeft === 0 ? t('academy.full') : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 }
 
 /** A name, with its other-language spelling beside it when that differs. */
@@ -107,6 +132,23 @@ export async function buildLlmsTxt(): Promise<string> {
       ),
       ...(en.services.length > 0
         ? ['', link(t('nav.services'), `${canonicalUrl('EN', '')}#services`)]
+        : []),
+    ]),
+    ...section(t('academy.title'), [
+      ...en.courses.map((course) =>
+        item(
+          [
+            bilingual(course.title, georgian(ka.courses, course.id)?.title),
+            [shortText(course.summary, SUMMARY_MAX), courseFacts(course, t)]
+              .filter(Boolean)
+              .join(' — '),
+          ]
+            .filter(Boolean)
+            .join(': '),
+        ),
+      ),
+      ...(en.courses.length > 0
+        ? ['', link(t('academy.title'), `${canonicalUrl('EN', '')}#academy`)]
         : []),
     ]),
     ...section(

@@ -164,6 +164,43 @@ test('the home page describes the company from the dashboard, never a sample', a
   expect(page.scripts.join('')).not.toMatch(/sample-/);
 });
 
+test('the home page describes each published course, and each video it can show', async ({
+  request,
+}) => {
+  // Real entries only: the samples an empty Academy or screening room shows
+  // are never described.
+  const [courses, videos] = await Promise.all([
+    request.get('/api/public/courses?locale=EN&limit=50').then((response) => response.json()),
+    request.get('/api/public/videos?locale=EN&limit=50').then((response) => response.json()),
+  ]);
+  const page = await read(request, '/en');
+
+  const described = nodes(page.graphs, 'Course') as Array<Record<string, unknown>>;
+  expect(described.map((course) => course.name)).toEqual(
+    courses.items.map((course: { title: string }) => course.title),
+  );
+  for (const course of described) {
+    expect(course.description).toBeTruthy();
+    expect(course.provider).toMatchObject({ '@type': 'Organization' });
+    expect(['onsite', 'online']).toContain(
+      (course.hasCourseInstance as { courseMode: string }).courseMode,
+    );
+    const offer = course.offers as { priceCurrency: string } | undefined;
+    if (offer) expect(offer.priceCurrency).toBe('GEL');
+  }
+
+  const films = nodes(page.graphs, 'VideoObject') as Array<Record<string, unknown>>;
+  const titles = videos.items.map((video: { title: string }) => video.title);
+  for (const film of films) {
+    expect(titles).toContain(film.name);
+    expect((film.thumbnailUrl as string[]).length).toBe(1);
+    expect(film.uploadDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(film.embedUrl ?? film.contentUrl).toBeTruthy();
+  }
+  if (videos.total === 0) expect(films).toHaveLength(0);
+  expect(page.scripts.join('')).not.toMatch(/sample-/);
+});
+
 test('the team page lists each published member as a person', async ({ request }) => {
   const team = await (await request.get('/api/public/team?locale=EN&limit=100')).json();
   const people = nodes((await read(request, '/en/team')).graphs, 'Person');
@@ -229,6 +266,9 @@ test('/llms.txt describes the site for AI assistants, from the dashboard', async
   expect(text).toMatch(/\]\(https?:\/\/[^/]+\/ka\)/);
   for (const service of services.items) expect(text).toContain(`**${service.title}**`);
   for (const article of insights.items) expect(text).toContain(`/en/insights/${article.slug})`);
+  const courses = await request.get('/api/public/courses?locale=EN&limit=50').then((r) => r.json());
+  for (const course of courses.items) expect(text).toContain(`**${course.title}**`);
+  expect(text.includes('#academy)')).toBe(courses.total > 0);
   if (layout.contactEmail) expect(text).toContain(`mailto:${layout.contactEmail}`);
   // A page with nothing to show is not offered.
   expect(text.includes('/en/team)')).toBe(team.total > 0);
