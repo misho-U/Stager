@@ -82,3 +82,48 @@ export function isMissingTable(error: unknown): boolean {
 export function isMissingColumn(error: unknown): boolean {
   return describeDbError(error)?.code === 'P2022';
 }
+
+/**
+ * A Prisma error as it may be logged or reported: its class, code and model.
+ * Never its message, which quotes the failed query's values: a contact
+ * form that failed to save would put the visitor's name, email, phone and
+ * message in the log and in Sentry. Null for anything that is not Prisma's.
+ */
+export type DbErrorSummary = { name: string; code: string | null; model: string | null };
+
+export function prismaErrorSummary(error: unknown): DbErrorSummary | null {
+  if (!(error instanceof Error)) return null;
+  const { code, meta } = error as Error & { code?: unknown; meta?: { modelName?: unknown } };
+  // The driver adapter's own error quotes Postgres, which names the values
+  // too ("Key (email)=(…) already exists").
+  const isPrisma =
+    error.name.startsWith('PrismaClient') ||
+    error.name === 'DriverAdapterError' ||
+    describeDbError(error) !== null;
+  if (!isPrisma) return null;
+  return {
+    name: error.name,
+    code: typeof code === 'string' ? code : null,
+    model: typeof meta?.modelName === 'string' ? meta.modelName : null,
+  };
+}
+
+/** What a withheld Prisma error says instead of its message. */
+export function prismaErrorText({ code, model }: DbErrorSummary): string {
+  return `${code ?? 'no code'} on ${model ?? 'an unknown model'} (message withheld)`;
+}
+
+/**
+ * The error to report in place of a Prisma one: same class name and stack
+ * frames, its message replaced by code and model. The first line of a stack
+ * repeats the message, and so does every line before the first frame.
+ */
+export function withheldPrismaError(error: unknown): unknown {
+  const summary = prismaErrorSummary(error);
+  if (!summary || !(error instanceof Error)) return error;
+  const withheld = new Error(prismaErrorText(summary));
+  withheld.name = summary.name;
+  const frames = (error.stack ?? '').split('\n').filter((line) => /^\s+at /.test(line));
+  withheld.stack = [`${withheld.name}: ${withheld.message}`, ...frames].join('\n');
+  return withheld;
+}

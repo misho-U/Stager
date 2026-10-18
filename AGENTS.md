@@ -1041,7 +1041,15 @@ the migrations match `schema.prisma` (`prisma migrate diff … --exit-code`).
 - **What is never sent:** cookies, request bodies, query strings (also in
   breadcrumbs), and of a user anything but an id (`scrubEvent`,
   `scrubBreadcrumb`). No session replay, no performance tracing.
-  `sendDefaultPii` stays false.
+  `sendDefaultPii` stays false. Email addresses and phone numbers are
+  redacted from an event's message, exception values, extra data and
+  breadcrumbs (`pkg/monitoring/redact.ts`): an error's own words can quote
+  what a visitor typed.
+- **A database error is logged and reported by code and model, never by its
+  message** (`prismaErrorSummary`, `withheldPrismaError` in `pkg/db/errors.ts`):
+  Prisma's message prints the failed query's values. Prisma's own error log
+  is off in production for the same reason. A Resend refusal is logged by its
+  code (`describeMailRejection`), never its message, which names the address.
 - **Browser events go through `/monitoring`** on the site itself, past ad
   blockers; the proxy matcher must keep skipping that path.
 - **Server events are flushed in `after()`**: Vercel freezes a function once

@@ -1,4 +1,5 @@
 import { IS_PRODUCTION } from '@pkg/config/runtime';
+import { prismaErrorSummary, prismaErrorText, withheldPrismaError } from '@pkg/db/errors';
 import { reportServerEvent } from '@pkg/monitoring/server';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
@@ -42,6 +43,7 @@ type SerialisedError = {
   name: string;
   message: string;
   code?: string;
+  model?: string;
   status?: number;
   stack?: string;
   cause?: SerialisedError;
@@ -49,6 +51,20 @@ type SerialisedError = {
 
 function describeError(error: unknown, depth: number): SerialisedError {
   if (!(error instanceof Error)) return { name: 'UnknownError', message: String(error) };
+
+  // A database error by its code and model only: its message, its stack's
+  // first line and its cause all quote the values of the query that failed.
+  const db = prismaErrorSummary(error);
+  if (db) {
+    const withheld = withheldPrismaError(error) as Error;
+    return {
+      name: db.name,
+      message: prismaErrorText(db),
+      ...(db.code ? { code: db.code } : {}),
+      ...(db.model ? { model: db.model } : {}),
+      stack: withheld.stack,
+    };
+  }
 
   const extra = error as Error & { code?: unknown; status?: unknown };
   return {

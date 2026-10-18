@@ -5,6 +5,7 @@ import { Resend } from 'resend';
 import { serverEnv } from '@pkg/config/env.server';
 import { withTimeout } from '@pkg/http/timeout';
 import { logger, serialiseError } from '@pkg/logger';
+import { describeMailRejection } from '@pkg/mail/rejection';
 
 let client: Resend | null = null;
 
@@ -80,8 +81,11 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
     );
 
     if (error) {
-      logger.error('mail.send_rejected', { purpose: input.purpose, reason: error.message });
-      return { ok: false, error: error.message };
+      // By Resend's code, never its message, which can name the address it
+      // refused.
+      const rejection = describeMailRejection(error);
+      logger.error('mail.send_rejected', { purpose: input.purpose, ...rejection });
+      return { ok: false, error: `Email was rejected (${rejection.code})` };
     }
 
     return { ok: true, id: data?.id ?? null };

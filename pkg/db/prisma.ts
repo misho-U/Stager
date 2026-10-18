@@ -97,7 +97,10 @@ const createPrismaClient = () => {
 
   return new PrismaClient({
     adapter,
-    log: isProduction ? ['error'] : ['warn', 'error'],
+    // Nothing of Prisma's own in production: its error lines print the failed
+    // query's values. Every error still reaches its caller, which logs it by
+    // code and model (pkg/logger, serialiseError).
+    log: isProduction ? [] : ['warn', 'error'],
     transactionOptions: POOL.transactionOptions,
   });
 };

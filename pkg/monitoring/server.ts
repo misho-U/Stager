@@ -3,6 +3,7 @@ import 'server-only';
 import type * as SentrySdk from '@sentry/nextjs';
 import { after } from 'next/server';
 
+import { withheldPrismaError } from '@pkg/db/errors';
 import { MONITORING_ON } from '@pkg/monitoring/options';
 
 type Context = Record<string, unknown>;
@@ -27,9 +28,14 @@ function send(capture: (Sentry: typeof SentrySdk) => void): void {
   }
 }
 
-/** A thrown error, with its stack: grouped in Sentry by where it came from. */
+/**
+ * A thrown error, with its stack: grouped in Sentry by where it came from. A
+ * database error goes by its code and model, never its message, which
+ * quotes the values of the query that failed.
+ */
 export function reportServerError(error: unknown, context?: Context): void {
-  send((Sentry) => Sentry.captureException(error, context ? { extra: context } : undefined));
+  const reported = withheldPrismaError(error);
+  send((Sentry) => Sentry.captureException(reported, context ? { extra: context } : undefined));
 }
 
 /** A logged failure (logger.error): grouped in Sentry by its event name. */
