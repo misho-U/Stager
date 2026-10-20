@@ -23,7 +23,7 @@ type ProjectSheetProps = {
  * .ct-project). A project with no summary has nothing to open.
  */
 export function ProjectSheet({ title, meta, summary, labels, children }: ProjectSheetProps) {
-  const { dialog, open, onCardClick, onClose, requestClose } = useProjectSheet();
+  const { dialog, isOpen, open, onCardClick, onClose, requestClose } = useProjectSheet();
   const titleId = useId();
 
   if (!summary) return <article className="ct-project">{children}</article>;
@@ -53,30 +53,32 @@ export function ProjectSheet({ title, meta, summary, labels, children }: Project
         onClick={(event) => {
           if (event.target === event.currentTarget) requestClose();
         }}
-        aria-labelledby={titleId}
+        aria-labelledby={isOpen ? titleId : undefined}
         data-lenis-prevent
         data-testid="project-sheet"
         className="registration-dialog ct-project-sheet bg-surface text-ink"
       >
-        <div className="flex flex-col gap-6 p-6 sm:p-10">
-          <div className="flex items-start justify-between gap-6">
-            <div className="flex flex-col gap-2">
-              {meta ? <p className="text-body-sm text-ink-muted">{meta}</p> : null}
-              <h2 id={titleId} className="text-title font-heading text-balance">
-                {title}
-              </h2>
+        {isOpen ? (
+          <div className="flex flex-col gap-6 p-6 sm:p-10">
+            <div className="flex items-start justify-between gap-6">
+              <div className="flex flex-col gap-2">
+                {meta ? <p className="text-body-sm text-ink-muted">{meta}</p> : null}
+                <h2 id={titleId} className="text-title font-heading text-balance">
+                  {title}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={requestClose}
+                aria-label={labels.close}
+                className="border-line-input hover:bg-surface-muted inline-flex size-11 shrink-0 items-center justify-center rounded-full border transition-colors"
+              >
+                <XIcon aria-hidden weight="bold" />
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={requestClose}
-              aria-label={labels.close}
-              className="border-line-input hover:bg-surface-muted inline-flex size-11 shrink-0 items-center justify-center rounded-full border transition-colors"
-            >
-              <XIcon aria-hidden weight="bold" />
-            </button>
+            <p className="text-body-lg text-ink-muted text-pretty whitespace-pre-line">{summary}</p>
           </div>
-          <p className="text-body-lg text-ink-muted text-pretty whitespace-pre-line">{summary}</p>
-        </div>
+        ) : null}
       </dialog>
     </article>
   );

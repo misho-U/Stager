@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, type MouseEvent } from 'react';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
 
 import { getSmoothScroll } from '@/widgets/smooth-scroll/smooth-scroll.service';
 
@@ -15,17 +15,22 @@ const POINTER_SHOWS_SUMMARY = '(hover: hover) and (pointer: fine)';
  *
  * The sheet is a native <dialog>: `showModal()` makes the page inert, holds
  * focus, closes on Escape and hands focus back. While it is open the page
- * does not glide on underneath (Lenis), as with the course drawer.
+ * does not glide on underneath (Lenis), as with the course drawer. Its
+ * contents exist only while it is open: closed, the page would hold every
+ * project's title twice, for search engines and for anyone finding it.
  */
 export function useProjectSheet() {
   const dialog = useRef<HTMLDialogElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
-  const open = () => {
+  useEffect(() => {
     const element = dialog.current;
-    if (!element || element.open) return;
+    if (!isOpen || !element || element.open) return;
     element.showModal();
     getSmoothScroll()?.stop();
-  };
+  }, [isOpen]);
+
+  const open = () => setIsOpen(true);
 
   /**
    * A tap anywhere on the card opens it, except on a control of its own (a
@@ -40,9 +45,14 @@ export function useProjectSheet() {
 
   return {
     dialog,
+    isOpen,
     open,
     onCardClick,
-    onClose: () => getSmoothScroll()?.start(),
+    // Escape, the close button and a tap outside all end here.
+    onClose: () => {
+      setIsOpen(false);
+      getSmoothScroll()?.start();
+    },
     requestClose: () => dialog.current?.close(),
   };
 }
