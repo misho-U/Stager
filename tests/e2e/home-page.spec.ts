@@ -502,7 +502,7 @@ test.describe('the company, its services and its projects', () => {
     await expect(page.locator('#services a')).toHaveCount(0);
   });
 
-  test("a project's summary waits for the pointer, or reads under its name on a touch screen", async ({
+  test("a project's summary waits for the pointer, or opens in a sheet on a touch screen", async ({
     page,
   }, testInfo) => {
     await openHome(page, 'en');
@@ -513,6 +513,8 @@ test.describe('the company, its services and its projects', () => {
     await card.scrollIntoViewIfNeeded();
 
     if (testInfo.project.name === 'chromium') {
+      // A mouse needs no button: the summary comes to the pointer.
+      await expect(card.getByTestId('project-open')).toBeHidden();
       await expect(summary).toHaveCSS('opacity', '0');
       await card.locator('.ct-project-frame').hover();
       await expect(summary).toHaveCSS('opacity', '1');
@@ -523,19 +525,59 @@ test.describe('the company, its services and its projects', () => {
       ]);
       expect(summaryBox?.y ?? 0).toBeLessThan(titleBox?.y ?? 0);
     } else {
-      // No hover on a touch screen: always shown, under the name.
-      await expect(summary).toHaveCSS('opacity', '1');
-      const [summaryBox, titleBox] = await Promise.all([
-        summary.boundingBox(),
-        title.boundingBox(),
-      ]);
-      expect(summaryBox?.y ?? 0).toBeGreaterThan(titleBox?.y ?? 0);
+      // No hover on a touch screen: the card shows its photo and name only,
+      // and a tap anywhere on it opens what the project was about in a sheet
+      // (the owner, on a phone).
+      await expect(summary).toBeHidden();
+      const text = ((await summary.textContent()) ?? '').trim();
+      const name = ((await title.textContent()) ?? '').trim();
+      const sheet = card.getByTestId('project-sheet');
+      await title.tap();
+      await expect(sheet).toBeVisible();
+      await expect(sheet.getByRole('heading', { name })).toBeVisible();
+      await expect(sheet).toContainText(text.slice(0, 40));
+      await sheet.getByRole('button', { name: 'Close' }).tap();
+      await expect(sheet).toBeHidden();
+
+      // A keyboard or a screen reader opens it with its button.
+      await card.getByTestId('project-open').click();
+      await expect(sheet).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(sheet).toBeHidden();
+      await expect(card.getByTestId('project-open')).toBeFocused();
     }
   });
 
   test('projects have no page of their own: the cards link nowhere', async ({ page }) => {
     await openHome(page, 'en');
     await expect(page.locator('#projects a')).toHaveCount(0);
+  });
+
+  test('on a touch screen, a photo arrow moves the photos and opens nothing', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name === 'chromium', 'Only a touch screen opens the sheet.');
+    await openHome(page, 'en');
+    const card = page
+      .locator('.ct-project:has([data-testid="project-summary"]):has(.ct-photos-next)')
+      .first();
+    test.skip((await card.count()) === 0, 'No project with a summary has several photos.');
+    await card.scrollIntoViewIfNeeded();
+    await card.locator('.ct-photos-next').tap();
+    await expect(card.getByTestId('project-sheet')).toBeHidden();
+  });
+
+  test('"Who we are" links to the team page exactly when there is one', async ({ page }) => {
+    await openHome(page, 'en');
+    // The team page exists once someone on the team is published; the menu
+    // says so with its own link (site-chrome, teamHref).
+    const menuLink = page.locator('[data-site] a[href="/en/team"]:not([data-testid="about-team"])');
+    const link = page.locator('#about').getByTestId('about-team');
+    if ((await menuLink.count()) === 0) {
+      await expect(link).toHaveCount(0);
+    } else {
+      await expect(link).toHaveAttribute('href', '/en/team');
+    }
   });
 });
 

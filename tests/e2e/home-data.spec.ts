@@ -547,4 +547,40 @@ test.describe('team members added in the dashboard', () => {
       await revalidate();
     }
   });
+
+  test('"Who we are" on the home page leads to the team', async ({ page, request }) => {
+    const prisma = testPrisma();
+    const revalidate = () =>
+      request.post('/api/dev/revalidate-probe', {
+        data: { entity: 'teamMember' },
+        headers: { 'sec-fetch-site': 'same-origin' },
+      });
+    const member = await prisma.teamMember.create({
+      data: {
+        slug: `e2e-about-team-${Date.now()}`,
+        status: 'PUBLISHED',
+        order: 10_000,
+        translations: {
+          create: [
+            { locale: 'EN', name: 'E2E About Member', position: 'Head chef' },
+            { locale: 'KA', name: 'E2E About Member', position: 'შეფ-მზარეული' },
+          ],
+        },
+      },
+    });
+
+    try {
+      expect((await revalidate()).ok()).toBeTruthy();
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.goto('/en');
+      const link = page.locator('#about').getByTestId('about-team');
+      await expect(link).toHaveText(/Meet the team/);
+      await link.click();
+      await expect(page).toHaveURL(/\/en\/team$/);
+      await expect(page.getByTestId('team-list')).toContainText('E2E About Member');
+    } finally {
+      await prisma.teamMember.delete({ where: { id: member.id } });
+      await revalidate();
+    }
+  });
 });

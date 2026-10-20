@@ -22,6 +22,7 @@ import { useStatusOptions, useVideoKindOptions } from '@/shared/lib/use-enum-opt
 import type { DbLocale } from '@/shared/types/enums';
 import { useUnsavedChangesGuard } from '@/shared/lib/use-unsaved-changes-guard';
 import { MediaPicker } from '@/widgets/media-picker/media-picker.module';
+import { VideoFrame } from '@/widgets/video-frame/video-frame.module';
 import { VideoUpload } from '@/widgets/video-upload/video-upload.module';
 import { MAX_VIDEO_UPLOAD_BYTES } from '@pkg/blob/constraints';
 
@@ -163,6 +164,21 @@ export function AdminVideoFormModule({ videoId }: { videoId?: string }) {
                 />
               )}
             />
+
+            {source === 'FILE' && file ? (
+              <VideoFrame
+                src={file.url}
+                // The cover's alt text: the title, Georgian first, as the site reads.
+                alt={
+                  form.getValues('translations.KA.title') ||
+                  form.getValues('translations.EN.title') ||
+                  ''
+                }
+                onPicked={(mediaId) =>
+                  form.setValue('posterMediaId', mediaId, { shouldDirty: true })
+                }
+              />
+            ) : null}
           </div>
         </Panel>
 
