@@ -24,6 +24,7 @@ import type { PublicServiceListItem } from '@/entity/service/model/service.model
 import type { PublicStat } from '@/entity/stat/model/stat.model';
 import type { PublicVideo } from '@/entity/video/model/video.model';
 import { ProjectPhotos } from '@/modules/home-page/elements/chefs-table/elements/project-photos/project-photos.module';
+import { ProjectSheet } from '@/modules/home-page/elements/chefs-table/elements/project-sheet/project-sheet.module';
 import {
   PlayButton,
   ScreeningPlayer,
@@ -410,6 +411,18 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                         />
                       </div>
                     )}
+                    {chrome.teamHref ? (
+                      <div data-reveal>
+                        <SiteLink
+                          href={chrome.teamHref}
+                          data-testid="about-team"
+                          className={BUTTON_OUTLINE}
+                        >
+                          {t('home.meetTeam')}
+                          <ArrowRightIcon aria-hidden />
+                        </SiteLink>
+                      </div>
+                    ) : null}
                     {section.intro.media ? (
                       <div data-reveal>
                         <MediaFrame
@@ -511,7 +524,8 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
         ) : null}
 
         {/* --- Projects: a card each, its photos one after another, what it
-            was about shown under the pointer --- */}
+            was about shown under the pointer, or in a sheet a tap opens on a
+            touch screen --- */}
         {showProjects ? (
           <section id="projects" aria-labelledby="projects-title" className="px-gutter py-section">
             <div className="max-w-page mx-auto flex flex-col gap-12">
@@ -536,7 +550,12 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                     const focusable = project.summary !== '' && photos.length < 2;
                     return (
                       <li key={project.id} data-reveal>
-                        <article className="ct-project">
+                        <ProjectSheet
+                          title={project.title}
+                          meta={meta}
+                          summary={project.summary}
+                          labels={{ open: t('home.projectMore'), close: t('home.close') }}
+                        >
                           <div
                             role={focusable ? 'group' : undefined}
                             aria-label={focusable ? project.title : undefined}
@@ -588,12 +607,7 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
                             </h3>
                             {meta ? <p className="text-body-sm text-ink-muted">{meta}</p> : null}
                           </div>
-                          {project.summary ? (
-                            <p data-testid="project-summary" className="ct-project-summary">
-                              {project.summary}
-                            </p>
-                          ) : null}
-                        </article>
+                        </ProjectSheet>
                       </li>
                     );
                   })}

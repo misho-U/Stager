@@ -786,12 +786,16 @@
 
   /* A project's card: its photos, its name and details under them, and
      what it was about. On a screen with a mouse, that summary waits on the
-     photos and shows under the pointer, or with focus inside the card; a
-     touch screen has no hover, so there it reads under the name. The frame
-     and the summary share a grid cell to overlap. */
+     photos and shows under the pointer, or with focus inside the card. A
+     touch screen has no hover: there the card shows its photo and name
+     only, and a tap opens the summary in a sheet (ProjectSheet), its button
+     under the name. The frame and the summary share a grid cell to overlap. */
   [data-site] .ct-project {
     display: grid;
-    grid-template-areas: 'photo' 'text' 'summary';
+    grid-template-areas: 'photo' 'text' 'open';
+  }
+  [data-site] .ct-project[data-project-sheet] {
+    cursor: pointer;
   }
   [data-site] .ct-project-frame {
     grid-area: photo;
@@ -801,22 +805,37 @@
     grid-area: text;
   }
   [data-site] .ct-project-summary {
-    grid-area: summary;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
-    overflow: hidden;
-    padding-top: 0.5rem;
-    color: var(--color-ink-muted);
+    display: none;
+  }
+  [data-site] .ct-project-open {
+    grid-area: open;
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    color: var(--color-accent);
     font-size: var(--text-body-sm);
     line-height: var(--text-body-sm--line-height);
-    text-wrap: pretty;
+    font-weight: 500;
   }
   @media (hover: hover) and (pointer: fine) {
     [data-site] .ct-project {
       grid-template-areas: 'photo' 'text';
     }
+    [data-site] .ct-project[data-project-sheet] {
+      cursor: auto;
+    }
+    [data-site] .ct-project-open {
+      display: none;
+    }
     [data-site] .ct-project-summary {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      font-size: var(--text-body-sm);
+      line-height: var(--text-body-sm--line-height);
+      text-wrap: pretty;
       position: relative;
       z-index: 1;
       grid-area: photo;
@@ -841,6 +860,15 @@
     [data-site] .ct-project:is(:hover, :focus-within) .ct-project-summary {
       opacity: 1;
       translate: 0 0;
+    }
+  }
+
+  /* A project's sheet (ProjectSheet) is the course drawer, sized to what it
+     says: a few lines of summary should not fill the phone's screen. It
+     still stops at the drawer's height and scrolls past it. */
+  [data-site] dialog.ct-project-sheet {
+    @variant max-sm {
+      height: fit-content;
     }
   }
 

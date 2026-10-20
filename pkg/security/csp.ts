@@ -43,7 +43,9 @@ function buildDirectives(scriptSrc: string[]): Record<string, string[]> {
       'https://*.public.blob.vercel-storage.com',
       'https://i.ytimg.com',
     ],
-    'media-src': ["'self'", 'https://*.public.blob.vercel-storage.com'],
+    // `blob:`: a video file on the owner's own computer, opened in the
+    // dashboard to take a cover from one of its frames (widgets/video-frame).
+    'media-src': ["'self'", 'blob:', 'https://*.public.blob.vercel-storage.com'],
     'connect-src': [
       "'self'",
       supabaseOrigin,

@@ -447,7 +447,7 @@
       },
       "poster": {
         "label": "Cover image",
-        "hintFile": "Shown before Play. Without one the card shows a plain placeholder: the file itself is only loaded when Play is pressed.",
+        "hintFile": "Shown before Play. Pick an image, or take a frame from the video below. Without one the card shows a plain placeholder: the file itself is only loaded when Play is pressed.",
         "hintYoutube": "Optional. Shown before Play instead of YouTube's own thumbnail."
       },
       "kind": {
@@ -459,7 +459,19 @@
         "hint": "When it came out. The newest video is shown first."
       },
       "durationMinutes": "Length (minutes)",
-      "submit": "Save video"
+      "submit": "Save video",
+      "frame": {
+        "open": "Take the cover from the video",
+        "hide": "Close",
+        "intro": "Play the video and pause on the moment you want, then press “Use this frame”. It becomes the cover on the site; Save to keep it.",
+        "use": "Use this frame",
+        "uploading": "Uploading… {progress}%",
+        "local": "Open the file from this computer",
+        "localHint": "If the frame cannot be read from the stored video, open the same file from your computer: nothing is uploaded but the frame.",
+        "unreadable": "This browser could not read a frame of the stored video. Open the same file from your computer instead.",
+        "notReady": "The video has not loaded yet. Play it, pause on a moment, and try again.",
+        "done": "The frame is now the cover. Press Save to keep it."
+      }
     }
   },
   "videoKinds": {
