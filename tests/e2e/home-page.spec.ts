@@ -101,6 +101,69 @@ for (const locale of LOCALES) {
   });
 }
 
+/**
+ * The contrast scan above only sees what the database holds, and a fresh one
+ * has no video with a YouTube link, so its "YouTube" links never showed there
+ * (the pill's night fill measured 1:1 for months). Two are published here, so
+ * the newest's pill on its frame and an older one's link by its title are
+ * both on the page while it is scanned.
+ */
+test.describe('with YouTube videos published', () => {
+  test.beforeEach(() => {
+    test.skip(!DB_WRITES_ALLOWED, DB_WRITES_SKIP_REASON);
+  });
+  test.afterAll(disconnectTestPrisma);
+
+  const revalidateVideos = (request: APIRequestContext) =>
+    request.post('/api/dev/revalidate-probe', {
+      data: { entity: 'video' },
+      headers: { 'sec-fetch-site': 'same-origin' },
+    });
+
+  test('the YouTube links meet the same contrast bar', async ({ page, request }, testInfo) => {
+    const prisma = testPrisma();
+    // Per project: chromium and mobile each publish and remove their own.
+    const stamp = `${testInfo.project.name}-${Date.now()}`;
+    const videos = await Promise.all(
+      [0, 1].map((index) => {
+        const slug = `e2e-youtube-${stamp}-${index}`;
+        const title = `E2E YouTube video ${index + 1}`;
+        return prisma.video.create({
+          data: {
+            slug,
+            status: 'PUBLISHED',
+            kind: 'EPISODE',
+            // The first is the newest, shown large with the pill on its frame.
+            publishedAt: new Date(Date.now() - index * 60_000),
+            durationMinutes: 12,
+            youtubeUrl: 'https://www.youtube.com/watch?v=e2eE2Ee2E2e',
+            translations: {
+              create: [
+                { locale: 'EN', title, summary: 'An entry made by an end-to-end test.' },
+                { locale: 'KA', title, summary: '' },
+              ],
+            },
+          },
+        });
+      }),
+    );
+
+    try {
+      expect((await revalidateVideos(request)).ok()).toBeTruthy();
+      for (const locale of LOCALES) {
+        await openHome(page, locale);
+        const links = page.locator('#videos a[href^="https://www.youtube.com/watch"]:visible');
+        await expect(links.first()).toBeVisible();
+        expect(await links.count()).toBeGreaterThanOrEqual(2);
+        expect(await contrastFindings(page)).toEqual([]);
+      }
+    } finally {
+      await prisma.video.deleteMany({ where: { id: { in: videos.map((video) => video.id) } } });
+      await revalidateVideos(request);
+    }
+  });
+});
+
 test('Georgian text is never capitalised, slanted or cramped', async ({ page }) => {
   // Chromium leaves Mkhedruli unchanged under `uppercase`, faked italics
   // look broken in Georgian, and tall Georgian letters collide below the
