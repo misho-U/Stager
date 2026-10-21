@@ -577,7 +577,11 @@
     font-weight: 500;
   }
 
-  /* "YouTube": a glass pill on a frame's corner, or a quiet link by a title. */
+  /* "YouTube": a pill on a frame's corner, or a quiet link by a title. The
+     pill is a control on a photo, so it is filled like the project photos'
+     arrows: a night-glass fill vanished into a dark poster, and measured 1:1
+     against the night around the frame (WCAG asks 3:1 for a control's
+     boundary). .ct-tag, the label on the other corner, stays glass. */
   [data-site] .ct-youtube {
     z-index: var(--z-raised);
     display: inline-flex;
@@ -586,15 +590,16 @@
     min-height: 2.25rem;
     padding-inline: 0.875rem;
     border-radius: 9999px;
-    background-color: color-mix(in oklab, var(--ct-night) 72%, transparent);
-    backdrop-filter: blur(8px);
-    color: var(--color-brand-cream-light);
+    background-color: var(--color-primary);
+    box-shadow: var(--shadow-card);
+    color: var(--color-on-primary);
     font-size: var(--text-body-sm);
     font-weight: 500;
+    transition: background-color var(--duration-base) var(--ease-brand);
 
     @media (hover: hover) {
       &:hover {
-        background-color: var(--ct-night);
+        background-color: var(--color-primary-hover);
       }
     }
   }
