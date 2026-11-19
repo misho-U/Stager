@@ -715,12 +715,16 @@ and CLAUDE.md win wherever they disagree. The resolved conflicts:
   more than a line read badly in both scripts.
 - **No custom cursors**, and no scroll cues: the skill bans both, and round 3
   showed why (a cursor disc that hid what it pointed at).
-- **Sample content is TEMPORARY and says so.** While the dashboard holds no
-  figures, courses or videos, `home-page.samples.ts` supplies invented
-  entries, and every section showing them carries a "Sample" badge
-  (`shared/components/sample-badge.tsx`). The first real entry replaces them
-  all; a failed read shows the failure, never samples. They must be replaced
-  by dashboard data before launch, never shipped as content.
+- **Samples never reach the live site.** Where the dashboard holds no
+  figures, courses or videos, the production deployment hides the section
+  (and the Academy's menu link and "Next course" teaser). Everywhere else
+  (local, CI, previews), `home-page.samples.ts` fills it with invented
+  entries so the design can be judged, each section showing them marked
+  with a "Sample" badge (`shared/components/sample-badge.tsx`). The gate is
+  `SAMPLES_ALLOWED` in `home-page.service.ts`: without it the live
+  Academy went back to six invented courses, with prices and Register
+  buttons, the day its only real course started. The first real entry
+  replaces the samples; a failed read shows the failure, never samples.
 - **Out of scope:** the admin dashboard — the skill excludes admin panels.
 
 ### Motion
@@ -1066,9 +1070,10 @@ it verified in production and what it left open: `docs/AUDIT-HANDOFF.md`.
 Courses (with categories the owner adds) and videos have their tables,
 dashboard screens and public endpoints (`/api/public/courses`, which lists a
 course until its start date has passed, and `/api/public/videos`, newest
-first). The home page reads them; a section the dashboard has nothing for yet
-shows samples marked "Sample" (`orSamples`, `home-page.samples.ts`), and a
-failed read shows the failure, never samples.
+first). The home page reads them; a section the dashboard has nothing for is
+hidden on the live site (off it, samples marked "Sample" stand in:
+`orSamples`, `SAMPLES_ALLOWED`), and a failed read shows the failure, never
+samples.
 
 **The public site: one design, "Chef's Table" (dark)**, chosen by the client
 in October 2026 (`src/modules/home-page/elements/chefs-table`, `site.css`).
@@ -1102,7 +1107,7 @@ PRIVACY), each section with only the fields the site shows
 (`sectionFields`); ABOUT, SERVICES, PROJECTS and CONTACT stay in the
 database, unused.
 
-Still open: the real figures (the samples are placeholders, marked); the
+Still open: the
 policy's text (the client's lawyer); the BPG Nino Mtavruli licence; the logo
 artwork for the favicon and share card (set in type until then). The site
 is open to search engines since the launch (`OPEN_TO_SEARCH`, § Search
