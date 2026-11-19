@@ -25,6 +25,7 @@ import {
   type JsonLdNode,
 } from '@/widgets/seo/seo.utils';
 import { loadSiteChrome } from '@/widgets/site-chrome/site-chrome.service';
+import { serverEnv } from '@pkg/config/env.server';
 
 /**
  * Server-side data loading for the home page.
@@ -53,6 +54,14 @@ const COURSES_SHOWN = 50;
 const SERVICES_SHOWN = 100;
 
 /**
+ * Sample entries fill empty sections everywhere but the production deployment
+ * (local, CI and previews keep them, so the design can still be judged).
+ * On stager.ge an empty section is hidden rather than filled with invented
+ * courses a visitor could try to register for.
+ */
+const SAMPLES_ALLOWED = serverEnv.VERCEL_ENV !== 'production';
+
+/**
  * Once per render (React `cache`): the page and its metadata read the same
  * data. A course leaves its list once its start date has passed: the daily job
  * purges the list just after Tbilisi midnight (COURSE_CACHE_LIFE).
@@ -74,12 +83,12 @@ export const loadHomePageData = cache(async (locale: DbLocale) => {
   return {
     chrome,
     page,
-    stats: await orSamples(stats.items, () => sampleStats(locale)),
+    stats: await orSamples(stats.items, () => sampleStats(locale), SAMPLES_ALLOWED),
     projects,
     services,
     insights,
-    courses: await orSamples(courses.items, () => sampleCourses(locale)),
-    videos: await orSamples(videos.items, () => sampleVideos(locale)),
+    courses: await orSamples(courses.items, () => sampleCourses(locale), SAMPLES_ALLOWED),
+    videos: await orSamples(videos.items, () => sampleVideos(locale), SAMPLES_ALLOWED),
   };
 });
 
