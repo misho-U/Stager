@@ -234,7 +234,8 @@ Before launch:
     heading in Georgian (Page copy → Home, Georgian tab: it is still the
     English line), the address and phone (Site settings: structured data and
     local search need them), the company's figures and the Academy's courses
-    (until they exist the page shows marked samples), and optionally each
+    (until they exist the page showed marked samples; since November 2026
+    the live site hides an empty section instead), and optionally each
     page's own search title and description (Page copy; without them the
     site's are used).
 13. **Launch** (done, October 2026): set `OPEN_TO_SEARCH` to true

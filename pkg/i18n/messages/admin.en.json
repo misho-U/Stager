@@ -322,7 +322,7 @@
   },
   "courses": {
     "title": "Courses",
-    "description": "STAGER Academy courses. A course leaves the site by itself once its start date has passed.",
+    "description": "STAGER Academy courses. A course leaves the site by itself once its start date has passed. With no course to come, the Academy is hidden on the site.",
     "new": "New course",
     "categoriesLink": "Course categories",
     "emptyTitle": "No courses yet",
@@ -411,7 +411,7 @@
   },
   "videos": {
     "title": "Videos",
-    "description": "Videos from STAGER's YouTube channel or uploaded here, newest first.",
+    "description": "Videos from STAGER's YouTube channel or uploaded here, newest first. With none, the section is hidden on the site.",
     "new": "New video",
     "emptyTitle": "No videos yet",
     "noLink": "No video yet",
@@ -598,7 +598,7 @@
   },
   "companyStats": {
     "title": "Company in figures",
-    "description": "The figures under the first section of the home page: years of experience, projects delivered and the like. Until you add one, the site shows sample figures marked “Sample”.",
+    "description": "The figures under the first section of the home page: years of experience, projects delivered and the like. While none is shown, the site hides this band.",
     "back": "← Page copy",
     "editTitle": "Edit figure",
     "addTitle": "Add a figure",

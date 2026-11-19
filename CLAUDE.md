@@ -156,8 +156,9 @@ Do not add a library outside this list without raising it first.
 - **The site is open to search engines: `OPEN_TO_SEARCH` is true**
   (`widgets/seo/seo.constants.ts`), flipped at launch on the owner's word;
   only they may turn it off again. Previews and local servers stay
-  `noindex` regardless. A sample shown in an empty section is now indexed
-  like real content, so a section should never stand empty. Every public page builds its metadata with
+  `noindex` regardless. The live site never shows a sample: an empty
+  section is hidden there (`SAMPLES_ALLOWED`, AGENTS.md § Design skill).
+  Every public page builds its metadata with
   `pageMetadata()` and its JSON-LD from dashboard data only, never a sample. A
   new public page also goes in the sitemap's `pages()` and in `/llms.txt`
   (AGENTS.md § Search engines).
