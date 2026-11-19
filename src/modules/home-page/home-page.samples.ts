@@ -13,7 +13,8 @@ import { collectionTag, COURSE_CACHE_LIFE } from '@pkg/cache/tags';
  * The design needs some to be judged before the dashboard holds real ones.
  * These entries are invented, so every section that shows them says so on the
  * page ("Sample"), and the first real entry in the dashboard replaces them
- * (`orSamples`, home-page.service.ts). Never ship them to production as content.
+ * (`orSamples`, home-page.service.ts). The production deployment never shows
+ * them: there an empty section is hidden instead (`SAMPLES_ALLOWED`).
  *
  * Dates are counted from today, so the timetable never shows a course that
  * has already started. No video has a link: a sample cannot point at a real
@@ -52,12 +53,19 @@ export type SectionItems<T> = { items: T[]; sample: boolean };
  * replaces them all. A failed read never gets here (it is not caught; see
  * home-page.service.ts), so invented entries never stand in for content that
  * did not load.
+ *
+ * `allowed` is false on the production deployment: there an empty section
+ * stays empty, and the page hides it (with its menu link and the Academy's
+ * "Next course" teaser). Without this gate, the live site's Academy went
+ * back to six invented courses, with prices and Register buttons, the day
+ * its only real course started and dropped off the list (Nov 2026).
  */
 export async function orSamples<T>(
   items: T[],
   samples: () => T[] | Promise<T[]>,
+  allowed: boolean,
 ): Promise<SectionItems<T>> {
-  if (items.length > 0) return { items, sample: false };
+  if (items.length > 0 || !allowed) return { items, sample: false };
   return { items: await samples(), sample: true };
 }
 

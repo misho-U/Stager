@@ -28,11 +28,19 @@ test.describe('samples stand in only for an empty section', () => {
   });
 
   test('an empty section shows the samples, marked as such', async () => {
-    expect(await orSamples([], samples)).toEqual({ items: ['sample'], sample: true });
+    expect(await orSamples([], samples, true)).toEqual({ items: ['sample'], sample: true });
   });
 
   test('the first real entry replaces them all', async () => {
-    expect(await orSamples(['real'], samples)).toEqual({ items: ['real'], sample: false });
+    expect(await orSamples(['real'], samples, true)).toEqual({ items: ['real'], sample: false });
+  });
+
+  test('on the production deployment an empty section stays empty', async () => {
+    expect(await orSamples([], samples, false)).toEqual({ items: [], sample: false });
+  });
+
+  test('on the production deployment real entries still show', async () => {
+    expect(await orSamples(['real'], samples, false)).toEqual({ items: ['real'], sample: false });
   });
 });
 
