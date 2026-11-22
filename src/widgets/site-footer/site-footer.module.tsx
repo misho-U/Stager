@@ -17,13 +17,14 @@ type SiteFooterProps = {
   privacy: Link | null;
   /** The link to the page being shown, if listed: marked as current. */
   current?: string | null;
-  labels: { sections: string; rights: string };
+  /** `credit`: who made the site, in the small print. */
+  labels: { sections: string; rights: string; credit: string };
 };
 
 /**
  * The site's footer: the wordmark and tagline, the sections, the contact
  * lines, "STAGER" drawn in outline across it (decoration, risen by the home
- * page's motion), and the small print.
+ * page's motion), and the small print, with the site maker's credit.
  */
 export function SiteFooter({ layout, links, privacy, current = null, labels }: SiteFooterProps) {
   const siteName = layout?.siteName || 'STAGER';
@@ -91,6 +92,7 @@ export function SiteFooter({ layout, links, privacy, current = null, labels }: S
               </SiteLink>
             ) : null}
             <p>{labels.rights}</p>
+            <p data-testid="site-credit">{labels.credit}</p>
           </div>
         </div>
       </div>
