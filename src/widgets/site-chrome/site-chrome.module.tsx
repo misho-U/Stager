@@ -83,7 +83,11 @@ export async function SubpageShell({ locale, chrome, current, children }: Subpag
           links={links}
           current={current}
           privacy={privacy}
-          labels={{ sections: t('home.sections'), rights: t('home.rights') }}
+          labels={{
+            sections: t('home.sections'),
+            rights: t('home.rights'),
+            credit: t('home.credit'),
+          }}
         />
       </SiteMotion>
     </div>

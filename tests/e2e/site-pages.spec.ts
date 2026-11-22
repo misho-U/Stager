@@ -38,6 +38,7 @@ for (const locale of LOCALES) {
         await expect(page.locator('main#content')).toHaveCount(1);
         await expect(page.locator('[data-ct-header]')).toBeVisible();
         await expect(page.getByTestId('footer-wordmark')).toBeVisible();
+        await expect(page.getByTestId('site-credit')).toHaveText(words.home.credit);
 
         // The menu leads home, and marks this page where it lists it.
         await page.locator('[data-ct-header] button[aria-haspopup="dialog"]').click();
@@ -71,6 +72,15 @@ for (const locale of LOCALES) {
     });
   }
 }
+
+test('the home page credits who made the site, in both languages', async ({ page }) => {
+  for (const locale of LOCALES) {
+    await open(page, `/${locale}`);
+    await expect(page.locator('footer').getByTestId('site-credit')).toHaveText(
+      (locale === 'ka' ? ka : en).home.credit,
+    );
+  }
+});
 
 test.describe('the articles', () => {
   test('each listed article opens its own page, and leads back to them all', async ({

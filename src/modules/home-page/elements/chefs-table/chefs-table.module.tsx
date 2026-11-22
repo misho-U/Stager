@@ -935,7 +935,11 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
         layout={layout}
         links={links}
         privacy={privacyHref ? { href: privacyHref, label: t('privacy.title') } : null}
-        labels={{ sections: t('home.sections'), rights: t('home.rights') }}
+        labels={{
+          sections: t('home.sections'),
+          rights: t('home.rights'),
+          credit: t('home.credit'),
+        }}
       />
 
       <RegistrationDialog
