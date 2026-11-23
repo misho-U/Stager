@@ -10,7 +10,7 @@ import { toAppLocale } from '@pkg/i18n/routing';
 import { INQUIRY_ANCHOR } from '@/widgets/inquiry-form/inquiry-form.constants';
 import { LanguageSwitcher } from '@/widgets/language-switcher/language-switcher.module';
 import type { SiteChrome } from '@/widgets/site-chrome/site-chrome.service';
-import { SiteFooter } from '@/widgets/site-footer/site-footer.module';
+import { creditAuthor, SiteFooter } from '@/widgets/site-footer/site-footer.module';
 import { SiteHeader } from '@/widgets/site-header/site-header.module';
 import { SiteMotion } from '@/widgets/site-motion/site-motion.module';
 import { StageDecor } from '@/widgets/stage-decor/stage-decor.module';
@@ -86,7 +86,7 @@ export async function SubpageShell({ locale, chrome, current, children }: Subpag
           labels={{
             sections: t('home.sections'),
             rights: t('home.rights'),
-            credit: t('home.credit'),
+            credit: t.rich('home.credit', { author: creditAuthor }),
           }}
         />
       </SiteMotion>

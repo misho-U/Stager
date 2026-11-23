@@ -26,6 +26,9 @@ async function open(page: Page, path: string) {
   return response;
 }
 
+/** The credit as it reads on the page: its message marks the name as `<author>`. */
+const creditText = (message: string) => message.replace(/<\/?author>/g, '');
+
 for (const locale of LOCALES) {
   const words = locale === 'ka' ? ka : en;
 
@@ -38,7 +41,7 @@ for (const locale of LOCALES) {
         await expect(page.locator('main#content')).toHaveCount(1);
         await expect(page.locator('[data-ct-header]')).toBeVisible();
         await expect(page.getByTestId('footer-wordmark')).toBeVisible();
-        await expect(page.getByTestId('site-credit')).toHaveText(words.home.credit);
+        await expect(page.getByTestId('site-credit')).toHaveText(creditText(words.home.credit));
 
         // The menu leads home, and marks this page where it lists it.
         await page.locator('[data-ct-header] button[aria-haspopup="dialog"]').click();
@@ -77,8 +80,25 @@ test('the home page credits who made the site, in both languages', async ({ page
   for (const locale of LOCALES) {
     await open(page, `/${locale}`);
     await expect(page.locator('footer').getByTestId('site-credit')).toHaveText(
-      (locale === 'ka' ? ka : en).home.credit,
+      creditText((locale === 'ka' ? ka : en).home.credit),
     );
+  }
+});
+
+test("the site maker's name opens a Gmail message to them, in a new tab", async ({ page }) => {
+  for (const locale of LOCALES) {
+    await open(page, `/${locale}`);
+    const words = (locale === 'ka' ? ka : en).home.credit;
+    // Only the name is the link, not the words around it.
+    const name = /<author>(.*)<\/author>/.exec(words)?.[1] ?? '';
+    const link = page.locator('footer').getByTestId('site-credit-link');
+    await expect(link).toHaveText(name);
+    const href = new URL((await link.getAttribute('href')) ?? '');
+    expect(href.origin + href.pathname).toBe('https://mail.google.com/mail/');
+    expect(href.searchParams.get('view')).toBe('cm');
+    expect(href.searchParams.get('to')).toBe('mishomgvdliashvili@gmail.com');
+    await expect(link).toHaveAttribute('target', '_blank');
+    await expect(link).toHaveAttribute('rel', /noopener/);
   }
 });
 
