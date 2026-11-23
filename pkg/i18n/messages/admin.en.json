@@ -103,6 +103,8 @@
     "youtube": "Must be a youtube.com or youtu.be link.",
     "link": "Use a page path like /ka/projects, a section like #inquiry, or a full https://, mailto: or tel: link.",
     "seatsLeftOverTotal": "Seats left can't be more than the seats in total.",
+    "passwordsDiffer": "The two new passwords don't match.",
+    "passwordUnchanged": "Choose a password different from the current one.",
     "invalid": "Check this value."
   },
   "errors": {
@@ -128,7 +130,9 @@
       "RATE_LIMITED": "Too many sign-in attempts. Please try again later.",
       "PROVIDER_RATE_LIMITED": "Supabase is throttling sign-in attempts. Wait a minute.",
       "MEDIA_IN_USE": "This image is still used by other content. Remove it there first, then delete it here.",
-      "STALE_REFERENCE": "Something this links to no longer exists (deleted meanwhile, perhaps). Reload the page and choose again."
+      "STALE_REFERENCE": "Something this links to no longer exists (deleted meanwhile, perhaps). Reload the page and choose again.",
+      "WRONG_PASSWORD": "That's not your current password.",
+      "WEAK_PASSWORD": "This password is too easy to guess. Choose a different one."
     },
     "uploadStalled": "The upload stopped making progress, so it was cancelled. Check the connection and try again. If it keeps happening, uploads are being blocked: contact whoever maintains the site.",
     "fileTooBig": "Images must be under {max} MB."
@@ -677,7 +681,17 @@
       "sent": "Sent. It should appear in Sentry within a minute.",
       "off": "Error reporting is off: no Sentry address is set for this site. Whoever maintains the site can turn it on."
     },
-    "submit": "Save settings"
+    "submit": "Save settings",
+    "password": {
+      "title": "Password",
+      "description": "Change the password you sign in with. You stay signed in here; every other device is signed out.",
+      "current": "Current password",
+      "new": "New password",
+      "newHint": "At least {min} characters. A short sentence is easier to remember than symbols.",
+      "confirm": "New password again",
+      "submit": "Change password",
+      "changed": "Password changed. Use the new one next time you sign in; other devices have been signed out."
+    }
   },
   "inquiries": {
     "title": "Inquiries",

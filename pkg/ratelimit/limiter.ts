@@ -99,4 +99,7 @@ export const RATE_LIMITS = {
   // typo, never meets it.
   loginAccount: { limit: 30, windowSeconds: 60 * 60 },
   upload: { limit: 60, windowSeconds: 60 * 60 },
+  // Changing the password checks the current one: a stolen session must not
+  // be able to guess it here instead of at sign-in.
+  passwordChange: { limit: 5, windowSeconds: 15 * 60 },
 } as const;

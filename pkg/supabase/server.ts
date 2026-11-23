@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createServerClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 
 import { AuthUnavailableError } from '@pkg/auth/errors';
@@ -41,6 +42,17 @@ export async function createSupabaseServerClient() {
       },
     },
   );
+}
+
+/**
+ * A Supabase client with no cookies: whatever it signs in to stays inside it
+ * and never becomes the browser's session. For checking a password again
+ * (Settings → password) without touching who is signed in.
+ */
+export function createSupabaseDetachedClient() {
+  return createClient(clientEnv.NEXT_PUBLIC_SUPABASE_URL, clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
 }
 
 /**
