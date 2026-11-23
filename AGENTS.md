@@ -466,6 +466,15 @@ Non-negotiable. Each exists because of a specific failure mode.
    setup:check`) reports all of them; `scripts/set-admin-password.ts`
    (`pnpm admin:set-password`) repairs both systems at once. Reach for those
    before debugging credentials by hand.
+
+   A signed-in admin changes their own password in Settings → Password
+   (`POST /api/admin/account/password`). The current password is checked on
+   a cookie-less client (`createSupabaseDetachedClient`), so a wrong one never
+   touches the browser's session; the new one is set through that fresh
+   session (Supabase may ask for a recent sign-in), this browser signs in
+   again with it, and every other session ends (`signOut({ scope: 'others' })`).
+   Its test runs as an admin made for it: signing the shared test admin out
+   of "other devices" would end every signed-in test's session.
 4. **RLS is enabled on every table with no policies.** Prisma owns the tables and
    bypasses RLS; the `anon` and `authenticated` roles read zero rows. If you add
    a table, enable RLS on it in the migration that creates it, as

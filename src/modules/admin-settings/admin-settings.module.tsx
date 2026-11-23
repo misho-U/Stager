@@ -5,6 +5,7 @@ import { Controller } from 'react-hook-form';
 
 import { useAdminSettings } from '@/modules/admin-settings/admin-settings.service';
 import { ErrorReporting } from '@/modules/admin-settings/elements/error-reporting/error-reporting.module';
+import { PasswordChange } from '@/modules/admin-settings/elements/password-change/password-change.module';
 import { Button } from '@/shared/components/button';
 import {
   ContentLocaleProvider,
@@ -149,6 +150,8 @@ export function AdminSettingsModule() {
             </Button>
           </div>
         </form>
+
+        <PasswordChange />
 
         <ErrorReporting />
       </div>

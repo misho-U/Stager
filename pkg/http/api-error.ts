@@ -37,6 +37,10 @@ export const API_ERROR_REASONS = [
   // A save that names something deleted meanwhile (a category, an author, an
   // image): reload and choose again.
   'STALE_REFERENCE',
+  // Changing the password: the current one typed was not right, or Supabase
+  // refused the new one as too weak (a common or leaked password).
+  'WRONG_PASSWORD',
+  'WEAK_PASSWORD',
 ] as const;
 
 export type ApiErrorReason = (typeof API_ERROR_REASONS)[number];

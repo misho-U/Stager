@@ -14,6 +14,8 @@ export type ValidationKey =
   | 'youtube'
   | 'link'
   | 'seatsLeftOverTotal'
+  | 'passwordsDiffer'
+  | 'passwordUnchanged'
   | 'invalid';
 
 export type ValidationMessage = { key: ValidationKey; values?: Record<string, number> };
@@ -51,6 +53,8 @@ const CUSTOM_KEYS: ReadonlySet<string> = new Set<ValidationKey>([
   'youtube',
   'link',
   'seatsLeftOverTotal',
+  'passwordsDiffer',
+  'passwordUnchanged',
 ]);
 
 /**
