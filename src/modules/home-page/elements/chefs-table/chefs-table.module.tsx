@@ -60,7 +60,7 @@ import { InquiryForm } from '@/widgets/inquiry-form/inquiry-form.module';
 import { InsightRows } from '@/widgets/insight-list/insight-list.module';
 import { LanguageSwitcher } from '@/widgets/language-switcher/language-switcher.module';
 import type { SiteChrome } from '@/widgets/site-chrome/site-chrome.service';
-import { SiteFooter } from '@/widgets/site-footer/site-footer.module';
+import { creditAuthor, SiteFooter } from '@/widgets/site-footer/site-footer.module';
 import { SiteHeader } from '@/widgets/site-header/site-header.module';
 import { SiteMotion } from '@/widgets/site-motion/site-motion.module';
 import { SectionIndex, StageDecor } from '@/widgets/stage-decor/stage-decor.module';
@@ -938,7 +938,7 @@ export async function ChefsTable({ locale, content }: ChefsTableProps) {
         labels={{
           sections: t('home.sections'),
           rights: t('home.rights'),
-          credit: t('home.credit'),
+          credit: t.rich('home.credit', { author: creditAuthor }),
         }}
       />
 

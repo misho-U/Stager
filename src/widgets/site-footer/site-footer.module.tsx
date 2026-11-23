@@ -1,4 +1,5 @@
 import { cacheLife } from 'next/cache';
+import type { ReactNode } from 'react';
 
 import type { PublicLayoutData } from '@/entity/site-setting/model/site-setting.model';
 import { ContactDetails } from '@/shared/components/contact-details';
@@ -17,9 +18,32 @@ type SiteFooterProps = {
   privacy: Link | null;
   /** The link to the page being shown, if listed: marked as current. */
   current?: string | null;
-  /** `credit`: who made the site, in the small print. */
-  labels: { sections: string; rights: string; credit: string };
+  /** `credit`: who made the site, in the small print, its name a link (`creditAuthor`). */
+  labels: { sections: string; rights: string; credit: ReactNode };
 };
+
+/** Where the site maker's name leads: a new Gmail message to them (the owner's request). */
+const CREDIT_MAIL = 'mishomgvdliashvili@gmail.com';
+export const CREDIT_HREF = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(CREDIT_MAIL)}`;
+
+/**
+ * The site maker's name in the credit (`home.credit`, its `<author>` part),
+ * as a link that opens a Gmail message to them in a new tab. For
+ * `t.rich('home.credit', { author: creditAuthor })`.
+ */
+export function creditAuthor(chunks: ReactNode) {
+  return (
+    <a
+      href={CREDIT_HREF}
+      target="_blank"
+      rel="noopener noreferrer"
+      data-testid="site-credit-link"
+      className="text-ink underline underline-offset-4 hover:no-underline"
+    >
+      {chunks}
+    </a>
+  );
+}
 
 /**
  * The site's footer: the wordmark and tagline, the sections, the contact
